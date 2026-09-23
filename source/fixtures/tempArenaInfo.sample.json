@@ -1,0 +1,10 @@
+{
+  "arenaId": "mock-battle-001",
+  "mapDisplayName": "模拟海域",
+  "gameLogic": "Domination",
+  "vehicles": [
+    { "id": 1, "name": "yizhibai", "relation": 1, "shipId": 4074645200, "shipName": "Yamato" },
+    { "id": 2, "name": "yizhibaieqiu", "relation": 2, "shipId": 4281317360, "shipName": "Shimakaze" }
+  ]
+}
+
