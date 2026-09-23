@@ -7,7 +7,7 @@
 
 ## 下载完整程序
 
-Windows 安装版和便携版放在 [V0.1.3 发布页](https://github.com/awhite1127/wws-no-7-insert/releases/tag/V0.1.3)。安装版支持选择安装目录并创建快捷方式；便携版可直接运行。两者包含相同功能与图标。
+Windows 安装版和便携版放在 [V0.1.3 发布页](https://github.com/awhite1127/WWS-No.7-insert/releases/tag/V0.1.3)。安装版支持选择安装目录并创建快捷方式；便携版可直接运行。两者包含相同功能与图标。
 
 源码在本仓库的 [source](source) 文件夹；打包文件通过 GitHub Releases 分发，避免把大型二进制文件写入 Git 历史。
 
