@@ -73,11 +73,6 @@ watch(() => props.realm, () => void loadContainers(), { immediate: true });
 
 <template>
   <section class="container-explorer">
-    <div class="container-explorer__intro panel">
-      <span class="eyebrow">CONTAINER DROP RATES</span>
-      <h2>箱子查询</h2>
-      <p>搜索补给箱名称，查看官网公布的奖励内容与掉落概率。目录来自对应区服，箱子详情在选中时实时读取。</p>
-    </div>
     <div class="container-explorer__layout">
       <section class="container-picker panel">
         <div class="container-picker__heading"><strong>补给箱目录</strong><span>{{ containers.length }} 种</span></div>

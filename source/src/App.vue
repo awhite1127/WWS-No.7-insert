@@ -17,7 +17,7 @@ import type { AppConfig, ArenaInfo, ClanDetails, ClanSearchResult, PlayerDetails
 const isOverlay = new URLSearchParams(location.search).get("overlay") === "1";
 document.documentElement.classList.toggle("overlay-mode", isOverlay);
 document.body.classList.toggle("overlay-mode", isOverlay);
-const config = ref<AppConfig>({ realm: "asia", theme: "dark", gamePath: "", overlayEnabled: true, overlayHotkey: "Tab" });
+const config = ref<AppConfig>({ realm: "asia", theme: "dark", gamePath: "", overlayEnabled: true, overlayHotkeyEnabled: true, overlayHotkey: "Tab" });
 const mode = ref<"player" | "clan">("player");
 const activeView = ref<"player" | "clan" | "containers" | "overlay" | "my" | "snow">("overlay");
 const authStatus = ref<WgAuthStatus>({ authorized: false });
@@ -40,6 +40,7 @@ const arenaFileFound = ref(false);
 const arenaWarning = ref("");
 const battleLogs = ref<Array<{ time: string; message: string; tone?: string }>>([]);
 const rosterRefreshing = ref(false);
+const capturingHotkey = ref(false);
 
 function logBattle(message: string, tone = "") {
   battleLogs.value = [...battleLogs.value, {
@@ -70,7 +71,7 @@ let saveFeedbackTimer: ReturnType<typeof setTimeout> | null = null;
 const pageMeta = computed(() => {
   if (activeView.value === "clan") return { eyebrow: "CLAN INTELLIGENCE", title: "军团情报", description: "检索军团档案与完整成员名单" };
   if (activeView.value === "containers") return { eyebrow: "CONTAINER INTELLIGENCE", title: "箱子查询", description: "检索官网公布的补给箱奖励和掉落概率" };
-  if (activeView.value === "overlay") return { eyebrow: "BATTLE ASSISTANT", title: "七号插", description: `自动加载当前对局，按住 ${hotkeyLabel(config.value.overlayHotkey)} 可在游戏中呼出` };
+  if (activeView.value === "overlay") return { eyebrow: "BATTLE ASSISTANT", title: "七号插", description: config.value.overlayHotkeyEnabled ? `自动加载当前对局，按住 ${hotkeyLabel(config.value.overlayHotkey)} 可在游戏中呼出` : "自动加载当前对局，按键呼出已关闭" };
   if (activeView.value === "my") return { eyebrow: "PERSONAL PERFORMANCE", title: "我的战绩", description: "仅展示当前授权账号的总体战绩、排位记录和舰船水平" };
   if (activeView.value === "snow") return { eyebrow: "FESTIVE REWARDS", title: "扫雪", description: "算算你能获得什么！" };
   return { eyebrow: "PLAYER INTELLIGENCE", title: "玩家战绩", description: "从 WG 官方数据中检索公开战绩" };
@@ -201,6 +202,7 @@ async function saveSettings() {
       theme: config.value.theme,
       gamePath: config.value.gamePath,
       overlayEnabled: config.value.overlayEnabled,
+      overlayHotkeyEnabled: config.value.overlayHotkeyEnabled,
       overlayHotkey: config.value.overlayHotkey,
     };
     const gamePathChanged = plainConfig.gamePath !== watchedGamePath.value;
@@ -248,10 +250,6 @@ async function simulate() {
   await window.wws.simulateArena();
 }
 
-function previewOverlay(visible: boolean) {
-  void window.wws.setOverlayVisible(visible);
-}
-
 function hotkeyLabel(code: string) {
   if (code.startsWith("Key")) return code.slice(3);
   if (code.startsWith("Digit")) return code.slice(5);
@@ -263,9 +261,21 @@ function hotkeyLabel(code: string) {
   return labels[code] || code;
 }
 
-function captureHotkey(event: KeyboardEvent) {
+async function captureHotkey(event: KeyboardEvent, persist = false) {
+  if (event.code === "Escape") { capturingHotkey.value = false; return; }
   const supported = /^(Key[A-Z]|Digit[0-9]|F(?:[1-9]|1[0-2])|Tab|CapsLock|Space|Backquote|Minus|Equal|BracketLeft|BracketRight|Backslash|Semicolon|Quote|Comma|Period|Slash)$/;
-  if (supported.test(event.code)) config.value.overlayHotkey = event.code;
+  if (!supported.test(event.code)) return;
+  const previous = config.value.overlayHotkey;
+  config.value.overlayHotkey = event.code;
+  capturingHotkey.value = false;
+  if (!persist) return;
+  try {
+    config.value = await window.wws.saveConfig({ ...config.value });
+    showSaveFeedback("success", `呼出按键已设为 ${hotkeyLabel(event.code)}`);
+  } catch (reason) {
+    config.value.overlayHotkey = previous;
+    showSaveFeedback("error", `按键保存失败：${reason instanceof Error ? reason.message : String(reason)}`);
+  }
 }
 
 onMounted(async () => {
@@ -501,7 +511,7 @@ onUnmounted(() => {
                   <div class="overlay-hero__copy">
                     <span class="section-kicker"><i></i>OVERLAY READY</span>
                     <h2>战斗开始时，情报自动就位。</h2>
-                    <p>设置一次游戏安装目录，程序会自动监控对局文件。新对局开始后，双方公开战绩会直接显示在本页，也可按住 {{ hotkeyLabel(config.overlayHotkey) }} 呼出游戏内透明覆盖层。</p>
+                    <p>设置一次游戏安装目录，程序会自动监控对局文件。新对局开始后，双方公开战绩会直接显示在本页。{{ config.overlayHotkeyEnabled ? `按住 ${hotkeyLabel(config.overlayHotkey)} 可呼出游戏内透明覆盖层。` : '按键呼出已在设置中关闭。' }}</p>
                     <div class="arena-file-card" :class="{ 'arena-file-card--found': arenaFileFound }">
                       <div class="arena-file-card__status"><AppIcon name="database" :size="19" /><div><strong>{{ !config.gamePath ? '尚未设置游戏路径' : arenaFileFound ? '已找到对局文件' : '尚未找到对局文件' }}</strong><span>{{ !config.gamePath ? '请选择《战舰世界》安装目录' : arenaFileFound ? '监控已就绪，等待下一局游戏加载' : '请确认路径，或进入游戏生成对局文件' }}</span></div><i></i></div>
                       <div class="arena-file-card__path"><span>游戏路径</span><code :title="config.gamePath">{{ config.gamePath || '尚未设置' }}</code><button type="button" :disabled="settingsSaving" @click="chooseGameDirectoryFromHero">{{ config.gamePath ? '更改路径' : '设置游戏路径' }}</button></div>
@@ -511,14 +521,13 @@ onUnmounted(() => {
                     <div class="overlay-actions">
                       <div v-if="arenaFileFound" class="arena-waiting" role="status"><AppIcon name="pulse" :size="17" />等待下一局游戏加载…</div>
                       <button v-else class="button-primary" @click="simulate"><AppIcon name="pulse" :size="17" />载入模拟对局</button>
-                      <button class="button-secondary" @mousedown="previewOverlay(true)" @mouseup="previewOverlay(false)" @mouseleave="previewOverlay(false)"><AppIcon name="eye" :size="17" />按住预览</button>
                     </div>
                   </div>
-                  <div class="key-visual">
-                    <span>HOLD TO VIEW</span>
-                    <strong>{{ hotkeyLabel(config.overlayHotkey).toUpperCase() }}</strong>
-                    <small>释放后自动隐藏</small>
-                  </div>
+                  <button type="button" class="key-visual key-visual--editable" :class="{ 'key-visual--disabled': !config.overlayHotkeyEnabled }" aria-label="修改游戏内战绩面板呼出按键" @click="capturingHotkey = true" @keydown.stop.prevent="captureHotkey($event, true)" @blur="capturingHotkey = false">
+                    <span>{{ capturingHotkey ? 'PRESS A KEY' : config.overlayHotkeyEnabled ? 'HOLD TO VIEW' : 'HOTKEY OFF' }}</span>
+                    <strong>{{ capturingHotkey ? '…' : hotkeyLabel(config.overlayHotkey).toUpperCase() }}</strong>
+                    <small>{{ capturingHotkey ? '按下新按键，Esc 取消' : '点击修改呼出按键' }}</small>
+                  </button>
                 </div>
 
                 <section class="panel privacy-note">
@@ -541,6 +550,7 @@ onUnmounted(() => {
         <label><span>界面主题</span><div class="theme-choice" aria-label="选择界面主题"><button :class="{ active: config.theme === 'dark' }" @click="config.theme = 'dark'">黑色</button><button :class="{ active: config.theme === 'light' }" @click="config.theme = 'light'">白色</button></div></label>
         <label><span>游戏安装文件夹</span><div class="path-field"><input v-model="config.gamePath" placeholder="请选择《战舰世界》的安装目录" /><button @click="browseGameDirectory">选择目录</button></div></label>
         <label class="toggle"><input v-model="config.overlayEnabled" type="checkbox" /><span></span><b>启用游戏内透明覆盖层</b></label>
+        <label class="toggle"><input v-model="config.overlayHotkeyEnabled" type="checkbox" /><span></span><b>启用按键呼出战绩面板</b></label>
         <label><span>七号插呼出按键</span><button class="hotkey-input" @keydown.stop.prevent="captureHotkey">{{ hotkeyLabel(config.overlayHotkey) }}<small>点击后按下新按键</small></button></label>
         <div class="settings-guide">
           <strong>对局监控说明</strong>

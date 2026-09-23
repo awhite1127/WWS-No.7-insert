@@ -1,6 +1,7 @@
 "use strict";
 
 const { shipsFromPort, summarizeSnowflakes } = require("./snowflake.cjs");
+const officialChinese = require("../data/wg-zh-sg-glossary.json");
 
 const REALM_HOSTS = {
   asia: "api.worldofwarships.asia",
@@ -55,7 +56,7 @@ class WgApi {
     const cacheKey = url.replace(applicationId, "<app>");
     const cached = this.cache.get(cacheKey);
     if (cached && cached.expiresAt > Date.now()) return cached.value;
-    const response = await fetch(url, { headers: { "User-Agent": "No7Insert/0.1.2" } });
+    const response = await fetch(url, { headers: { "User-Agent": "No7Insert/0.1.3" } });
     if (!response.ok) throw new Error(`WG API HTTP ${response.status}`);
     const body = await response.json();
     if (body.status !== "ok") {
@@ -111,12 +112,18 @@ class WgApi {
       const body = await this.request(
         realm,
         "encyclopedia/ships",
-        // zh-cn follows the mainland/360 localization and rewrites a number of
-        // Japanese ship names. zh-tw is WG Asia's official, unfiltered catalog.
+        // The WG developer API rejects zh-sg. Use international zh-tw as the
+        // fallback, then replace names with the official zh-sg glossary below.
         { ship_id: group.join(","), language: "zh-tw", fields: "ship_id,name,tier,type,nation" },
         24 * 3600,
       );
       Object.assign(result, body.data ?? {});
+    }
+    for (const [id, ship] of Object.entries(result)) {
+      const localized = officialChinese.ships[id];
+      if (localized?.title) {
+        result[id] = { ...ship, name: localized.title, tier: ship.tier || localized.level };
+      }
     }
     return result;
   }
@@ -202,7 +209,7 @@ class WgApi {
           const meta = metadata[String(ship.ship_id)] ?? {};
           return {
             shipId: ship.ship_id,
-            name: meta.name || `#${ship.ship_id}`,
+            name: officialChinese.ships[String(ship.ship_id)]?.title || meta.name || `#${ship.ship_id}`,
             tier: meta.tier ?? 0,
             type: meta.type ?? "Unknown",
             nation: meta.nation ?? "",
@@ -230,7 +237,7 @@ class WgApi {
       const ship = metadata[String(player.shipId)] ?? {};
       const withShip = {
         ...player,
-        shipName: ship.name || player.shipName,
+        shipName: officialChinese.ships[String(player.shipId)]?.title || ship.name || player.shipName,
         shipType: ship.type || player.shipType || "",
         shipTier: ship.tier || player.shipTier || 0,
       };
@@ -253,7 +260,10 @@ class WgApi {
           accountId: details.accountId,
           clan: details.clan,
           overall: details.overall,
-          currentShip,
+          currentShip: currentShip ? {
+            ...currentShip,
+            name: officialChinese.ships[String(currentShip.shipId)]?.title || currentShip.name,
+          } : null,
         };
       } catch (error) {
         return { ...withShip, status: "error", error: error.message };

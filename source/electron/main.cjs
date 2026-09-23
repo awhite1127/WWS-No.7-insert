@@ -122,7 +122,7 @@ async function wgAuthRequest(realm, method, params = {}) {
     {
       method: usesPost ? "POST" : "GET",
       headers: {
-        "User-Agent": "No7Insert/0.1.2",
+        "User-Agent": "No7Insert/0.1.3",
         ...(usesPost ? { "Content-Type": "application/x-www-form-urlencoded" } : {}),
       },
       ...(usesPost ? { body: query } : {}),
@@ -233,6 +233,7 @@ function loadConfig() {
     theme: saved.theme === "light" ? "light" : "dark",
     gamePath,
     overlayEnabled: saved.overlayEnabled !== false,
+    overlayHotkeyEnabled: saved.overlayHotkeyEnabled !== false,
     overlayHotkey: normalizeHotkey(saved.overlayHotkey),
   };
 }
@@ -243,6 +244,7 @@ function publicConfig(config) {
     theme: config.theme,
     gamePath: config.gamePath,
     overlayEnabled: config.overlayEnabled,
+    overlayHotkeyEnabled: config.overlayHotkeyEnabled,
     overlayHotkey: config.overlayHotkey,
   };
 }
@@ -256,6 +258,7 @@ function saveConfig(next) {
     theme: next?.theme === "light" || next?.theme === "dark" ? next.theme : current.theme,
     gamePath: typeof next?.gamePath === "string" ? next.gamePath : current.gamePath,
     overlayEnabled: typeof next?.overlayEnabled === "boolean" ? next.overlayEnabled : current.overlayEnabled,
+    overlayHotkeyEnabled: typeof next?.overlayHotkeyEnabled === "boolean" ? next.overlayHotkeyEnabled : current.overlayHotkeyEnabled,
     overlayHotkey: typeof next?.overlayHotkey === "string" ? normalizeHotkey(next.overlayHotkey) : current.overlayHotkey,
   };
   fs.mkdirSync(path.dirname(configPath()), { recursive: true });
@@ -284,8 +287,8 @@ async function loadRenderer(window, overlay = false) {
 
 function createWindows() {
   mainWindow = new BrowserWindow({
-    width: 1280,
-    height: 820,
+    width: Math.min(1500, screen.getPrimaryDisplay().workArea.width),
+    height: Math.min(940, screen.getPrimaryDisplay().workArea.height),
     minWidth: 980,
     minHeight: 680,
     backgroundColor: "#071018",
@@ -354,7 +357,9 @@ function startKeyboardHook() {
   try {
     const { uIOhook, UiohookKey } = require("uiohook-napi");
     uIOhook.on("keydown", (event) => {
-      const configuredKeycode = resolveHotkeyCode(loadConfig().overlayHotkey, UiohookKey);
+      const config = loadConfig();
+      if (!config.overlayHotkeyEnabled || !config.overlayEnabled) return;
+      const configuredKeycode = resolveHotkeyCode(config.overlayHotkey, UiohookKey);
       if (event.keycode === configuredKeycode && !hotkeyDown) {
         hotkeyDown = true;
         activeHotkeyKeycode = configuredKeycode;
@@ -402,7 +407,7 @@ ipcMain.handle("containers:list", (_event, { realm }) => listContainers(realm));
 ipcMain.handle("containers:details", (_event, { id, realm }) => containerDetails(id, realm));
 ipcMain.handle("containers:open-source", (_event, { realm }) => {
   const host = { asia: "worldofwarships.asia", eu: "worldofwarships.eu", na: "worldofwarships.com" }[realm] || "worldofwarships.asia";
-  return shell.openExternal(`https://${host}/en/content/contents-and-drop-rates-of-containers/`);
+  return shell.openExternal(`https://${host}/zh-sg/content/contents-and-drop-rates-of-containers/`);
 });
 ipcMain.handle("arena:refresh-roster", async () => {
   if (!currentArena) throw new Error("尚未识别对局");
@@ -470,10 +475,10 @@ ipcMain.handle("arena:stop", () => {
 ipcMain.handle("arena:simulate", async () => {
   rosterRequestId++;
   const ships = [
-    ["Hakuryu", "AirCarrier"], ["Yamato", "Battleship"], ["Montana", "Battleship"],
-    ["Bourgogne", "Battleship"], ["Ohio", "Battleship"], ["Venezia", "Cruiser"],
-    ["Des Moines", "Cruiser"], ["Petropavlovsk", "Cruiser"], ["Minotaur", "Cruiser"],
-    ["Moskva", "Cruiser"], ["Shimakaze", "Destroyer"], ["Harugumo", "Destroyer"],
+    ["白龙", "AirCarrier"], ["大和", "Battleship"], ["蒙大拿", "Battleship"],
+    ["勃艮第", "Battleship"], ["俄亥俄", "Battleship"], ["威尼斯", "Cruiser"],
+    ["得梅因", "Cruiser"], ["彼得罗巴甫洛夫斯克", "Cruiser"], ["米诺陶斯", "Cruiser"],
+    ["莫斯科", "Cruiser"], ["岛风", "Destroyer"], ["春云", "Destroyer"],
   ];
   const sample = {
     arenaId: "mock-battle",

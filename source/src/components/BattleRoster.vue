@@ -12,23 +12,22 @@ const props = defineProps<{
 const emit = defineEmits<{ refresh: [] }>();
 const chartMode = ref<"overall" | "ship">("overall");
 const shipTypes = ["AirCarrier", "Battleship", "Cruiser", "Destroyer", "Submarine", "Unknown"] as const;
-function typeOf(player: RosterPlayer) {
+function typeOf(player: RosterPlayer): typeof shipTypes[number] {
   const type = player.shipType || player.currentShip?.type || "Unknown";
-  return shipTypes.some((shipType) => shipType === type) ? type : "Unknown";
+  return shipTypes.find((shipType) => shipType === type) || "Unknown";
 }
-function sorted(side: "ally" | "enemy", type: string) {
-  return props.roster.filter((player) => player.side === side && typeOf(player) === type)
-    .sort((a, b) => (b.shipTier || b.currentShip?.tier || 0) - (a.shipTier || a.currentShip?.tier || 0)
+function sorted(side: "ally" | "enemy") {
+  return props.roster.filter((player) => player.side === side)
+    .sort((a, b) => shipTypes.indexOf(typeOf(a)) - shipTypes.indexOf(typeOf(b))
+      || (b.shipTier || b.currentShip?.tier || 0) - (a.shipTier || a.currentShip?.tier || 0)
       || (a.shipName || a.currentShip?.name || "").localeCompare(b.shipName || b.currentShip?.name || "")
       || a.name.localeCompare(b.name));
 }
-const slots = computed(() => shipTypes.flatMap((type) => {
-  const ally = sorted("ally", type);
-  const enemy = sorted("enemy", type);
-  return Array.from({ length: Math.max(ally.length, enemy.length) }, (_, index) => ({
-    ally: ally[index] || null, enemy: enemy[index] || null,
-  }));
-}));
+const slots = computed(() => {
+  const ally = sorted("ally");
+  const enemy = sorted("enemy");
+  return Array.from({ length: Math.max(ally.length, enemy.length) }, (_, index) => ({ ally: ally[index] || null, enemy: enemy[index] || null }));
+});
 const ordered = computed(() => ({
   ally: slots.value.flatMap((slot) => slot.ally ? [slot.ally] : []),
   enemy: slots.value.flatMap((slot) => slot.enemy ? [slot.enemy] : []),
@@ -38,6 +37,16 @@ function metric(player: RosterPlayer, mode: "overall" | "ship") {
 }
 function percent(value?: number) {
   return Number.isFinite(value) ? Number(value).toFixed(1) + "%" : "—";
+}
+function winRateColor(value?: number) {
+  if (!Number.isFinite(value)) return "#78909f";
+  if (Number(value) < 48) return "#f06b6b";
+  if (Number(value) < 50) return "#ff9d56";
+  if (Number(value) < 52) return "#f3cf5c";
+  if (Number(value) < 54) return "#9fda79";
+  if (Number(value) < 56) return "#4dbf7a";
+  if (Number(value) < 60) return "#61b9f5";
+  return "#b485f5";
 }
 function number(value?: number) {
   return Number.isFinite(value) ? Math.round(Number(value)).toLocaleString() : "—";
@@ -87,13 +96,13 @@ function segments(side: "ally" | "enemy") {
           <div><span>玩家 / 舰船</span><span>账号数据</span><span>单舰数据</span></div>
         </div>
         <div v-for="(pair, index) in slots" :key="index" class="battle-pair">
-          <div v-for="side in (['ally', 'enemy'] as const)" :key="side" class="battle-entry" :class="['battle-entry--' + side, { 'battle-entry--empty': !pair[side] }]">
+          <div v-for="side in (['ally', 'enemy'] as const)" :key="side" class="battle-entry" :class="['battle-entry--' + side, { 'battle-entry--empty': !pair[side] }]" :style="pair[side] ? { '--win-rate-color': winRateColor(pair[side]!.overall?.winRate) } : undefined">
             <template v-if="pair[side]">
               <div class="battle-entry__identity" :title="pair[side]!.name + ' · ' + (pair[side]!.currentShip?.name || pair[side]!.shipName)">
                 <strong><b v-if="pair[side]!.clan">[{{ pair[side]!.clan!.tag }}]</b>{{ pair[side]!.name }}</strong>
                 <small>{{ pair[side]!.currentShip?.name || pair[side]!.shipName || '未知舰船' }}</small>
               </div>
-              <div class="battle-entry__stats"><strong>{{ percent(pair[side]!.overall?.winRate) }}</strong><small>{{ number(pair[side]!.overall?.battles) }} 场 · {{ number(pair[side]!.overall?.avgXp) }} 经验</small></div>
+              <div class="battle-entry__stats battle-entry__stats--overall"><strong>{{ percent(pair[side]!.overall?.winRate) }}</strong><small>{{ number(pair[side]!.overall?.battles) }} 场 · {{ number(pair[side]!.overall?.avgXp) }} 经验</small></div>
               <div class="battle-entry__stats"><strong>{{ percent(pair[side]!.currentShip?.winRate) }}</strong><small>{{ number(pair[side]!.currentShip?.battles) }} 场 · {{ number(pair[side]!.currentShip?.avgXp) }} 经验</small></div>
               <span v-if="pair[side]!.status === 'loading'" class="battle-entry__status">读取中</span>
             </template>

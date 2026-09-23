@@ -1,7 +1,7 @@
 import type { AppConfig, ArenaInfo, ClanDetails, ContainerDetails, ContainerSummary, PlayerDetails, RosterPlayer, SnowflakeAuthStatus, WgAuthStatus } from "./types";
 
 if (!window.wws) {
-  const config: AppConfig = { realm: "asia", theme: "dark", gamePath: "", overlayEnabled: true, overlayHotkey: "Tab" };
+  const config: AppConfig = { realm: "asia", theme: "dark", gamePath: "", overlayEnabled: true, overlayHotkeyEnabled: true, overlayHotkey: "Tab" };
   const arenaListeners: Array<(arena: ArenaInfo | null) => void> = [];
   const rosterListeners: Array<(players: RosterPlayer[]) => void> = [];
   const mockDetails: PlayerDetails = {
@@ -93,22 +93,33 @@ if (!window.wws) {
     clan: index === 0 ? mockDetails.clan : null,
   }));
   const mockContainers: ContainerSummary[] = [
-    { id: "4059222960", title: "“特殊递送：作战物资”高级补给箱", englishName: '"Special Delivery: Combat Supplies" Premium container' },
-    { id: "4046640048", title: "“超大号圣诞老人的礼物”补给箱", englishName: "Santa's Mega Gift container" },
-    { id: "4169323440", title: "白银段位补给箱", englishName: "Silver League container" },
+    { id: "4059222960", title: "“特级快递：战斗支援物资”高级补给箱", englishName: '"Special Delivery: Combat Supplies" Premium container' },
+    { id: "4002599856", title: "“星条曙光”补给箱", englishName: "Dawn of a Nation container" },
+    { id: "4169323440", title: "白银联盟补给箱", englishName: "Silver League container" },
   ];
   const mockContainerDetails: ContainerDetails = {
     id: mockContainers[0].id,
     title: mockContainers[0].title,
     savePoint: null,
-    sourceUrl: "https://worldofwarships.asia/en/content/contents-and-drop-rates-of-containers/",
+    sourceUrl: "https://worldofwarships.asia/zh-sg/content/contents-and-drop-rates-of-containers/",
     slots: [{ number: 1, title: "", groups: [
       { kind: "common", title: "常规奖励", probability: null, guaranteedAfter: null, rewards: [
-        { name: "经济加成（ID 4281331632）", type: "camoboost", amount: 8, probability: 10, id: "4281331632" },
+        { name: "银币经济加成 +160%", type: "camoboost", amount: 8, probability: 10, id: "4281331632" },
         { name: "精英指挥官经验", type: "elite_xp", amount: 57000, probability: 38.1, id: null },
       ] },
-      { kind: "valuable", title: "IX级金币战舰", probability: 1.9, guaranteedAfter: 110, rewards: [
-        { name: "BA 狒", type: "ship", amount: 1, probability: null, id: "3436099280" },
+      { kind: "valuable", title: "金币战舰", probability: 1.9, guaranteedAfter: 110, rewards: [
+        { name: "IX BA高梁", type: "ship", amount: 1, probability: null, id: "3436099280" },
+      ] },
+    ] }],
+  };
+  const mockAlbumDetails: ContainerDetails = {
+    id: "4002599856",
+    title: "“星条曙光”补给箱",
+    savePoint: null,
+    sourceUrl: "https://worldofwarships.asia/zh-sg/content/contents-and-drop-rates-of-containers/",
+    slots: [{ number: 1, title: "", groups: [
+      { kind: "common", title: "常规奖励", probability: null, guaranteedAfter: null, rewards: [
+        { name: "“星条曙光”收藏品拼图", type: "collection_album", amount: 1, probability: 100, id: "4245658544" },
       ] },
     ] }],
   };
@@ -150,7 +161,9 @@ if (!window.wws) {
     saveConfig: async (next) => Object.assign(config, next),
     getArenaState: async () => ({ arena: null, roster: [], watchedPath: "", arenaFileFound: false }),
     listContainers: async () => mockContainers,
-    containerDetails: async (id) => ({ ...mockContainerDetails, id, title: mockContainers.find((item) => item.id === id)?.title || mockContainerDetails.title }),
+    containerDetails: async (id) => id === mockAlbumDetails.id
+      ? mockAlbumDetails
+      : { ...mockContainerDetails, id, title: mockContainers.find((item) => item.id === id)?.title || mockContainerDetails.title },
     openContainerSource: async () => {},
     refreshRoster: async () => {
       rosterListeners.forEach((listener) => listener(mockRoster));

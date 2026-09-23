@@ -3,6 +3,7 @@ export interface AppConfig {
   theme: "dark" | "light";
   gamePath: string;
   overlayEnabled: boolean;
+  overlayHotkeyEnabled: boolean;
   overlayHotkey: string;
 }
 
