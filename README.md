@@ -1,3 +1,4 @@
+# 战舰世界 七号插
 # WWS No. 7 insert
 
 ![No. 7 insert 图标](source/src/assets/app-icon.png)
