@@ -136,6 +136,37 @@ export interface ArenaState {
   arena: ArenaInfo | null;
   roster: RosterPlayer[];
   watchedPath?: string;
+  arenaFileFound?: boolean;
+}
+
+export interface ContainerSummary {
+  id: string;
+  title: string;
+  englishName: string;
+}
+
+export interface ContainerReward {
+  name: string;
+  type: string;
+  amount: number;
+  probability: number | null;
+  id: string | null;
+}
+
+export interface ContainerGroup {
+  kind: "common" | "valuable";
+  title: string;
+  probability: number | null;
+  guaranteedAfter: number | null;
+  rewards: ContainerReward[];
+}
+
+export interface ContainerDetails {
+  id: string;
+  title: string;
+  savePoint: number | null;
+  slots: Array<{ number: number; title: string; groups: ContainerGroup[] }>;
+  sourceUrl: string;
 }
 
 export interface SnowflakeTierSummary {

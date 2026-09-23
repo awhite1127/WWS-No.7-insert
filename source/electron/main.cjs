@@ -11,6 +11,7 @@ require("dotenv").config({ path: envPath, quiet: true });
 
 const { WgApi } = require("./wg-api.cjs");
 const { ArenaWatcher } = require("./arena-watcher.cjs");
+const { listContainers, containerDetails } = require("./containers.cjs");
 const { parseArenaData } = require("./arena-parser.cjs");
 const { normalizeHotkey, resolveHotkeyCode } = require("./hotkey-config.cjs");
 const { makeSnapshot, mergeSnapshot, recentFromSnapshots } = require("./stats-history.cjs");
@@ -121,7 +122,7 @@ async function wgAuthRequest(realm, method, params = {}) {
     {
       method: usesPost ? "POST" : "GET",
       headers: {
-        "User-Agent": "No7Insert/0.1.1",
+        "User-Agent": "No7Insert/0.1.2",
         ...(usesPost ? { "Content-Type": "application/x-www-form-urlencoded" } : {}),
       },
       ...(usesPost ? { body: query } : {}),
@@ -392,10 +393,17 @@ async function handleArena(arena) {
 watcher.on("arena", (arena) => void handleArena(arena));
 watcher.on("warning", (message) => sendAll("overlay:status", { warning: message }));
 watcher.on("path", (watchedPath) => sendAll("overlay:status", { watchedPath }));
+watcher.on("file-status", (status) => sendAll("overlay:status", status));
 
 ipcMain.handle("config:get", () => publicConfig(loadConfig()));
 ipcMain.handle("config:save", (_event, config) => saveConfig(config));
-ipcMain.handle("arena:get-state", () => ({ arena: currentArena, roster: currentRoster, watchedPath: watcher.filePath }));
+ipcMain.handle("arena:get-state", () => ({ arena: currentArena, roster: currentRoster, watchedPath: watcher.filePath, arenaFileFound: watcher.fileExists }));
+ipcMain.handle("containers:list", (_event, { realm }) => listContainers(realm));
+ipcMain.handle("containers:details", (_event, { id, realm }) => containerDetails(id, realm));
+ipcMain.handle("containers:open-source", (_event, { realm }) => {
+  const host = { asia: "worldofwarships.asia", eu: "worldofwarships.eu", na: "worldofwarships.com" }[realm] || "worldofwarships.asia";
+  return shell.openExternal(`https://${host}/en/content/contents-and-drop-rates-of-containers/`);
+});
 ipcMain.handle("arena:refresh-roster", async () => {
   if (!currentArena) throw new Error("尚未识别对局");
   if (currentArena.battleId === "mock-battle") {
@@ -450,7 +458,13 @@ ipcMain.handle("arena:start", (_event, { gamePath }) => {
   return watched;
 });
 ipcMain.handle("arena:stop", () => {
+  rosterRequestId++;
   watcher.stop();
+  currentArena = null;
+  currentRoster = [];
+  sendAll("arena:update", null);
+  sendAll("roster:stats", []);
+  sendAll("overlay:status", { watchedPath: "", arenaFileFound: false });
   return true;
 });
 ipcMain.handle("arena:simulate", async () => {

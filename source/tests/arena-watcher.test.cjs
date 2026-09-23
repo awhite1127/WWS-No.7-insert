@@ -43,13 +43,15 @@ test("retries the same file version when parsing initially fails", () => {
   const replays = path.join(root, "replays");
   const arenaFile = path.join(replays, "tempArenaInfo.json");
   fs.mkdirSync(replays, { recursive: true });
-  fs.writeFileSync(arenaFile, "{", "utf8");
   const watcher = new ArenaWatcher();
   let arenas = 0;
   watcher.on("arena", () => { arenas += 1; });
   try {
     watcher.start(root);
-    assert.equal(watcher.lastSignature, "");
+    assert.equal(watcher.fileExists, false);
+    fs.writeFileSync(arenaFile, "{", "utf8");
+    watcher.poll();
+    assert.equal(watcher.lastContent, null);
     fs.writeFileSync(arenaFile, JSON.stringify({ vehicles: [{ name: "Tester", relation: 1 }] }), "utf8");
     watcher.poll();
     assert.equal(arenas, 1);
@@ -59,20 +61,55 @@ test("retries the same file version when parsing initially fails", () => {
   }
 });
 
-test("does not load a stale arena snapshot from a previous session", () => {
+test("finds an existing file but waits for its content to change", () => {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), "wws-stale-"));
   const replays = path.join(root, "replays");
   const arenaFile = path.join(replays, "tempArenaInfo.json");
   fs.mkdirSync(replays, { recursive: true });
-  fs.writeFileSync(arenaFile, JSON.stringify({ vehicles: [{ name: "OldBattle", relation: 1 }] }), "utf8");
-  const old = new Date(Date.now() - 4 * 60 * 60 * 1000);
-  fs.utimesSync(arenaFile, old, old);
+  const oldContent = JSON.stringify({ vehicles: [{ name: "OldBattle", relation: 1 }] });
+  fs.writeFileSync(arenaFile, oldContent, "utf8");
   const watcher = new ArenaWatcher();
+  let arenas = 0;
+  const statuses = [];
+  watcher.on("arena", () => { arenas += 1; });
+  watcher.on("file-status", (status) => statuses.push(status));
+  try {
+    watcher.start(root);
+    assert.equal(arenas, 0);
+    assert.equal(watcher.fileExists, true);
+    assert.equal(statuses.at(-1).arenaFileFound, true);
+    fs.writeFileSync(arenaFile, oldContent, "utf8");
+    watcher.poll();
+    assert.equal(arenas, 0);
+    const originalTime = fs.statSync(arenaFile).mtime;
+    fs.writeFileSync(arenaFile, JSON.stringify({ vehicles: [{ name: "NewBattle", relation: 1 }] }), "utf8");
+    fs.utimesSync(arenaFile, originalTime, originalTime);
+    watcher.poll();
+    assert.equal(arenas, 1);
+  } finally {
+    watcher.stop();
+    fs.rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test("baselines an older file discovered later under the selected folder", () => {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), "wws-discovery-"));
+  const watcher = new ArenaWatcher();
+  const arenaFile = path.join(root, "Games", "World_of_Warships", "replays", "tempArenaInfo.json");
   let arenas = 0;
   watcher.on("arena", () => { arenas += 1; });
   try {
     watcher.start(root);
+    fs.mkdirSync(path.dirname(arenaFile), { recursive: true });
+    fs.writeFileSync(arenaFile, JSON.stringify({ vehicles: [{ name: "OldBattle", relation: 1 }] }));
+    watcher.lastDiscoveryAt = 0;
+    watcher.poll();
+    assert.equal(watcher.filePath, arenaFile);
+    assert.equal(watcher.fileExists, true);
     assert.equal(arenas, 0);
+    fs.writeFileSync(arenaFile, JSON.stringify({ vehicles: [{ name: "NewBattle", relation: 1 }] }));
+    watcher.poll();
+    assert.equal(arenas, 1);
   } finally {
     watcher.stop();
     fs.rmSync(root, { recursive: true, force: true });

@@ -1,4 +1,4 @@
-import type { AppConfig, ArenaInfo, ClanDetails, PlayerDetails, RosterPlayer, SnowflakeAuthStatus, WgAuthStatus } from "./types";
+import type { AppConfig, ArenaInfo, ClanDetails, ContainerDetails, ContainerSummary, PlayerDetails, RosterPlayer, SnowflakeAuthStatus, WgAuthStatus } from "./types";
 
 if (!window.wws) {
   const config: AppConfig = { realm: "asia", theme: "dark", gamePath: "", overlayEnabled: true, overlayHotkey: "Tab" };
@@ -92,6 +92,26 @@ if (!window.wws) {
     },
     clan: index === 0 ? mockDetails.clan : null,
   }));
+  const mockContainers: ContainerSummary[] = [
+    { id: "4059222960", title: "“特殊递送：作战物资”高级补给箱", englishName: '"Special Delivery: Combat Supplies" Premium container' },
+    { id: "4046640048", title: "“超大号圣诞老人的礼物”补给箱", englishName: "Santa's Mega Gift container" },
+    { id: "4169323440", title: "白银段位补给箱", englishName: "Silver League container" },
+  ];
+  const mockContainerDetails: ContainerDetails = {
+    id: mockContainers[0].id,
+    title: mockContainers[0].title,
+    savePoint: null,
+    sourceUrl: "https://worldofwarships.asia/en/content/contents-and-drop-rates-of-containers/",
+    slots: [{ number: 1, title: "", groups: [
+      { kind: "common", title: "常规奖励", probability: null, guaranteedAfter: null, rewards: [
+        { name: "经济加成（ID 4281331632）", type: "camoboost", amount: 8, probability: 10, id: "4281331632" },
+        { name: "精英指挥官经验", type: "elite_xp", amount: 57000, probability: 38.1, id: null },
+      ] },
+      { kind: "valuable", title: "IX级金币战舰", probability: 1.9, guaranteedAfter: 110, rewards: [
+        { name: "BA 狒", type: "ship", amount: 1, probability: null, id: "3436099280" },
+      ] },
+    ] }],
+  };
   const snowStatus: SnowflakeAuthStatus = {
     authorized: true,
     accountId: 3003269897,
@@ -128,7 +148,10 @@ if (!window.wws) {
   window.wws = {
     getConfig: async () => config,
     saveConfig: async (next) => Object.assign(config, next),
-    getArenaState: async () => ({ arena: mockArena, roster: mockRoster }),
+    getArenaState: async () => ({ arena: null, roster: [], watchedPath: "", arenaFileFound: false }),
+    listContainers: async () => mockContainers,
+    containerDetails: async (id) => ({ ...mockContainerDetails, id, title: mockContainers.find((item) => item.id === id)?.title || mockContainerDetails.title }),
+    openContainerSource: async () => {},
     refreshRoster: async () => {
       rosterListeners.forEach((listener) => listener(mockRoster));
       return mockRoster;

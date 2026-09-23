@@ -11,13 +11,10 @@ const props = defineProps<{
 }>();
 const emit = defineEmits<{ refresh: [] }>();
 const chartMode = ref<"overall" | "ship">("overall");
-const classes = [
-  ["AirCarrier", "航空母舰"], ["Battleship", "战列舰"], ["Cruiser", "巡洋舰"],
-  ["Destroyer", "驱逐舰"], ["Submarine", "潜艇"], ["Unknown", "舰种待确认"],
-] as const;
+const shipTypes = ["AirCarrier", "Battleship", "Cruiser", "Destroyer", "Submarine", "Unknown"] as const;
 function typeOf(player: RosterPlayer) {
   const type = player.shipType || player.currentShip?.type || "Unknown";
-  return classes.some(([key]) => key === type) ? type : "Unknown";
+  return shipTypes.some((shipType) => shipType === type) ? type : "Unknown";
 }
 function sorted(side: "ally" | "enemy", type: string) {
   return props.roster.filter((player) => player.side === side && typeOf(player) === type)
@@ -25,18 +22,17 @@ function sorted(side: "ally" | "enemy", type: string) {
       || (a.shipName || a.currentShip?.name || "").localeCompare(b.shipName || b.currentShip?.name || "")
       || a.name.localeCompare(b.name));
 }
-const groups = computed(() => classes.map(([key, label]) => {
-  const ally = sorted("ally", key);
-  const enemy = sorted("enemy", key);
-  return { key, label, ally, enemy, rows: Array.from({ length: Math.max(ally.length, enemy.length) }, (_, index) => ({
+const slots = computed(() => shipTypes.flatMap((type) => {
+  const ally = sorted("ally", type);
+  const enemy = sorted("enemy", type);
+  return Array.from({ length: Math.max(ally.length, enemy.length) }, (_, index) => ({
     ally: ally[index] || null, enemy: enemy[index] || null,
-  })) };
-}).filter((group) => group.rows.length));
-const ordered = computed(() => ({
-  ally: groups.value.flatMap((group) => group.ally),
-  enemy: groups.value.flatMap((group) => group.enemy),
+  }));
 }));
-const slots = computed(() => groups.value.flatMap((group) => group.rows));
+const ordered = computed(() => ({
+  ally: slots.value.flatMap((slot) => slot.ally ? [slot.ally] : []),
+  enemy: slots.value.flatMap((slot) => slot.enemy ? [slot.enemy] : []),
+}));
 function metric(player: RosterPlayer, mode: "overall" | "ship") {
   return mode === "overall" ? player.overall : player.currentShip;
 }
@@ -90,24 +86,21 @@ function segments(side: "ally" | "enemy") {
           <div><span>玩家 / 舰船</span><span>账号数据</span><span>单舰数据</span></div>
           <div><span>玩家 / 舰船</span><span>账号数据</span><span>单舰数据</span></div>
         </div>
-        <div v-for="group in groups" :key="group.key" class="battle-class">
-          <div class="battle-class__heading"><span>{{ group.label }}</span><small>我方 {{ group.ally.length }} · 敌方 {{ group.enemy.length }}</small></div>
-          <div v-for="(pair, index) in group.rows" :key="group.key + index" class="battle-pair">
-            <div v-for="side in (['ally', 'enemy'] as const)" :key="side" class="battle-entry" :class="['battle-entry--' + side, { 'battle-entry--empty': !pair[side] }]">
-              <template v-if="pair[side]">
-                <div class="battle-entry__identity" :title="pair[side]!.name + ' · ' + (pair[side]!.currentShip?.name || pair[side]!.shipName)">
-                  <strong><b v-if="pair[side]!.clan">[{{ pair[side]!.clan!.tag }}]</b>{{ pair[side]!.name }}</strong>
-                  <small>{{ pair[side]!.currentShip?.name || pair[side]!.shipName || '未知舰船' }}</small>
-                </div>
-                <div class="battle-entry__stats"><strong>{{ percent(pair[side]!.overall?.winRate) }}</strong><small>{{ number(pair[side]!.overall?.battles) }} 场 · {{ number(pair[side]!.overall?.avgXp) }} 经验</small></div>
-                <div class="battle-entry__stats"><strong>{{ percent(pair[side]!.currentShip?.winRate) }}</strong><small>{{ number(pair[side]!.currentShip?.battles) }} 场 · {{ number(pair[side]!.currentShip?.avgXp) }} 经验</small></div>
-                <span v-if="pair[side]!.status === 'loading'" class="battle-entry__status">读取中</span>
-              </template>
-              <span v-else class="battle-entry__placeholder">—</span>
-            </div>
+        <div v-for="(pair, index) in slots" :key="index" class="battle-pair">
+          <div v-for="side in (['ally', 'enemy'] as const)" :key="side" class="battle-entry" :class="['battle-entry--' + side, { 'battle-entry--empty': !pair[side] }]">
+            <template v-if="pair[side]">
+              <div class="battle-entry__identity" :title="pair[side]!.name + ' · ' + (pair[side]!.currentShip?.name || pair[side]!.shipName)">
+                <strong><b v-if="pair[side]!.clan">[{{ pair[side]!.clan!.tag }}]</b>{{ pair[side]!.name }}</strong>
+                <small>{{ pair[side]!.currentShip?.name || pair[side]!.shipName || '未知舰船' }}</small>
+              </div>
+              <div class="battle-entry__stats"><strong>{{ percent(pair[side]!.overall?.winRate) }}</strong><small>{{ number(pair[side]!.overall?.battles) }} 场 · {{ number(pair[side]!.overall?.avgXp) }} 经验</small></div>
+              <div class="battle-entry__stats"><strong>{{ percent(pair[side]!.currentShip?.winRate) }}</strong><small>{{ number(pair[side]!.currentShip?.battles) }} 场 · {{ number(pair[side]!.currentShip?.avgXp) }} 经验</small></div>
+              <span v-if="pair[side]!.status === 'loading'" class="battle-entry__status">读取中</span>
+            </template>
+            <span v-else class="battle-entry__placeholder">—</span>
           </div>
         </div>
-        <div v-if="!groups.length" class="battle-roster__empty">正在读取双方阵容…</div>
+        <div v-if="!slots.length" class="battle-roster__empty">正在读取双方阵容…</div>
       </div>
       <aside class="battle-board__side">
         <section class="battle-chart">

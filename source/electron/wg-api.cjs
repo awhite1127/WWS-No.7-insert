@@ -55,7 +55,7 @@ class WgApi {
     const cacheKey = url.replace(applicationId, "<app>");
     const cached = this.cache.get(cacheKey);
     if (cached && cached.expiresAt > Date.now()) return cached.value;
-    const response = await fetch(url, { headers: { "User-Agent": "No7Insert/0.1.1" } });
+    const response = await fetch(url, { headers: { "User-Agent": "No7Insert/0.1.2" } });
     if (!response.ok) throw new Error(`WG API HTTP ${response.status}`);
     const body = await response.json();
     if (body.status !== "ok") {

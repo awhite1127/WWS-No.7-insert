@@ -3,6 +3,7 @@ import { computed, onMounted, onUnmounted, ref, watch } from "vue";
 import AppIcon from "./components/AppIcon.vue";
 import appIcon from "./assets/app-icon.png";
 import BattleRoster from "./components/BattleRoster.vue";
+import ContainerView from "./components/ContainerView.vue";
 import LoadingState from "./components/LoadingState.vue";
 import MyStatsView from "./components/MyStatsView.vue";
 import SnowflakeView from "./components/SnowflakeView.vue";
@@ -18,7 +19,7 @@ document.documentElement.classList.toggle("overlay-mode", isOverlay);
 document.body.classList.toggle("overlay-mode", isOverlay);
 const config = ref<AppConfig>({ realm: "asia", theme: "dark", gamePath: "", overlayEnabled: true, overlayHotkey: "Tab" });
 const mode = ref<"player" | "clan">("player");
-const activeView = ref<"player" | "clan" | "overlay" | "my" | "snow">("overlay");
+const activeView = ref<"player" | "clan" | "containers" | "overlay" | "my" | "snow">("overlay");
 const authStatus = ref<WgAuthStatus>({ authorized: false });
 const authOnboardingOpen = ref(false);
 const query = ref("");
@@ -33,7 +34,10 @@ const settingsSaving = ref(false);
 const saveFeedback = ref<{ type: "success" | "error"; message: string } | null>(null);
 const arena = ref<ArenaInfo | null>(null);
 const roster = ref<RosterPlayer[]>([]);
-const overlayStatus = ref("等待识别对局");
+const watchedPath = ref("");
+const watchedGamePath = ref("");
+const arenaFileFound = ref(false);
+const arenaWarning = ref("");
 const battleLogs = ref<Array<{ time: string; message: string; tone?: string }>>([]);
 const rosterRefreshing = ref(false);
 
@@ -65,6 +69,7 @@ let saveFeedbackTimer: ReturnType<typeof setTimeout> | null = null;
 
 const pageMeta = computed(() => {
   if (activeView.value === "clan") return { eyebrow: "CLAN INTELLIGENCE", title: "军团情报", description: "检索军团档案与完整成员名单" };
+  if (activeView.value === "containers") return { eyebrow: "CONTAINER INTELLIGENCE", title: "箱子查询", description: "检索官网公布的补给箱奖励和掉落概率" };
   if (activeView.value === "overlay") return { eyebrow: "BATTLE ASSISTANT", title: "七号插", description: `自动加载当前对局，按住 ${hotkeyLabel(config.value.overlayHotkey)} 可在游戏中呼出` };
   if (activeView.value === "my") return { eyebrow: "PERSONAL PERFORMANCE", title: "我的战绩", description: "仅展示当前授权账号的总体战绩、排位记录和舰船水平" };
   if (activeView.value === "snow") return { eyebrow: "FESTIVE REWARDS", title: "扫雪", description: "算算你能获得什么！" };
@@ -144,6 +149,11 @@ function openMyStats() {
   error.value = "";
 }
 
+function openContainers() {
+  activeView.value = "containers";
+  error.value = "";
+}
+
 function handleAuthorized(status: WgAuthStatus) {
   authStatus.value = status;
   authOnboardingOpen.value = false;
@@ -193,12 +203,19 @@ async function saveSettings() {
       overlayEnabled: config.value.overlayEnabled,
       overlayHotkey: config.value.overlayHotkey,
     };
+    const gamePathChanged = plainConfig.gamePath !== watchedGamePath.value;
     config.value = await window.wws.saveConfig(plainConfig);
-    if (config.value.gamePath) {
-      const watchedPath = await window.wws.startArenaWatch(config.value.gamePath);
-      overlayStatus.value = `正在监控：${watchedPath}`;
-    } else {
-      await window.wws.stopArenaWatch();
+    if (gamePathChanged || (config.value.gamePath && !watchedPath.value)) {
+      arenaWarning.value = "";
+      arenaFileFound.value = false;
+      if (config.value.gamePath) {
+        watchedPath.value = await window.wws.startArenaWatch(config.value.gamePath);
+        arenaFileFound.value = Boolean((await window.wws.getArenaState()).arenaFileFound);
+      } else {
+        await window.wws.stopArenaWatch();
+        watchedPath.value = "";
+      }
+      watchedGamePath.value = config.value.gamePath;
     }
     settingsOpen.value = false;
     showSaveFeedback("success", "设置已保存");
@@ -220,9 +237,15 @@ async function browseGameDirectory() {
   if (selected) config.value.gamePath = selected;
 }
 
+async function chooseGameDirectoryFromHero() {
+  const selected = await window.wws.chooseGameDirectory();
+  if (!selected) return;
+  config.value.gamePath = selected;
+  await saveSettings();
+}
+
 async function simulate() {
   await window.wws.simulateArena();
-  overlayStatus.value = `模拟对局已就绪，按住 ${hotkeyLabel(config.value.overlayHotkey)} 查看覆盖层`;
 }
 
 function previewOverlay(visible: boolean) {
@@ -253,20 +276,25 @@ onMounted(async () => {
     window.wws.getWgAuthStatus(),
   ]);
   config.value = savedConfig;
+  watchedGamePath.value = savedConfig.gamePath;
   authStatus.value = savedAuth;
   authOnboardingOpen.value = !savedAuth.authorized && localStorage.getItem("wwsmonkey.authPromptSeen") !== "1";
   arena.value = current.arena;
   roster.value = current.roster;
+  watchedPath.value = current.watchedPath || "";
+  arenaFileFound.value = Boolean(current.arenaFileFound);
   if (current.arena) {
-    overlayStatus.value = `已识别 ${current.arena.players.length} 名玩家`;
     logBattle("已载入当前对局：" + current.arena.players.length + " 名玩家");
     if (current.roster.some((item) => item.status === "loading")) logBattle("正在读取公开战绩…");
   }
   cleanups = [
     window.wws.onArenaUpdate((value) => {
+      const previousBattleId = arena.value?.battleId;
       arena.value = value;
-      overlayStatus.value = value ? `已识别 ${value.players.length} 名玩家` : "等待识别新对局";
-      if (value) logBattle("识别对局：" + (value.mapName || "未知地图") + "，" + value.players.length + " 名玩家");
+      if (value) {
+        if (value.battleId !== previousBattleId) activeView.value = "overlay";
+        logBattle("识别对局：" + (value.mapName || "未知地图") + "，" + value.players.length + " 名玩家");
+      }
     }),
     window.wws.onRosterStats((value) => {
       roster.value = value;
@@ -281,10 +309,15 @@ onMounted(async () => {
       }
     }),
     window.wws.onOverlayStatus((value) => {
-      if (value.error) overlayStatus.value = `键盘监听不可用：${value.error}`;
-      else if (value.watchedPath) overlayStatus.value = `正在监控：${value.watchedPath}`;
-      else if (value.warning) overlayStatus.value = `等待完整对局文件：${value.warning}`;
-      if (value.error || value.warning) logBattle(overlayStatus.value, "error");
+      if (typeof value.watchedPath === "string") watchedPath.value = value.watchedPath;
+      if (typeof value.arenaFileFound === "boolean") {
+        arenaFileFound.value = value.arenaFileFound;
+        if (value.arenaFileFound) arenaWarning.value = "";
+      }
+      if (value.error || value.warning) {
+        arenaWarning.value = String(value.error || value.warning);
+        logBattle(arenaWarning.value, "error");
+      }
     }),
   ];
 });
@@ -329,6 +362,9 @@ onUnmounted(() => {
             </button>
             <button class="nav-item" :class="{ 'nav-item--active': activeView === 'clan' }" @click="selectMode('clan')">
               <AppIcon name="clan" /><span>军团情报</span><AppIcon class="nav-chevron" name="chevron" :size="14" />
+            </button>
+            <button class="nav-item" :class="{ 'nav-item--active': activeView === 'containers' }" @click="openContainers">
+              <AppIcon name="database" /><span>箱子查询</span><AppIcon class="nav-chevron" name="chevron" :size="14" />
             </button>
           </nav>
         </div>
@@ -448,7 +484,7 @@ onUnmounted(() => {
                 </article>
                 <button class="feature-card feature-card--action panel" @click="openOverlay">
                   <div class="feature-card__icon feature-card__icon--orange"><AppIcon name="overlay" :size="21" /></div>
-                  <div><span class="eyebrow">BATTLE OVERLAY</span><h3>进入七号插</h3><p>载入模拟对局，提前查看战斗助手效果。</p></div>
+                  <div><span class="eyebrow">BATTLE OVERLAY</span><h3>进入七号插</h3><p>设置游戏路径后，自动等待下一局对局文件更新。</p></div>
                   <AppIcon name="arrow" :size="18" />
                 </button>
               </section>
@@ -465,9 +501,16 @@ onUnmounted(() => {
                   <div class="overlay-hero__copy">
                     <span class="section-kicker"><i></i>OVERLAY READY</span>
                     <h2>战斗开始时，情报自动就位。</h2>
-                    <p>设置一次游戏安装目录，程序会自动监控其中的对局信息并查询双方公开战绩。数据会直接显示在本页，也可按住 {{ hotkeyLabel(config.overlayHotkey) }} 呼出游戏内透明覆盖层。</p>
+                    <p>设置一次游戏安装目录，程序会自动监控对局文件。新对局开始后，双方公开战绩会直接显示在本页，也可按住 {{ hotkeyLabel(config.overlayHotkey) }} 呼出游戏内透明覆盖层。</p>
+                    <div class="arena-file-card" :class="{ 'arena-file-card--found': arenaFileFound }">
+                      <div class="arena-file-card__status"><AppIcon name="database" :size="19" /><div><strong>{{ !config.gamePath ? '尚未设置游戏路径' : arenaFileFound ? '已找到对局文件' : '尚未找到对局文件' }}</strong><span>{{ !config.gamePath ? '请选择《战舰世界》安装目录' : arenaFileFound ? '监控已就绪，等待下一局游戏加载' : '请确认路径，或进入游戏生成对局文件' }}</span></div><i></i></div>
+                      <div class="arena-file-card__path"><span>游戏路径</span><code :title="config.gamePath">{{ config.gamePath || '尚未设置' }}</code><button type="button" :disabled="settingsSaving" @click="chooseGameDirectoryFromHero">{{ config.gamePath ? '更改路径' : '设置游戏路径' }}</button></div>
+                      <div v-if="arenaFileFound" class="arena-file-card__path"><span>对局文件</span><code :title="watchedPath">{{ watchedPath }}</code></div>
+                      <small v-if="arenaWarning" class="arena-file-card__warning">{{ arenaWarning }}</small>
+                    </div>
                     <div class="overlay-actions">
-                      <button class="button-primary" @click="simulate"><AppIcon name="pulse" :size="17" />载入模拟对局</button>
+                      <div v-if="arenaFileFound" class="arena-waiting" role="status"><AppIcon name="pulse" :size="17" />等待下一局游戏加载…</div>
+                      <button v-else class="button-primary" @click="simulate"><AppIcon name="pulse" :size="17" />载入模拟对局</button>
                       <button class="button-secondary" @mousedown="previewOverlay(true)" @mouseup="previewOverlay(false)" @mouseleave="previewOverlay(false)"><AppIcon name="eye" :size="17" />按住预览</button>
                     </div>
                   </div>
@@ -478,17 +521,13 @@ onUnmounted(() => {
                   </div>
                 </div>
 
-                <section class="panel overlay-status-card overlay-status-card--waiting">
-                    <header><div><span class="eyebrow">CURRENT SESSION</span><h3>当前对局</h3></div><i :class="{ active: arena }"></i></header>
-                    <div class="session-empty"><AppIcon name="pulse" :size="26" /><strong>{{ overlayStatus }}</strong><span>检测到战斗文件后，阵容会直接替换当前页面</span></div>
-                </section>
-
                 <section class="panel privacy-note">
                   <AppIcon name="shield" :size="20" /><div><strong>只读、透明、随时可关</strong><span>软件只读取本地战斗阵容文件和 WG 官方公开数据，不修改游戏文件。</span></div>
                 </section>
                 </template>
               </section>
             </template>
+            <ContainerView v-else-if="activeView === 'containers'" :realm="config.realm" />
             <MyStatsView v-else-if="activeView === 'my'" :auth-status="authStatus" :realm="config.realm" @authorized="handleAuthorized" />
             <SnowflakeView v-else :realm="config.realm" :auth-status="authStatus" @auth-changed="handleAuthorized" />
           </div>

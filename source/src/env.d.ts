@@ -1,6 +1,6 @@
 /// <reference types="vite/client" />
 
-import type { AppConfig, ArenaInfo, ArenaState, ClanDetails, ClanSearchResult, PlayerDetails, RosterPlayer, SearchResult, SnowflakeAuthStatus, WgAuthStatus } from "./types";
+import type { AppConfig, ArenaInfo, ArenaState, ClanDetails, ClanSearchResult, ContainerDetails, ContainerSummary, PlayerDetails, RosterPlayer, SearchResult, SnowflakeAuthStatus, WgAuthStatus } from "./types";
 
 declare global {
   interface Window {
@@ -8,6 +8,9 @@ declare global {
       getConfig(): Promise<AppConfig>;
       saveConfig(config: Partial<AppConfig>): Promise<AppConfig>;
       getArenaState(): Promise<ArenaState>;
+      listContainers(realm: AppConfig["realm"]): Promise<ContainerSummary[]>;
+      containerDetails(id: string, realm: AppConfig["realm"]): Promise<ContainerDetails>;
+      openContainerSource(realm: AppConfig["realm"]): Promise<void>;
       refreshRoster(): Promise<RosterPlayer[]>;
       getWgAuthStatus(): Promise<WgAuthStatus>;
       loginWg(realm: AppConfig["realm"]): Promise<WgAuthStatus>;

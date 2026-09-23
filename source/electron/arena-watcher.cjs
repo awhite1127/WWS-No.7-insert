@@ -3,10 +3,9 @@
 const fs = require("node:fs");
 const path = require("node:path");
 const { EventEmitter } = require("node:events");
-const { parseArenaFile } = require("./arena-parser.cjs");
+const { parseArenaData } = require("./arena-parser.cjs");
 
 const ARENA_FILE_NAME = "tempArenaInfo.json";
-const MAX_INITIAL_FILE_AGE_MS = 3 * 60 * 60 * 1000;
 const SKIP_DIRECTORIES = new Set(["bin", "res", "res_packages", "updates", "screenshots", "profile", "node_modules"]);
 
 function existingArenaFile(root) {
@@ -68,17 +67,32 @@ class ArenaWatcher extends EventEmitter {
     this.filePath = "";
     this.gameDirectory = "";
     this.timer = null;
-    this.lastSignature = "";
+    this.lastContent = null;
     this.lastDiscoveryAt = 0;
+    this.fileExists = false;
+    this.lastReportedPath = "";
   }
 
   start(gameDirectory) {
     this.stop();
     this.gameDirectory = path.resolve(gameDirectory);
     this.filePath = resolveArenaFilePath(gameDirectory);
+    // An existing file may belong to the previous battle. Wait for a new write.
+    try {
+      this.lastContent = fs.readFileSync(this.filePath, "utf8").replace(/^\uFEFF/, "");
+    } catch (error) {
+      if (error?.code !== "ENOENT") this.emit("warning", error.message);
+    }
     this.timer = setInterval(() => this.poll(), 1200);
     this.poll();
     return this.filePath;
+  }
+
+  reportFileStatus(found) {
+    if (this.fileExists === found && this.lastReportedPath === this.filePath) return;
+    this.fileExists = found;
+    this.lastReportedPath = this.filePath;
+    this.emit("file-status", { watchedPath: this.filePath, arenaFileFound: found });
   }
 
   poll() {
@@ -88,29 +102,39 @@ class ArenaWatcher extends EventEmitter {
         const discovered = resolveArenaFilePath(this.gameDirectory);
         if (discovered !== this.filePath) {
           this.filePath = discovered;
-          this.lastSignature = "";
+          // A newly discovered path may still contain an older battle.
+          // Baseline its content before waiting for the next change.
+          try {
+            this.lastContent = fs.readFileSync(discovered, "utf8").replace(/^\uFEFF/, "");
+          } catch {
+            this.lastContent = null;
+          }
           this.emit("path", discovered);
         }
       }
-      const stat = fs.statSync(this.filePath);
-      if (!this.lastSignature && stat.mtimeMs < Date.now() - MAX_INITIAL_FILE_AGE_MS) return;
-      const signature = `${stat.mtimeMs}:${stat.size}`;
-      if (signature === this.lastSignature) return;
-      const arena = parseArenaFile(this.filePath);
-      // Only mark a version as consumed after parsing succeeds. The game may
+      const content = fs.readFileSync(this.filePath, "utf8").replace(/^\uFEFF/, "");
+      this.reportFileStatus(true);
+      if (content === this.lastContent) return;
+      const arena = parseArenaData(JSON.parse(content));
+      // Only mark content as consumed after parsing succeeds. The game may
       // expose the file while it is still being written.
-      this.lastSignature = signature;
+      this.lastContent = content;
       this.emit("arena", arena);
     } catch (error) {
-      if (error?.code !== "ENOENT") this.emit("warning", error.message);
+      if (error?.code === "ENOENT") this.reportFileStatus(false);
+      else this.emit("warning", error.message);
     }
   }
 
   stop() {
     if (this.timer) clearInterval(this.timer);
     this.timer = null;
-    this.lastSignature = "";
+    this.lastContent = null;
     this.lastDiscoveryAt = 0;
+    this.fileExists = false;
+    this.lastReportedPath = "";
+    this.filePath = "";
+    this.gameDirectory = "";
   }
 }
 
