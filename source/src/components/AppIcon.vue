@@ -32,6 +32,18 @@ defineProps<{ name: string; size?: number; strokeWidth?: number }>();
     <template v-else-if="name === 'snow'">
       <path d="M12 2.5v19M3.8 7.2l16.4 9.6M20.2 7.2 3.8 16.8M8.8 4.4 12 7.1l3.2-2.7M8.8 19.6l3.2-2.7 3.2 2.7M4.1 11.2l3.9-1.1-.7-4M19.9 12.8 16 13.9l.7 4M19.9 11.2 16 10.1l.7-4M4.1 12.8 8 13.9l-.7 4" />
     </template>
+    <template v-else-if="name === 'gift'">
+      <rect x="3" y="8" width="18" height="13" rx="2" /><path d="M2.5 8h19M12 8v13M12 8C8 7.6 6 6.3 6 4.5c0-1.3 1-2.2 2.2-2.2C10 2.3 11 4.4 12 8Zm0 0c4-.4 6-1.7 6-3.5 0-1.3-1-2.2-2.2-2.2C14 2.3 13 4.4 12 8Z" />
+    </template>
+    <template v-else-if="name === 'star'">
+      <path d="m12 2.4 2.8 5.8 6.4.9-4.6 4.5 1.1 6.4-5.7-3-5.7 3 1.1-6.4-4.6-4.5 6.4-.9z" fill="currentColor" stroke="none" />
+    </template>
+    <template v-else-if="name === 'monkey'">
+      <circle cx="4.1" cy="12" r="2.1" /><circle cx="19.9" cy="12" r="2.1" />
+      <path d="M12 3.3c-4.4 0-7 3.4-7 8.1 0 5.7 2.7 9.3 7 9.3s7-3.6 7-9.3c0-4.7-2.6-8.1-7-8.1Z" />
+      <path d="M9.2 11.7v.2M14.8 11.7v.2M8.3 15.1c0-1.4 1.4-2.3 3.7-2.3s3.7.9 3.7 2.3c0 1.7-1.6 3-3.7 3s-3.7-1.3-3.7-3Z" />
+      <path d="M10.6 15.5c.8.6 2 .6 2.8 0" />
+    </template>
     <template v-else-if="name === 'settings'">
       <circle cx="12" cy="12" r="3" />
       <path d="M19 13.5v-3l-2-.7a7 7 0 0 0-.65-1.55l.9-1.9-2.1-2.1-1.9.9A7 7 0 0 0 11.5 4l-.7-2h-3l-.7 2a7 7 0 0 0-1.55.65l-1.9-.9-2.1 2.1.9 1.9A7 7 0 0 0 1.8 9.5l-2 .7v3l2 .7a7 7 0 0 0 .65 1.55l-.9 1.9 2.1 2.1 1.9-.9a7 7 0 0 0 1.55.65l.7 2h3l.7-2a7 7 0 0 0 1.55-.65l1.9.9 2.1-2.1-.9-1.9A7 7 0 0 0 19 13.5Z" transform="translate(2.2 0) scale(.82)" />

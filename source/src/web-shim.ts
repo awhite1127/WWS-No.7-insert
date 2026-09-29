@@ -1,6 +1,13 @@
-import type { AppConfig, ArenaInfo, ClanDetails, ContainerDetails, ContainerSummary, PlayerDetails, RosterPlayer, SnowflakeAuthStatus, WgAuthStatus } from "./types";
+import newsSnapshot from "../data/news-snapshot.json";
+import type { NewsFeed, AppConfig, ArenaInfo, ClanDetails, ContainerDetails, ContainerSummary, PlayerDetails, RosterPlayer, SnowflakeAuthStatus, WgAuthStatus } from "./types";
 
 if (!window.wws) {
+  // Optional slow-data preview; Electron always uses its real preload API.
+  const previewDelay = import.meta.env.DEV ? Math.min(10000, Math.max(0, Number(new URLSearchParams(location.search).get("previewDelay")) || 0)) : 0;
+  async function previewResult<T>(value: T): Promise<T> {
+    if (previewDelay) await new Promise((resolve) => setTimeout(resolve, previewDelay));
+    return value;
+  }
   const config: AppConfig = { realm: "asia", theme: "dark", gamePath: "", overlayEnabled: true, overlayHotkeyEnabled: true, overlayHotkey: "Tab" };
   const arenaListeners: Array<(arena: ArenaInfo | null) => void> = [];
   const rosterListeners: Array<(players: RosterPlayer[]) => void> = [];
@@ -32,6 +39,7 @@ if (!window.wws) {
     ships: Array.from({ length: 22 }, (_, index) => ({
       shipId: index === 0 ? 4074645200 : index === 1 ? 4281317360 : 4000000000 + index,
       name: ["大和", "岛风", "藏王", "得克萨斯", "吉野", "信浓"][index % 6] + (index > 5 ? ` · ${Math.floor(index / 6) + 1}` : ""),
+      englishName: ["Yamato", "Shimakaze", "Zao", "Texas", "Yoshino", "Shinano"][index % 6] + (index > 5 ? ` ${Math.floor(index / 6) + 1}` : ""),
       tier: 10,
       type: ["Battleship", "Destroyer", "Cruiser", "AirCarrier"][index % 4],
       nation: "japan",
@@ -157,10 +165,13 @@ if (!window.wws) {
   };
 
   window.wws = {
+    getNews: async () => { const today = new Date(); const monthStart = new Date(Date.UTC(today.getUTCFullYear(), today.getUTCMonth() - 2, 1)); const lastDay = new Date(Date.UTC(monthStart.getUTCFullYear(), monthStart.getUTCMonth() + 1, 0)).getUTCDate(); const cutoff = new Date(Date.UTC(monthStart.getUTCFullYear(), monthStart.getUTCMonth(), Math.min(today.getUTCDate(), lastDay))); return previewResult({ ...newsSnapshot, items: newsSnapshot.items.filter(item => { const published = new Date(item.publishedAt + "T00:00:00Z"); return published >= cutoff && published <= today; }) } as NewsFeed); },
+    getNewsDetail: async () => ["浏览器预览暂不提供文章全文，请在桌面版查看。"],
+    openNewsSource: async (url) => { window.open(url, "_blank", "noopener,noreferrer"); },
     getConfig: async () => config,
     saveConfig: async (next) => Object.assign(config, next),
     getArenaState: async () => ({ arena: null, roster: [], watchedPath: "", arenaFileFound: false }),
-    listContainers: async () => mockContainers,
+    listContainers: async () => previewResult(mockContainers),
     containerDetails: async (id) => id === mockAlbumDetails.id
       ? mockAlbumDetails
       : { ...mockContainerDetails, id, title: mockContainers.find((item) => item.id === id)?.title || mockContainerDetails.title },
@@ -171,7 +182,9 @@ if (!window.wws) {
     },
     getWgAuthStatus: async () => snowStatus as WgAuthStatus,
     loginWg: async () => snowStatus as WgAuthStatus,
-    getMyStats: async () => mockDetails,
+    getMyStats: async () => previewResult(mockDetails),
+    getChristmasPortShips: async () => ({ accountId: 3003269897, nickname: "yizhibai", realm: "asia", shipIds: [3436099280, 3544102864, 4074645200, 4281317360], syncedAt: Date.now() }),
+    openChristmasSource: async (year) => { window.open(({ 2023: "https://worldofwarships.com/news/sales-and-events/armory-1211-santa-crates/", 2024: "https://worldofwarships.com/en/content/contents-and-drop-rates-of-containers/", 2025: "https://worldofwarships.com/en/news/sales-and-events/santas-gifts-arrived-to-nordlyshavn/" } as Record<number, string>)[year], "_blank"); },
     getSnowflakeStatus: async () => snowStatus,
     loginSnowflake: async () => snowStatus,
     refreshSnowflake: async () => snowStatus,
@@ -183,6 +196,12 @@ if (!window.wws) {
     chooseGameDirectory: async () => "",
     startArenaWatch: async (gamePath) => gamePath,
     stopArenaWatch: async () => true,
+    checkForUpdate: async () => ({ currentVersion: "0.1.5", latestVersion: "0.1.3", updateAvailable: false, releaseUrl: "https://github.com/awhite1127/WWS-No.7-insert/releases/tag/V0.1.3", asset: null }),
+    downloadUpdate: async () => { throw new Error("浏览器预览不能下载程序"); },
+    showUpdateFile: async () => false,
+    installUpdate: async () => false,
+    openUpdateRelease: async () => {},
+    onUpdateProgress: () => () => {},
     simulateArena: async () => {
       arenaListeners.forEach((listener) => listener(mockArena));
       rosterListeners.forEach((listener) => listener(mockRoster));

@@ -3,8 +3,21 @@
 const { contextBridge, ipcRenderer } = require("electron");
 
 contextBridge.exposeInMainWorld("wws", {
+  getNews: (force) => ipcRenderer.invoke("news:get", Boolean(force)),
+  getNewsDetail: (url) => ipcRenderer.invoke("news:detail", url),
+  openNewsSource: (url) => ipcRenderer.invoke("news:open", url),
   getConfig: () => ipcRenderer.invoke("config:get"),
   saveConfig: (config) => ipcRenderer.invoke("config:save", config),
+  checkForUpdate: () => ipcRenderer.invoke("update:check"),
+  downloadUpdate: () => ipcRenderer.invoke("update:download"),
+  showUpdateFile: () => ipcRenderer.invoke("update:show-file"),
+  installUpdate: () => ipcRenderer.invoke("update:install"),
+  openUpdateRelease: () => ipcRenderer.invoke("update:open-release"),
+  onUpdateProgress: (callback) => {
+    const listener = (_event, payload) => callback(payload);
+    ipcRenderer.on("update:progress", listener);
+    return () => ipcRenderer.removeListener("update:progress", listener);
+  },
   getArenaState: () => ipcRenderer.invoke("arena:get-state"),
   listContainers: (realm) => ipcRenderer.invoke("containers:list", { realm }),
   containerDetails: (id, realm) => ipcRenderer.invoke("containers:details", { id, realm }),
@@ -12,6 +25,8 @@ contextBridge.exposeInMainWorld("wws", {
   getWgAuthStatus: () => ipcRenderer.invoke("wg:auth-status"),
   loginWg: (realm) => ipcRenderer.invoke("wg:login", { realm }),
   getMyStats: () => ipcRenderer.invoke("wg:my-details"),
+  getChristmasPortShips: () => ipcRenderer.invoke("christmas:port-ships"),
+  openChristmasSource: (year) => ipcRenderer.invoke("christmas:open-source", { year }),
   getSnowflakeStatus: () => ipcRenderer.invoke("snowflake:get"),
   loginSnowflake: (realm) => ipcRenderer.invoke("snowflake:login", { realm }),
   refreshSnowflake: () => ipcRenderer.invoke("snowflake:refresh"),

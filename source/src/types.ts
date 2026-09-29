@@ -7,6 +7,26 @@ export interface AppConfig {
   overlayHotkey: string;
 }
 
+export interface UpdateCheckResult {
+  currentVersion: string;
+  latestVersion: string;
+  updateAvailable: boolean;
+  releaseUrl: string;
+  asset: { name: string; size: number; installer: boolean } | null;
+}
+
+export interface DownloadedUpdate {
+  path: string;
+  verified: boolean;
+  installer: boolean;
+}
+
+export interface UpdateProgress {
+  received: number;
+  total: number;
+  percent: number | null;
+}
+
 export interface SearchResult {
   account_id: number;
   nickname: string;
@@ -49,6 +69,7 @@ export interface OverallStats {
 export interface ShipStats {
   shipId: number;
   name: string;
+  englishName?: string;
   tier: number;
   type: string;
   nation: string;
@@ -212,7 +233,24 @@ export interface WgAuthStatus {
   expiresAt?: number;
 }
 
+export interface ChristmasPortShips {
+  accountId: number;
+  nickname: string;
+  realm: "asia" | "eu" | "na";
+  shipIds: number[];
+  syncedAt: number;
+}
+
 export interface SnowflakeAuthStatus extends WgAuthStatus {
   summary?: SnowflakeSummary;
   error?: string;
+}
+
+export interface NewsItem {
+  id: string; category: "ships" | "events"; title: string; originalTitle: string; summary: string; publishedAt: string; url: string; source: string; language: string; stage: string; important: boolean;
+}
+export interface NewsFeed {
+  items: NewsItem[];
+  sources: Array<{ category: "ships" | "events"; updatedAt: number; error: string }>;
+  checkedAt?: number;
 }

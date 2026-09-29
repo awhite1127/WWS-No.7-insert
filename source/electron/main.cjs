@@ -11,10 +11,32 @@ require("dotenv").config({ path: envPath, quiet: true });
 
 const { WgApi } = require("./wg-api.cjs");
 const { ArenaWatcher } = require("./arena-watcher.cjs");
+const { createNewsService, officialUrl, INTERVAL: NEWS_INTERVAL } = require("./news-service.cjs");
+let newsService;
+async function renderOfficialNewsPage(url) {
+  if (!officialUrl(url) || !url.startsWith("https://worldofwarships.asia/zh-sg/news/")) throw new Error("无效的官网文章链接");
+  const viewer = new BrowserWindow({ show: false, width: 1024, height: 768, webPreferences: { sandbox: true, nodeIntegration: false, contextIsolation: true, backgroundThrottling: false } });
+  viewer.webContents.setWindowOpenHandler(() => ({ action: "deny" }));
+  viewer.webContents.on("will-navigate", (event, target) => { if (!officialUrl(target)) event.preventDefault(); });
+  try {
+    await viewer.loadURL(url);
+    let previous = "", stable = 0;
+    for (let attempt = 0; attempt < 50; attempt++) {
+      const article = await viewer.webContents.executeJavaScript('document.querySelector("#content-root")?.innerText || document.querySelector(".news-content")?.innerText || ""');
+      if (article.length > 500 && article === previous && ++stable >= 2) return article.split(/\r?\n/).map(line => line.trim()).filter(Boolean);
+      if (article !== previous) stable = 0;
+      previous = article;
+      await new Promise(resolve => setTimeout(resolve, 400));
+    }
+    throw new Error("官网文章加载超时");
+  } finally { if (!viewer.isDestroyed()) viewer.destroy(); }
+}
 const { listContainers, containerDetails } = require("./containers.cjs");
+const christmasPools = require("../data/christmas-pools.json");
 const { parseArenaData } = require("./arena-parser.cjs");
 const { normalizeHotkey, resolveHotkeyCode } = require("./hotkey-config.cjs");
 const { makeSnapshot, mergeSnapshot, recentFromSnapshots } = require("./stats-history.cjs");
+const { checkForUpdate, downloadUpdate } = require("./update-service.cjs");
 
 let mainWindow = null;
 let overlayWindow = null;
@@ -26,6 +48,10 @@ let activeHotkeyKeycode = null;
 let keyboardHook = null;
 const watcher = new ArenaWatcher();
 let activeAuthServer = null;
+let updateCandidate = null;
+let downloadedUpdate = null;
+let updateDownloadPromise = null;
+let cachedConfig = null;
 
 const AUTH_HOSTS = {
   asia: "api.worldoftanks.asia",
@@ -218,6 +244,7 @@ async function loginWg(realm) {
 }
 
 function loadConfig() {
+  if (cachedConfig) return cachedConfig;
   let saved = {};
   try {
     saved = JSON.parse(fs.readFileSync(configPath(), "utf8"));
@@ -227,7 +254,7 @@ function loadConfig() {
     const parentPath = path.dirname(gamePath);
     gamePath = path.basename(parentPath).toLowerCase() === "replays" ? path.dirname(parentPath) : parentPath;
   }
-  return {
+  cachedConfig = {
     applicationId: saved.applicationId || process.env.WWSMONKEY_WG_APPLICATION_ID || "",
     realm: saved.realm || "asia",
     theme: saved.theme === "light" ? "light" : "dark",
@@ -236,6 +263,7 @@ function loadConfig() {
     overlayHotkeyEnabled: saved.overlayHotkeyEnabled !== false,
     overlayHotkey: normalizeHotkey(saved.overlayHotkey),
   };
+  return cachedConfig;
 }
 
 function publicConfig(config) {
@@ -263,6 +291,7 @@ function saveConfig(next) {
   };
   fs.mkdirSync(path.dirname(configPath()), { recursive: true });
   fs.writeFileSync(configPath(), JSON.stringify(merged, null, 2), "utf8");
+  cachedConfig = merged;
   return publicConfig(merged);
 }
 
@@ -389,19 +418,67 @@ async function handleArena(arena) {
   });
   sendAll("arena:update", arena);
   sendAll("roster:stats", currentRoster);
-  const result = await wg.rosterStats(arena.players, loadConfig().realm);
+  const result = await wg.rosterStats(arena.players, loadConfig().realm, () => requestId === rosterRequestId);
   if (requestId !== rosterRequestId) return;
   currentRoster = result;
   sendAll("roster:stats", currentRoster);
 }
 
 watcher.on("arena", (arena) => void handleArena(arena));
+watcher.on("arena-ended", () => {
+  rosterRequestId++;
+  currentArena = null;
+  currentRoster = [];
+  sendAll("arena:update", null);
+  sendAll("roster:stats", []);
+});
 watcher.on("warning", (message) => sendAll("overlay:status", { warning: message }));
 watcher.on("path", (watchedPath) => sendAll("overlay:status", { watchedPath }));
 watcher.on("file-status", (status) => sendAll("overlay:status", status));
 
+ipcMain.handle("news:get", (_event, force) => newsService.get(Boolean(force)));
+ipcMain.handle("news:detail", (_event, url) => newsService.detail(url));
+ipcMain.handle("news:open", (_event, url) => {
+  if (!officialUrl(url)) throw new Error("仅允许打开战舰世界官方公告");
+  return shell.openExternal(url);
+});
 ipcMain.handle("config:get", () => publicConfig(loadConfig()));
 ipcMain.handle("config:save", (_event, config) => saveConfig(config));
+ipcMain.handle("update:check", async () => {
+  const result = await checkForUpdate(app.getVersion(), Boolean(process.env.PORTABLE_EXECUTABLE_FILE));
+  updateCandidate = result.updateAvailable ? result : null;
+  downloadedUpdate = null;
+  return result;
+});
+ipcMain.handle("update:download", async () => {
+  if (!updateCandidate?.asset) throw new Error("请先检查更新，或此版本没有可下载的程序");
+  if (updateDownloadPromise) return updateDownloadPromise;
+  updateDownloadPromise = downloadUpdate(updateCandidate.asset, app.getPath("downloads"), (progress) => sendAll("update:progress", progress));
+  try {
+    downloadedUpdate = await updateDownloadPromise;
+    return downloadedUpdate;
+  } finally {
+    updateDownloadPromise = null;
+  }
+});
+ipcMain.handle("update:show-file", async () => {
+  if (!downloadedUpdate || !fs.existsSync(downloadedUpdate.path)) throw new Error("尚未下载更新文件");
+  shell.showItemInFolder(downloadedUpdate.path);
+  return true;
+});
+ipcMain.handle("update:install", async () => {
+  if (!downloadedUpdate?.installer || !downloadedUpdate.verified || !fs.existsSync(downloadedUpdate.path)) {
+    throw new Error("当前更新需要在下载目录手动安装");
+  }
+  const launchError = await shell.openPath(downloadedUpdate.path);
+  if (launchError) throw new Error(`无法启动安装程序：${launchError}`);
+  setImmediate(() => app.quit());
+  return true;
+});
+ipcMain.handle("update:open-release", () => {
+  if (!updateCandidate?.releaseUrl) throw new Error("请先检查更新");
+  return shell.openExternal(updateCandidate.releaseUrl);
+});
 ipcMain.handle("arena:get-state", () => ({ arena: currentArena, roster: currentRoster, watchedPath: watcher.filePath, arenaFileFound: watcher.fileExists }));
 ipcMain.handle("containers:list", (_event, { realm }) => listContainers(realm));
 ipcMain.handle("containers:details", (_event, { id, realm }) => containerDetails(id, realm));
@@ -424,6 +501,17 @@ ipcMain.handle("wg:my-details", async () => {
   const auth = loadAuth();
   if (!auth) throw new Error("请先授权 WG 账号");
   return attachRecentStats(await wg.playerDetails(auth.accountId, auth.realm, auth.accessToken));
+});
+ipcMain.handle("christmas:port-ships", async () => {
+  const auth = loadAuth();
+  if (!auth) throw new Error("请先授权 WG 账号");
+  const shipIds = await wg.portShipIds(auth.accountId, auth.accessToken, auth.realm);
+  return { accountId: auth.accountId, nickname: auth.nickname, realm: auth.realm, shipIds, syncedAt: Date.now() };
+});
+ipcMain.handle("christmas:open-source", (_event, { year }) => {
+  const pool = christmasPools.pools.find((entry) => entry.year === Number(year));
+  if (!pool) throw new Error("该年份的官方来源不可用");
+  return shell.openExternal(pool.sourceUrl);
 });
 ipcMain.handle("snowflake:get", () => snowflakeStatus());
 ipcMain.handle("snowflake:refresh", () => snowflakeStatus());
@@ -537,6 +625,9 @@ app.whenReady().then(() => {
   const userDataPath = path.join(app.getPath("appData"), "wwsmonkey");
   fs.mkdirSync(userDataPath, { recursive: true });
   app.setPath("userData", userDataPath);
+  newsService = createNewsService({ cacheFile: path.join(userDataPath, "news-cache.json"), seed: require("../data/news-snapshot.json"), renderOfficialPage: renderOfficialNewsPage });
+  void newsService.get();
+  setInterval(() => void newsService.get(), NEWS_INTERVAL).unref();
   createWindows();
   startKeyboardHook();
   const config = loadConfig();

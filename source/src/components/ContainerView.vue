@@ -1,9 +1,10 @@
 <script setup lang="ts">
 import { computed, ref, watch } from "vue";
 import AppIcon from "./AppIcon.vue";
-import type { AppConfig, ContainerDetails, ContainerSummary } from "../types";
+import LoadingState from "./LoadingState.vue";
+import type { AppConfig, ChristmasPortShips, ContainerDetails, ContainerSummary, WgAuthStatus } from "../types";
 
-const props = defineProps<{ realm: AppConfig["realm"] }>();
+const props = defineProps<{ realm: AppConfig["realm"]; authStatus: WgAuthStatus }>();
 const query = ref("");
 const containers = ref<ContainerSummary[]>([]);
 const selectedId = ref("");
@@ -11,6 +12,8 @@ const details = ref<ContainerDetails | null>(null);
 const listLoading = ref(false);
 const detailLoading = ref(false);
 const error = ref("");
+const port = ref<ChristmasPortShips | null>(null);
+const ownedShipIds = computed(() => new Set(port.value?.realm === props.realm ? port.value.shipIds : []));
 let requestId = 0;
 
 const filtered = computed(() => {
@@ -69,6 +72,11 @@ async function loadContainers() {
 }
 
 watch(() => props.realm, () => void loadContainers(), { immediate: true });
+watch(() => [props.authStatus.authorized, props.authStatus.accountId, props.realm], async () => {
+  port.value = null;
+  if (!props.authStatus.authorized || props.authStatus.realm !== props.realm) return;
+  try { port.value = await window.wws.getChristmasPortShips(); } catch { /* Box details remain available if port access fails. */ }
+}, { immediate: true });
 </script>
 
 <template>
@@ -77,7 +85,7 @@ watch(() => props.realm, () => void loadContainers(), { immediate: true });
       <section class="container-picker panel">
         <div class="container-picker__heading"><strong>补给箱目录</strong><span>{{ containers.length }} 种</span></div>
         <label class="container-picker__search"><AppIcon name="search" :size="17" /><input v-model="query" type="search" placeholder="搜索中文、英文名称或编号" aria-label="搜索补给箱" /></label>
-        <div v-if="listLoading" class="container-picker__message">正在读取官网箱子目录…</div>
+        <LoadingState v-if="listLoading" compact label="正在读取补给箱目录" detail="正在整理官方箱子资料" />
         <div v-else-if="!filtered.length" class="container-picker__message">{{ containers.length ? '没有找到匹配的箱子' : '箱子目录暂不可用' }}</div>
         <div v-else class="container-picker__list" role="listbox" aria-label="补给箱列表">
           <button v-for="item in filtered" :key="item.id" type="button" role="option" :aria-selected="selectedId === item.id" :class="{ active: selectedId === item.id }" @click="selectContainer(item)">
@@ -86,11 +94,11 @@ watch(() => props.realm, () => void loadContainers(), { immediate: true });
         </div>
       </section>
       <section class="container-detail panel">
-        <div v-if="detailLoading" class="container-detail__empty"><AppIcon name="database" :size="28" /><strong>正在读取奖励与概率…</strong></div>
+        <LoadingState v-if="detailLoading" class="container-detail__empty" label="正在读取奖励与概率…" detail="正在整理奖励分组与官方掉落概率" />
         <div v-else-if="error" class="container-detail__empty container-detail__empty--error"><strong>{{ error }}</strong><button v-if="selectedId" type="button" @click="selectContainer(containers.find((item) => item.id === selectedId)!)">重试</button><button v-else type="button" @click="loadContainers">重试</button></div>
         <div v-else-if="details" class="container-detail__content">
           <header><div><span class="eyebrow">官方掉落资料</span><h2>{{ details.title }}</h2><small>箱子编号 {{ details.id }}</small></div><button type="button" @click="openOfficialSource">查看官网说明 ↗</button></header>
-          <p class="container-detail__note">概率按官网当前公布的数据展示。奖励组概率表示抽中该组的机会；组内各物品未公布单独概率时不会推算。</p>
+          <p class="container-detail__note">概率按官网当前公布的数据展示。奖励组概率表示抽中该组的机会；组内各物品未公布单独概率时不会推算。{{ port?.realm === realm ? `已对照 ${port.nickname} 的港口舰船。` : '' }}</p>
           <article v-for="slot in details.slots" :key="slot.number" class="container-slot">
             <h3>奖励槽位 {{ slot.number }} <small v-if="slot.title">{{ slot.title }}</small></h3>
             <details v-for="(group, index) in slot.groups" :key="index" class="container-group" :open="group.rewards.length <= 15">
@@ -98,7 +106,7 @@ watch(() => props.realm, () => void loadContainers(), { immediate: true });
               <div v-if="group.guaranteedAfter" class="container-group__guarantee">官方保底计数：{{ group.guaranteedAfter }}</div>
               <div class="container-rewards">
                 <div v-for="(reward, rewardIndex) in group.rewards" :key="`${reward.type}-${reward.id}-${rewardIndex}`" class="container-reward">
-                  <span><strong>{{ reward.name }}</strong><small v-if="reward.amount > 1">数量 {{ reward.amount.toLocaleString('zh-CN') }}</small></span>
+                  <span><strong>{{ reward.name }} <i v-if="reward.type === 'ship' && reward.id && ownedShipIds.has(Number(reward.id))" class="container-reward__owned">✓ 已拥有</i></strong><small v-if="reward.amount > 1">数量 {{ reward.amount.toLocaleString('zh-CN') }}</small></span>
                   <b v-if="reward.probability != null">{{ percent(reward.probability) }}</b>
                   <em v-else-if="group.probability != null && group.rewards.length === 1">{{ percent(group.probability) }}</em>
                   <em v-else>组内未单独公布</em>

@@ -1,12 +1,21 @@
 /// <reference types="vite/client" />
 
-import type { AppConfig, ArenaInfo, ArenaState, ClanDetails, ClanSearchResult, ContainerDetails, ContainerSummary, PlayerDetails, RosterPlayer, SearchResult, SnowflakeAuthStatus, WgAuthStatus } from "./types";
+import type { NewsFeed, AppConfig, ArenaInfo, ArenaState, ClanDetails, ClanSearchResult, ContainerDetails, ContainerSummary, ChristmasPortShips, DownloadedUpdate, PlayerDetails, RosterPlayer, SearchResult, SnowflakeAuthStatus, UpdateCheckResult, UpdateProgress, WgAuthStatus } from "./types";
 
 declare global {
   interface Window {
     wws: {
+      getNews(force?: boolean): Promise<NewsFeed>;
+      getNewsDetail(url: string): Promise<string[]>;
+      openNewsSource(url: string): Promise<void>;
       getConfig(): Promise<AppConfig>;
       saveConfig(config: Partial<AppConfig>): Promise<AppConfig>;
+      checkForUpdate(): Promise<UpdateCheckResult>;
+      downloadUpdate(): Promise<DownloadedUpdate>;
+      showUpdateFile(): Promise<boolean>;
+      installUpdate(): Promise<boolean>;
+      openUpdateRelease(): Promise<void>;
+      onUpdateProgress(callback: (progress: UpdateProgress) => void): () => void;
       getArenaState(): Promise<ArenaState>;
       listContainers(realm: AppConfig["realm"]): Promise<ContainerSummary[]>;
       containerDetails(id: string, realm: AppConfig["realm"]): Promise<ContainerDetails>;
@@ -15,6 +24,8 @@ declare global {
       getWgAuthStatus(): Promise<WgAuthStatus>;
       loginWg(realm: AppConfig["realm"]): Promise<WgAuthStatus>;
       getMyStats(): Promise<PlayerDetails>;
+      getChristmasPortShips(): Promise<ChristmasPortShips>;
+      openChristmasSource(year: number): Promise<void>;
       getSnowflakeStatus(): Promise<SnowflakeAuthStatus>;
       loginSnowflake(realm: AppConfig["realm"]): Promise<SnowflakeAuthStatus>;
       refreshSnowflake(): Promise<SnowflakeAuthStatus>;

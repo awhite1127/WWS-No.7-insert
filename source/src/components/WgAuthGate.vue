@@ -40,7 +40,7 @@ async function login() {
         <button v-for="item in ['asia', 'eu', 'na']" :key="item" :class="{ active: selectedRealm === item }" @click="selectedRealm = item as AppConfig['realm']">{{ item.toUpperCase() }}</button>
       </div>
       <div class="wg-auth-gate__actions">
-        <button class="button-primary" :disabled="loading" @click="login"><AppIcon name="shield" :size="17" />{{ loading ? '等待 WG 授权' : '前往 WG 官方授权' }}</button>
+        <button class="button-primary" :disabled="loading" @click="login"><span v-if="loading" class="ui-spinner" aria-hidden="true"></span><AppIcon v-else name="shield" :size="17" />{{ loading ? '等待 WG 授权' : '前往 WG 官方授权' }}</button>
         <button v-if="onboarding" class="button-secondary" :disabled="loading" @click="emit('skip')">暂不授权</button>
       </div>
       <p v-if="error" class="error-message">{{ error }}</p>

@@ -40,6 +40,18 @@ async function main() {
   };
   const output = path.join(__dirname, "..", "data", "wg-zh-sg-glossary.json");
   fs.writeFileSync(output, JSON.stringify(catalog, null, 2) + "\n");
+  const englishResponse = await fetch(source, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", Accept: "application/json", "User-Agent": "No7Insert/0.1.5" },
+    body: JSON.stringify({ query: "query OfficialEnglish($languageCode: String) { vehicles(lang: $languageCode) { id title } }", variables: { languageCode: "en" } }),
+    signal: AbortSignal.timeout(90000),
+  });
+  if (!englishResponse.ok) throw new Error("WG English glossary HTTP " + englishResponse.status);
+  const englishResult = await englishResponse.json();
+  if (englishResult.errors?.length || !englishResult.data?.vehicles?.length) throw new Error("WG English glossary returned incomplete data");
+  const english = { source, locale: "en", ships: names(englishResult.data.vehicles, (entry) => entry.title) };
+  const englishOutput = path.join(__dirname, "..", "data", "wg-en-ship-names.json");
+  fs.writeFileSync(englishOutput, JSON.stringify(english, null, 2) + "\n");
   console.log(`Saved ${Object.keys(catalog.ships).length} ships, ${Object.keys(catalog.items).length} items, ${Object.keys(catalog.albums).length} albums to ${output}`);
 }
 

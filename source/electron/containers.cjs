@@ -30,6 +30,8 @@ const economicBonusNames = new Map([
 ]);
 const titleById = new Map(catalog.items.map((item) => [item.id, item.title]));
 const listCache = new Map();
+const detailsCache = new Map();
+const detailsInFlight = new Map();
 
 function realmHosts(realm) {
   return HOSTS[realm] || HOSTS.asia;
@@ -133,9 +135,24 @@ async function containerDetails(id, realm = "asia") {
   const idText = String(id);
   if (!/^\d{1,12}$/.test(idText)) throw new Error("无效的箱子编号");
   const host = realmHosts(realm).vortex;
-  const result = await fetchJson(`https://${host}/api/get_lootbox/${OFFICIAL_LOCALE}/${idText}/`);
-  if (result.status !== "ok" || !result.data?.slots) throw new Error("官网未返回箱子奖励数据");
-  return normalizeContainer(result.data, realm);
+  const key = `${host}:${idText}`;
+  const cached = detailsCache.get(key);
+  if (cached && cached.expiresAt > Date.now()) return cached.value;
+  detailsCache.delete(key);
+  if (detailsInFlight.has(key)) return detailsInFlight.get(key);
+  const operation = (async () => {
+    const result = await fetchJson(`https://${host}/api/get_lootbox/${OFFICIAL_LOCALE}/${idText}/`);
+    if (result.status !== "ok" || !result.data?.slots) throw new Error("官网未返回箱子奖励数据");
+    const value = normalizeContainer(result.data, realm);
+    const now = Date.now();
+    for (const [entryKey, entry] of detailsCache) if (entry.expiresAt <= now) detailsCache.delete(entryKey);
+    detailsCache.set(key, { value, expiresAt: now + 10 * 60 * 1000 });
+    while (detailsCache.size > 64) detailsCache.delete(detailsCache.keys().next().value);
+    return value;
+  })();
+  detailsInFlight.set(key, operation);
+  try { return await operation; }
+  finally { detailsInFlight.delete(key); }
 }
 
 module.exports = { listContainers, containerDetails, normalizeContainer };

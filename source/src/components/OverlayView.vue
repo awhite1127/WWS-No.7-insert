@@ -5,10 +5,12 @@ import type { ArenaInfo, RosterPlayer } from "../types";
 
 const arena = ref<ArenaInfo | null>(null);
 const roster = ref<RosterPlayer[]>([]);
+const realm = ref("asia");
 let cleanArena: (() => void) | null = null;
 let cleanRoster: (() => void) | null = null;
 
 onMounted(async () => {
+  realm.value = (await window.wws.getConfig()).realm;
   const current = await window.wws.getArenaState();
   arena.value = current.arena;
   roster.value = current.roster;
@@ -24,6 +26,6 @@ onUnmounted(() => {
 
 <template>
   <main class="overlay-shell">
-    <BattleRoster :arena="arena" :roster="roster" />
+    <BattleRoster :arena="arena" :roster="roster" :realm="realm" />
   </main>
 </template>

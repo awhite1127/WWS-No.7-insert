@@ -1,10 +1,14 @@
 <script setup lang="ts">
 import { computed, ref } from "vue";
+import AppIcon from "./AppIcon.vue";
+import { playerMark, togglePlayerMark } from "../player-marks";
 import type { OverallStats, PlayerDetails } from "../types";
 
-const props = defineProps<{ player: PlayerDetails }>();
+const props = defineProps<{ player: PlayerDetails; authorized?: boolean; markable?: boolean; refreshing?: boolean }>();
+const emit = defineEmits<{ refresh: [] }>();
 const mode = ref<"random" | "ranked">("random");
 const period = ref<"overall" | 1 | 7 | 30 | 90>("overall");
+const marks = computed(() => playerMark(props.player.realm, props.player.accountId, props.player.nickname));
 
 const periodOptions = [
   { value: "overall" as const, label: "总览" },
@@ -68,15 +72,23 @@ function formatDate(value?: number) {
       <div class="performance-profile">
         <div class="performance-avatar">{{ player.nickname.slice(0, 1).toUpperCase() }}</div>
         <div>
-          <span class="eyebrow">{{ player.realm.toUpperCase() }} · UID {{ player.accountId }}</span>
+          <span class="eyebrow">{{ authorized ? '已授权 ' : '' }}{{ player.realm.toUpperCase() }} · UID {{ player.accountId }}</span>
           <h2><b v-if="player.clan">[{{ player.clan.tag }}]</b>{{ player.nickname }}</h2>
           <p>{{ player.clan ? player.clan.name : "未加入军团" }}</p>
         </div>
         <span v-if="player.hiddenProfile" class="performance-hidden">战绩已隐藏</span>
       </div>
-      <div class="performance-switch" aria-label="切换战斗模式">
-        <button :class="{ active: mode === 'random' }" @click="mode = 'random'">随机战</button>
-        <button :class="{ active: mode === 'ranked' }" @click="mode = 'ranked'">排位战</button>
+      <div class="performance-head__actions">
+        <slot name="tools" />
+        <div v-if="markable" class="performance-mark-controls" aria-label="玩家标记">
+          <button type="button" :class="{ active: marks.favorite }" :aria-pressed="marks.favorite" title="特别关注" @click="togglePlayerMark(player.realm, player.accountId, player.nickname, 'favorite')"><AppIcon name="star" :size="16" />特别关注</button>
+          <button type="button" :class="{ active: marks.monkey }" :aria-pressed="marks.monkey" title="海猴标记" @click="togglePlayerMark(player.realm, player.accountId, player.nickname, 'monkey')"><AppIcon name="monkey" :size="17" />海猴标记</button>
+        </div>
+        <button v-if="authorized" class="button-secondary performance-refresh" :disabled="refreshing" @click="emit('refresh')"><span v-if="refreshing" class="ui-spinner" aria-hidden="true"></span><AppIcon v-else name="pulse" :size="15" />{{ refreshing ? '正在刷新…' : '刷新战绩' }}</button>
+        <div class="performance-switch" aria-label="切换战斗模式">
+          <button :class="{ active: mode === 'random' }" @click="mode = 'random'">随机战</button>
+          <button :class="{ active: mode === 'ranked' }" @click="mode = 'ranked'">排位战</button>
+        </div>
       </div>
     </header>
 
