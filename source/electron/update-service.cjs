@@ -26,7 +26,7 @@ function compareVersions(a, b) {
 }
 
 function validAsset(asset) {
-  if (!asset || typeof asset.name !== "string" || !/^No\. 7 insert(?: Setup)? v?\d+\.\d+\.\d+\.exe$/i.test(asset.name)) return false;
+  if (!asset || typeof asset.name !== "string" || !/^No[. ]+7[. ]+insert(?:[. ]+Setup)?[. ]+v?\d+\.\d+\.\d+\.exe$/i.test(asset.name)) return false;
   try {
     const url = new URL(asset.browser_download_url);
     return url.protocol === "https:" && url.hostname === "github.com"
@@ -36,7 +36,7 @@ function validAsset(asset) {
 
 function chooseAsset(assets, portable) {
   const available = Array.isArray(assets) ? assets.filter(validAsset) : [];
-  return available.find((asset) => portable ? !asset.name.includes(" Setup ") : asset.name.includes(" Setup "))
+  return available.find((asset) => portable ? !/[. ]Setup[. ]/i.test(asset.name) : /[. ]Setup[. ]/i.test(asset.name))
     || available[0] || null;
 }
 
@@ -60,7 +60,7 @@ async function checkForUpdate(currentVersion, portable = false, fetcher = fetch)
       url: asset.browser_download_url,
       size: Number(asset.size) || 0,
       digest: typeof asset.digest === "string" ? asset.digest : "",
-      installer: asset.name.includes(" Setup "),
+      installer: /[. ]Setup[. ]/i.test(asset.name),
     } : null,
   };
 }

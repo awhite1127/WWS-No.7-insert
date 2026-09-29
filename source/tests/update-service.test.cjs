@@ -19,6 +19,9 @@ const portable = {
   size: 4,
 };
 
+const githubInstaller = { ...installer, name: "No.7.insert.Setup.0.1.5.exe" };
+const githubPortable = { ...portable, name: "No.7.insert.0.1.5.exe" };
+
 test("compares release versions and selects the matching Windows package", async () => {
   assert.equal(compareVersions("V0.1.5", "0.1.4"), 1);
   assert.equal(compareVersions("0.1.3", "0.1.4"), -1);
@@ -31,6 +34,13 @@ test("compares release versions and selects the matching Windows package", async
   const current = await checkForUpdate("0.1.5", false, response);
   assert.equal(current.updateAvailable, false);
   assert.equal(current.asset, null);
+  const githubResponse = async () => new Response(JSON.stringify({ tag_name: "V0.1.5", assets: [githubPortable, githubInstaller] }), { status: 200 });
+  const githubInstalled = await checkForUpdate("0.1.4", false, githubResponse);
+  const githubUnpacked = await checkForUpdate("0.1.4", true, githubResponse);
+  assert.equal(githubInstalled.asset.name, githubInstaller.name);
+  assert.equal(githubInstalled.asset.installer, true);
+  assert.equal(githubUnpacked.asset.name, githubPortable.name);
+  assert.equal(githubUnpacked.asset.installer, false);
 });
 
 test("downloads a release only after matching its GitHub SHA-256 digest", async (t) => {
