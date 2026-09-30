@@ -52,8 +52,6 @@ Windows 安装版和便携版可从 [V0.1.5 发布页](https://github.com/awhite
 - 支持 WG 账号授权、个人战绩、港口舰船活动奖励汇总
 - 支持黑色与白色主题、自定义或关闭覆盖层呼出按键
 
-程序只读取本地对局文件及 WG 官方接口，不修改游戏文件。
-
 ## 从源码运行
 
 需要 Node.js 与 npm。在 [source/.env.example](source/.env.example) 的基础上创建 `source/.env.local`，填入自己的 WG `application_id`，再执行：
