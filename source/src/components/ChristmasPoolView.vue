@@ -7,7 +7,7 @@ import type { AppConfig, ChristmasPortShips, WgAuthStatus } from "../types";
 const props = defineProps<{ realm: AppConfig["realm"]; authStatus: WgAuthStatus }>();
 const emit = defineEmits<{ authorized: [status: WgAuthStatus] }>();
 const search = ref("");
-const tier = ref("all");
+const group = ref("all");
 const type = ref("all");
 const nation = ref("all");
 const ownership = ref("all");
@@ -25,15 +25,21 @@ const nationNames: Record<string, string> = { usa: "美国", japan: "日本", us
 const visibleShips = computed(() => {
   const needle = search.value.trim().toLocaleLowerCase().replace(/\s+/g, " ");
   return pool.value.ships.filter((ship) => {
-    if (tier.value !== "all" && ship.tier !== Number(tier.value)) return false;
+    if (group.value !== "all" && ship.groupId !== group.value) return false;
     if (type.value !== "all" && ship.type !== type.value) return false;
     if (nation.value !== "all" && ship.nation !== nation.value) return false;
     if (portMatchesRealm.value && ownership.value === "owned" && !owned.value.has(ship.id)) return false;
     if (portMatchesRealm.value && ownership.value === "missing" && owned.value.has(ship.id)) return false;
     const name = `${ship.name} ${ship.englishName} ${ship.id}`.toLocaleLowerCase().replace(/\s+/g, " ");
     return !needle || name.includes(needle);
-  }).sort((a, b) => b.tier - a.tier || a.name.localeCompare(b.name, "zh-CN"));
+  }).sort((a, b) => a.name.localeCompare(b.name, "zh-CN"));
 });
+
+const visibleGroups = computed(() => pool.value.groups.map(item => ({
+  ...item,
+  ships: visibleShips.value.filter(ship => ship.groupId === item.id),
+  total: pool.value.ships.filter(ship => ship.groupId === item.id).length,
+})).filter(item => item.ships.length));
 
 async function refreshPort() {
   if (!props.authStatus.authorized) return;
@@ -69,7 +75,7 @@ onMounted(() => { if (props.authStatus.authorized) void refreshPort(); });
         <div>
           <span class="eyebrow">SANTA CONTAINER FLEET</span>
           <h2>{{ pool.year }} 圣诞船池</h2>
-          <p>依据 WG 官方公布的圣诞补给箱掉落名单；港口拥有情况按舰船 ID 核对。</p>
+          <p>按 WG 官方概率档位分类；概率指获得本档任意舰船，港口拥有情况按舰船 ID 核对。</p>
         </div>
         <div class="christmas-overview__actions">
           <button type="button" class="button-secondary" @click="openSource">查看官网说明 ↗</button>
@@ -96,18 +102,21 @@ onMounted(() => { if (props.authStatus.authorized) void refreshPort(); });
           <input v-model="search" type="search" placeholder="搜索中英文船名或舰船 ID" aria-label="搜索圣诞船池" />
           <select v-model="type" aria-label="筛选舰种"><option value="all">全部舰种</option><option v-for="item in types" :key="item" :value="item">{{ typeNames[item] || item }}</option></select>
           <select v-model="nation" aria-label="筛选国家"><option value="all">全部国家</option><option v-for="item in nations" :key="item" :value="item">{{ nationNames[item] || item }}</option></select>
-          <select v-model="tier" aria-label="筛选等级"><option value="all">全部等级</option><option v-for="item in [...new Set(pool.ships.map((ship) => ship.tier))].sort((a,b) => b-a)" :key="item" :value="String(item)">{{ item }} 级</option></select>
+          <select v-model="group" aria-label="筛选掉落档位"><option value="all">全部档位</option><option v-for="item in pool.groups" :key="item.id" :value="item.id">{{ item.label }}</option></select>
           <select v-model="ownership" :disabled="!portMatchesRealm" aria-label="筛选拥有情况"><option value="all">全部状态</option><option value="owned">已拥有</option><option value="missing">未拥有</option></select>
         </div>
       </div>
       <div class="christmas-catalog__list">
-        <div v-for="ship in visibleShips" :key="ship.id" class="christmas-ship" :class="{ 'christmas-ship--owned': owned.has(ship.id) }">
+        <section v-for="item in visibleGroups" :key="item.id" class="christmas-group" :data-group="item.id">
+          <header class="christmas-group__header"><h3>{{ item.label }} <small>{{ item.ships.length }} / {{ item.total }} 艘</small></h3><span>本档掉落率 · 普通 {{ item.probabilities.gift }}% · 超大号 {{ item.probabilities.mega }}% · 超级 {{ item.probabilities.ultra }}%</span></header>
+        <div v-for="ship in item.ships" :key="ship.id" class="christmas-ship" :class="{ 'christmas-ship--owned': owned.has(ship.id) }">
           <span class="christmas-ship__tier">{{ ship.tier }}</span>
           <span class="christmas-ship__name"><strong>{{ ship.name }}</strong><small>{{ ship.englishName }}</small></span>
           <span class="christmas-ship__detail">{{ nationNames[ship.nation] || ship.nation }} · {{ typeNames[ship.type] || ship.type }}</span>
           <span class="christmas-ship__group">{{ ship.group }}</span>
           <span class="christmas-ship__status" :class="{ owned: owned.has(ship.id) }">{{ portMatchesRealm ? owned.has(ship.id) ? '✓ 已拥有' : '未拥有' : '待核对' }}</span>
         </div>
+        </section>
         <div v-if="!visibleShips.length" class="christmas-catalog__empty"><AppIcon name="search" :size="26" />没有符合条件的舰船</div>
       </div>
     </section>

@@ -8,7 +8,7 @@ import ChristmasPoolView from "./components/ChristmasPoolView.vue";
 import LoadingState from "./components/LoadingState.vue";
 import MyStatsView from "./components/MyStatsView.vue";
 import SnowflakeView from "./components/SnowflakeView.vue";
-import OverlayView from "./components/OverlayView.vue";
+import StatsTrend from "./components/StatsTrend.vue";
 import PerformanceOverview from "./components/PerformanceOverview.vue";
 import SearchControl from "./components/SearchControl.vue";
 import ShipTable from "./components/ShipTable.vue";
@@ -16,9 +16,6 @@ import TitleBar from "./components/TitleBar.vue";
 import WgAuthGate from "./components/WgAuthGate.vue";
 import type { AppConfig, ArenaInfo, ClanDetails, ClanSearchResult, DownloadedUpdate, PlayerDetails, RosterPlayer, SearchResult, UpdateCheckResult, UpdateProgress, WgAuthStatus } from "./types";
 
-const isOverlay = new URLSearchParams(location.search).get("overlay") === "1";
-document.documentElement.classList.toggle("overlay-mode", isOverlay);
-document.body.classList.toggle("overlay-mode", isOverlay);
 const config = ref<AppConfig>({ realm: "asia", theme: "dark", gamePath: "", overlayEnabled: true, overlayHotkeyEnabled: true, overlayHotkey: "Tab" });
 const mode = ref<"player" | "clan">("player");
 const activeView = ref<"player" | "clan" | "containers" | "christmas" | "overlay" | "my" | "snow" | "news">("overlay");
@@ -31,6 +28,7 @@ const suggestions = ref<SearchResult[]>([]);
 const clanSuggestions = ref<ClanSearchResult[]>([]);
 const player = ref<PlayerDetails | null>(null);
 const clan = ref<ClanDetails | null>(null);
+const clanDescriptionExpanded = ref(false);
 const error = ref("");
 const settingsOpen = ref(false);
 const settingsSaving = ref(false);
@@ -47,6 +45,8 @@ const watchedGamePath = ref("");
 const arenaFileFound = ref(false);
 const arenaWarning = ref("");
 const battleLogs = ref<Array<{ time: string; message: string; tone?: string }>>([]);
+const battleLogOpen = ref(false);
+const latestBattleLog = computed(() => battleLogs.value.at(-1));
 const rosterRefreshing = ref(false);
 const capturingHotkey = ref(false);
 
@@ -72,6 +72,7 @@ async function refreshBattleRoster() {
 }
 
 let cleanups: Array<() => void> = [];
+let rosterLoadingLogged = false;
 let saveFeedbackTimer: ReturnType<typeof setTimeout> | null = null;
 type QueryHistoryEntry = { kind: "player" | "clan"; realm: AppConfig["realm"]; id: number; label: string; queriedAt: number };
 const HISTORY_KEY = "wwsmonkey.queryHistory.v1";
@@ -163,6 +164,7 @@ async function loadClan(clanId: number) {
   error.value = "";
   try {
     const realm = config.value.realm;
+    clanDescriptionExpanded.value = false;
     clan.value = await window.wws.clanDetails(clanId, realm);
     query.value = clan.value.tag;
     rememberQuery({ kind: "clan", realm, id: clanId, label: `[${clan.value.tag}] ${clan.value.name}`, queriedAt: Date.now() });
@@ -221,6 +223,16 @@ function skipAuthOnboarding() {
 function openMember(accountId: number) {
   selectMode("player");
   void loadPlayer(accountId);
+}
+function openRosterPlayer(target: RosterPlayer) {
+  selectMode("player");
+  player.value = null;
+  if (Number.isSafeInteger(target.accountId) && Number(target.accountId) > 0) {
+    void loadPlayer(target.accountId!);
+  } else {
+    query.value = target.name;
+    void runSearch();
+  }
 }
 
 async function loadPlayer(accountId: number) {
@@ -372,7 +384,6 @@ async function captureHotkey(event: KeyboardEvent, persist = false) {
 }
 
 onMounted(async () => {
-  if (isOverlay) return;
   const [savedConfig, current, savedAuth] = await Promise.all([
     window.wws.getConfig(),
     window.wws.getArenaState(),
@@ -395,16 +406,26 @@ onMounted(async () => {
       const previousBattleId = arena.value?.battleId;
       arena.value = value;
       if (value) {
-        if (value.battleId !== previousBattleId) activeView.value = "overlay";
+        if (value.battleId !== previousBattleId) {
+          activeView.value = "overlay";
+          rosterLoadingLogged = false;
+        }
         logBattle("识别对局：" + (value.mapName || "未知地图") + "，" + value.players.length + " 名玩家");
+      } else {
+        battleLogOpen.value = false;
+        rosterLoadingLogged = false;
       }
     }),
     window.wws.onRosterStats((value) => {
       roster.value = value;
-      if (!value.length) return;
+      if (!value.length) { rosterLoadingLogged = false; return; }
       if (value.some((item) => item.status === "loading")) {
-        logBattle("正在读取 " + value.length + " 名玩家的账号与单舰数据…");
+        if (!rosterLoadingLogged) {
+          logBattle("正在读取 " + value.length + " 名玩家的账号与单舰数据…");
+          rosterLoadingLogged = true;
+        }
       } else {
+        rosterLoadingLogged = false;
         const available = value.filter((item) => item.status === "ok").length;
         const hidden = value.filter((item) => item.status === "hidden").length;
         const failed = value.length - available - hidden;
@@ -432,8 +453,7 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <OverlayView v-if="isOverlay" />
-  <div v-else class="app-frame">
+  <div class="app-frame">
     <TitleBar />
     <div class="app-shell">
       <aside class="sidebar">
@@ -482,6 +502,18 @@ onUnmounted(() => {
           <div class="page-heading">
             <div><h1>{{ pageMeta.title }}</h1><p>{{ pageMeta.description }}</p></div>
           </div>
+          <div v-if="activeView === 'overlay' && arena" class="battle-topbar">
+            <div class="battle-topbar__log">
+              <button type="button" class="battle-topbar__toggle" :aria-expanded="battleLogOpen" aria-controls="battle-topbar-history" @click="battleLogOpen = !battleLogOpen">
+                <AppIcon name="pulse" :size="16" /><span>读取日志</span><small aria-live="polite">{{ latestBattleLog?.message || '等待对局数据' }}</small>
+              </button>
+              <div v-show="battleLogOpen" id="battle-topbar-history" class="battle-topbar__history" role="log" aria-label="对局读取日志">
+                <div v-for="(entry, index) in [...battleLogs].reverse()" :key="index"><time>{{ entry.time }}</time><span :class="entry.tone">{{ entry.message }}</span></div>
+                <div v-if="!battleLogs.length"><time>—</time><span>等待对局数据</span></div>
+              </div>
+            </div>
+            <button type="button" class="battle-topbar__refresh button-secondary" :disabled="rosterRefreshing" @click="refreshBattleRoster"><span v-if="rosterRefreshing" class="ui-spinner" aria-hidden="true"></span>{{ rosterRefreshing ? '刷新中…' : '刷新数据' }}</button>
+          </div>
           <div v-if="activeView !== 'news'" class="topbar__tools">
             <span class="realm-label">服务器</span>
             <div class="realm-switch" aria-label="选择服务器">
@@ -510,35 +542,51 @@ onUnmounted(() => {
 
               <LoadingState v-if="searching && !hasSearchResult" class="panel stats-loading stats-loading--compact" :label="mode === 'player' ? '正在读取玩家随机战战绩…' : '正在读取军团资料…'" detail="正在从 WG 官方接口同步并整理数据" />
 
-              <section v-if="mode === 'player' && player" class="result-area">
+              <section v-if="mode === 'player' && player" class="result-area result-area--trends">
                 <PerformanceOverview :player="player" markable>
                   <template #tools><button class="button-secondary query-history__back" @click="showQueryHistory">查询历史</button><SearchControl v-model="query" compact :mode="mode" :realm="config.realm" :searching="searching" :suggestions="suggestions" :clan-suggestions="clanSuggestions" :error="error" @submit="runSearch" @select-player="loadPlayer" @select-clan="loadClan" /></template>
                 </PerformanceOverview>
+                <StatsTrend :key="player.realm + player.accountId" :player="player" />
                 <ShipTable :ships="player.ships" />
               </section>
 
               <section v-if="mode === 'clan' && clan" class="result-area clan-result">
                 <div class="panel clan-hero">
-                  <div class="clan-emblem">{{ clan.tag.slice(0, 2) }}</div>
-                  <div class="clan-identity">
-                    <span class="eyebrow">{{ config.realm.toUpperCase() }} · CLAN ID {{ clan.clanId }}</span>
-                    <h2>[{{ clan.tag }}] {{ clan.name }}</h2>
-                    <p>{{ clan.description || '该军团暂无简介' }}</p>
+                  <div class="clan-hero__head">
+                    <div class="clan-emblem">{{ clan.tag.slice(0, 2) }}</div>
+                    <div class="clan-identity">
+                      <span class="eyebrow">{{ config.realm.toUpperCase() }} · CLAN ID {{ clan.clanId }}</span>
+                      <h2>[{{ clan.tag }}] {{ clan.name }}</h2>
+                      <small>公开成员随机战绩汇总 · {{ clan.overall?.publicMembers || 0 }}/{{ clan.membersCount }} 名成员可统计</small>
+                    </div>
+                    <div class="clan-hero__search"><SearchControl v-model="query" compact :mode="mode" :realm="config.realm" :searching="searching" :suggestions="suggestions" :clan-suggestions="clanSuggestions" :error="error" @submit="runSearch" @select-player="loadPlayer" @select-clan="loadClan" /><button class="button-secondary query-history__back" @click="showQueryHistory">查询历史</button></div>
                   </div>
-                  <div class="clan-hero__search"><SearchControl v-model="query" compact :mode="mode" :realm="config.realm" :searching="searching" :suggestions="suggestions" :clan-suggestions="clanSuggestions" :error="error" @submit="runSearch" @select-player="loadPlayer" @select-clan="loadClan" /><button class="button-secondary query-history__back" @click="showQueryHistory">查询历史</button></div>
-                  <div class="clan-facts">
-                    <article><span>成员</span><strong>{{ clan.membersCount }}</strong></article>
-                    <article><span>指挥官</span><strong>{{ clan.leaderName || '—' }}</strong></article>
-                    <article><span>创建者</span><strong>{{ clan.creatorName || '—' }}</strong></article>
+                  <div class="clan-summary-grid">
+                    <article><span>成员人数</span><strong>{{ clan.membersCount }}</strong><small>{{ clan.overall?.publicMembers || 0 }} 名公开战绩</small></article>
+                    <article><span>总体胜率</span><strong>{{ clan.overall ? clan.overall.winRate.toFixed(1) + '%' : '—' }}</strong><small>按公开随机战场次汇总</small></article>
+                    <article><span>场均经验</span><strong>{{ clan.overall ? Math.round(clan.overall.avgXp).toLocaleString() : '—' }}</strong><small>累计经验 {{ clan.overall ? Math.round(clan.overall.totalXp).toLocaleString() : '—' }}</small></article>
+                    <article><span>场均伤害</span><strong>{{ clan.overall ? Math.round(clan.overall.avgDamage).toLocaleString() : '—' }}</strong><small>{{ clan.overall ? clan.overall.battles.toLocaleString() : '0' }} 场公开随机战</small></article>
+                  </div>
+                  <div class="clan-hero__details">
+                    <div class="clan-description">
+                      <div class="clan-description__heading"><strong>军团简介</strong><button v-if="clan.description.length > 120" type="button" @click="clanDescriptionExpanded = !clanDescriptionExpanded">{{ clanDescriptionExpanded ? '收起' : '展开全文' }}</button></div>
+                      <p :class="{ 'is-expanded': clanDescriptionExpanded }">{{ clan.description || '该军团暂无简介' }}</p>
+                    </div>
+                    <div class="clan-people"><span>指挥官 <strong>{{ clan.leaderName || '—' }}</strong></span><span>创建者 <strong>{{ clan.creatorName || '—' }}</strong></span></div>
                   </div>
                 </div>
                 <section class="panel clan-members">
                   <header class="panel__header"><div><span class="eyebrow">CLAN ROSTER</span><h2>军团成员</h2></div><small>点击成员即可打开战绩</small></header>
                   <div class="member-grid">
-                    <button v-for="member in clan.members" :key="member.accountId" @click="openMember(member.accountId)">
+                    <button v-for="member in clan.members" :key="member.accountId" type="button" @click="openMember(member.accountId)">
                       <i>{{ member.accountName.slice(0, 1).toUpperCase() }}</i>
-                      <span><strong>{{ member.accountName }}</strong><small>{{ member.role.replaceAll('_', ' ') }} · {{ member.accountId }}</small></span>
-                      <AppIcon name="arrow" :size="15" />
+                      <span class="member-identity"><strong>{{ member.accountName }}</strong><small>{{ member.role.replaceAll('_', ' ') }} · {{ member.accountId }}<em v-if="member.statsStatus !== 'ok'"> · {{ member.statsStatus === 'hidden' ? '隐藏战绩' : '战绩暂不可用' }}</em></small></span>
+                      <span class="member-metrics">
+                        <span class="member-stat"><small>胜率</small><strong>{{ member.overall ? member.overall.winRate.toFixed(1) + '%' : '—' }}</strong></span>
+                        <span class="member-stat"><small>场均伤害</small><strong>{{ member.overall ? Math.round(member.overall.avgDamage).toLocaleString() : '—' }}</strong></span>
+                        <span class="member-stat"><small>场均经验</small><strong>{{ member.overall ? Math.round(member.overall.avgXp).toLocaleString() : '—' }}</strong></span>
+                      </span>
+                      <AppIcon name="arrow" :size="16" />
                     </button>
                   </div>
                 </section>
@@ -575,7 +623,7 @@ onUnmounted(() => {
             <template v-else-if="activeView === 'overlay'">
               <section class="overlay-dashboard">
                 <section v-if="arena" class="panel battle-panel battle-panel--active">
-                  <BattleRoster :arena="arena" :roster="roster" :logs="battleLogs" :refreshing="rosterRefreshing" :realm="config.realm" embedded @refresh="refreshBattleRoster" />
+                  <BattleRoster :arena="arena" :roster="roster" :realm="config.realm" embedded @open-player="openRosterPlayer" />
                 </section>
 
                 <template v-else>

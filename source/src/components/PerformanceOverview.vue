@@ -1,14 +1,16 @@
 <script setup lang="ts">
 import { computed, ref } from "vue";
 import AppIcon from "./AppIcon.vue";
-import { playerMark, togglePlayerMark } from "../player-marks";
+import { automaticPlayerMark, playerMark, togglePlayerMark } from "../player-marks";
+import { ratingValue, trendPoints } from "../stats-trend";
 import type { OverallStats, PlayerDetails } from "../types";
 
 const props = defineProps<{ player: PlayerDetails; authorized?: boolean; markable?: boolean; refreshing?: boolean }>();
 const emit = defineEmits<{ refresh: [] }>();
 const mode = ref<"random" | "ranked">("random");
 const period = ref<"overall" | 1 | 7 | 30 | 90>("overall");
-const marks = computed(() => playerMark(props.player.realm, props.player.accountId, props.player.nickname));
+const marks = computed(() => playerMark(props.player.realm, props.player.accountId, props.player.nickname, props.player.overall?.winRate));
+const markIsAutomatic = computed(() => automaticPlayerMark(props.player.overall?.winRate) !== null);
 
 const periodOptions = [
   { value: "overall" as const, label: "总览" },
@@ -47,11 +49,22 @@ const winTone = computed(() => {
   return value >= 55 ? "good" : value < 48 ? "warn" : "plain";
 });
 
+const pr = computed(() => {
+  const history = props.player.history ?? [], current = history.at(-1);
+  if (!current || props.player.hiddenProfile) return { value: null, coverage: null };
+  if (period.value === "overall") return { value: ratingValue(current.pr), coverage: current.pr && current.pr.totalBattles > 0 ? current.pr.coveredBattles/current.pr.totalBattles : null };
+  if (!recentPeriod.value?.available || history.length<2) return { value: null, coverage: null };
+  const target=current.capturedAt-recentPeriod.value.actualDays*86400000;
+  const prior=history.slice(0,-1).reduce((best,s)=>Math.abs(s.capturedAt-target)<Math.abs(best.capturedAt-target)?s:best,history[0]!);
+  const point=trendPoints([prior,current],"interval").at(-1);
+  return { value: point?.values?.pr ?? null, coverage: point?.prCoverage ?? null };
+});
 const metrics = computed(() => {
   const stats = displayedStats.value;
   if (!stats) return [];
   return [
     { label: "场次", value: stats.battles.toLocaleString(), hint: "随机战" },
+    { label: "个人评分 PR", value: pr.value.value === null ? "—" : Math.round(pr.value.value).toLocaleString(), hint: "WoWS Numbers", tone: "pr", title: pr.value.value === null ? "尚无可计算的 PR 数据" : `WoWS Numbers 公式 · 可计算场次覆盖 ${((pr.value.coverage ?? 0)*100).toFixed(1)}%` },
     { label: "胜率", value: `${stats.winRate.toFixed(2)}%`, hint: "随机战", tone: winTone.value },
     { label: "场均伤害", value: Math.round(stats.avgDamage).toLocaleString(), hint: "随机战" },
     { label: "场均经验", value: Math.round(stats.avgXp).toLocaleString(), hint: "随机战" },
@@ -70,7 +83,6 @@ function formatDate(value?: number) {
   <section class="panel performance-panel">
     <header class="performance-head">
       <div class="performance-profile">
-        <div class="performance-avatar">{{ player.nickname.slice(0, 1).toUpperCase() }}</div>
         <div>
           <span class="eyebrow">{{ authorized ? '已授权 ' : '' }}{{ player.realm.toUpperCase() }} · UID {{ player.accountId }}</span>
           <h2><b v-if="player.clan">[{{ player.clan.tag }}]</b>{{ player.nickname }}</h2>
@@ -81,8 +93,8 @@ function formatDate(value?: number) {
       <div class="performance-head__actions">
         <slot name="tools" />
         <div v-if="markable" class="performance-mark-controls" aria-label="玩家标记">
-          <button type="button" :class="{ active: marks.favorite }" :aria-pressed="marks.favorite" title="特别关注" @click="togglePlayerMark(player.realm, player.accountId, player.nickname, 'favorite')"><AppIcon name="star" :size="16" />特别关注</button>
-          <button type="button" :class="{ active: marks.monkey }" :aria-pressed="marks.monkey" title="海猴标记" @click="togglePlayerMark(player.realm, player.accountId, player.nickname, 'monkey')"><AppIcon name="monkey" :size="17" />海猴标记</button>
+          <button type="button" :class="{ active: marks.favorite }" :aria-pressed="marks.favorite" :disabled="markIsAutomatic" :title="markIsAutomatic ? '按账号胜率自动标记' : '特别关注'" @click="togglePlayerMark(player.realm, player.accountId, player.nickname, 'favorite')"><AppIcon name="star" :size="16" />特别关注</button>
+          <button type="button" :class="{ active: marks.monkey }" :aria-pressed="marks.monkey" :disabled="markIsAutomatic" :title="markIsAutomatic ? '按账号胜率自动标记' : '海猴标记'" @click="togglePlayerMark(player.realm, player.accountId, player.nickname, 'monkey')"><AppIcon name="monkey" :size="17" />海猴标记</button>
         </div>
         <button v-if="authorized" class="button-secondary performance-refresh" :disabled="refreshing" @click="emit('refresh')"><span v-if="refreshing" class="ui-spinner" aria-hidden="true"></span><AppIcon v-else name="pulse" :size="15" />{{ refreshing ? '正在刷新…' : '刷新战绩' }}</button>
         <div class="performance-switch" aria-label="切换战斗模式">
@@ -92,8 +104,7 @@ function formatDate(value?: number) {
       </div>
     </header>
 
-    <template v-if="mode === 'random'">
-      <div class="performance-period-bar">
+    <div class="performance-period-bar" :class="{ 'is-reserved': mode !== 'random' }" :inert="mode !== 'random'">
         <div class="performance-periods" aria-label="选择统计周期">
           <button v-for="item in periodOptions" :key="item.value" :class="{ active: period === item.value }" @click="period = item.value">
             {{ item.label }}
@@ -102,11 +113,13 @@ function formatDate(value?: number) {
         <span v-if="player.recent">本地记录始于 {{ formatDate(player.recent.trackedSince) }}</span>
       </div>
 
+    <div class="performance-content">
+    <template v-if="mode === 'random'">
       <div v-if="displayedStats" class="performance-grid">
-        <article v-for="metric in metrics" :key="metric.label" :class="`tone-${metric.tone || 'plain'}`">
+        <article v-for="metric in metrics" :key="metric.label" :class="`tone-${metric.tone || 'plain'}`" :title="metric.title">
           <span>{{ metric.label }}</span>
           <strong>{{ metric.value }}</strong>
-          <small>{{ period === 'overall' ? '随机战总览' : `最近 ${period} 天` }}</small>
+          <small>{{ metric.hint === 'WoWS Numbers' ? pr.value === null ? 'WoWS Numbers · 暂不可用' : 'WoWS Numbers · ' + ((pr.coverage ?? 0)*100).toFixed(0) + '%' : period === 'overall' ? '随机战总览' : `最近 ${period} 天` }}</small>
         </article>
       </div>
       <div v-else-if="player.hiddenProfile" class="performance-empty">
@@ -134,5 +147,6 @@ function formatDate(value?: number) {
         <span>当前账号没有可公开读取的排位赛季数据。</span>
       </div>
     </template>
+    </div>
   </section>
 </template>

@@ -147,13 +147,13 @@ onMounted(() => {
           <button type="button" role="tab" :aria-selected="summaryView === 'tiers'" :class="{ active: summaryView === 'tiers' }" @click="summaryView = 'tiers'">各等级奖励</button>
         </div>
         <div class="snow-summary__views">
-          <div class="snow-totals" :class="{ 'is-hidden': summaryView !== 'overview' }" :aria-hidden="summaryView !== 'overview'">
+          <div class="snow-totals" :class="{ 'is-hidden': summaryView !== 'overview' }" :inert="summaryView !== 'overview'" :aria-hidden="summaryView !== 'overview'">
             <article><span>港口舰船</span><strong>{{ summary.totalShips }}</strong><small>包含全部等级</small></article>
             <article><span>可扫雪舰船</span><strong>{{ summary.eligibleShips }}</strong><small>V级及以上</small></article>
             <article class="snow-total--token"><span>节日代币总计</span><strong>{{ summary.totalTokens.toLocaleString() }}</strong><small>V–X级舰船</small></article>
             <article class="snow-total--steel"><span>钢铁总计</span><strong>{{ summary.totalSteel.toLocaleString() }}</strong><small>超级舰船</small></article>
           </div>
-          <div class="snow-tier-grid snow-tier-grid--inside" :class="{ 'is-hidden': summaryView !== 'tiers' }" :aria-hidden="summaryView !== 'tiers'">
+          <div class="snow-tier-grid snow-tier-grid--inside" :class="{ 'is-hidden': summaryView !== 'tiers' }" :inert="summaryView !== 'tiers'" :aria-hidden="summaryView !== 'tiers'">
             <article v-for="row in summary.tiers" :key="row.tier">
               <span>{{ row.label }}</span><strong>{{ row.count }}<small> 艘</small></strong>
               <div><em>单舰 {{ row.rewardPerShip }}</em><b>{{ row.totalReward.toLocaleString() }} {{ row.rewardType === 'steel' ? '钢铁' : '代币' }}</b></div>
@@ -169,7 +169,7 @@ onMounted(() => {
           <span>可获得代币 <strong>{{ summary.totalTokens.toLocaleString() }}</strong></span>
           <span>已规划使用 <strong>{{ plannedSpent.toLocaleString() }}</strong></span>
           <span>剩余代币 <strong>{{ remainingTokens.toLocaleString() }}</strong></span>
-          <button v-if="plannedSpent" type="button" @click="plannedCounts = {}">重置规划</button>
+          <button :class="{ 'is-reserved': !plannedSpent }" :disabled="!plannedSpent" :aria-hidden="!plannedSpent" type="button" @click="plannedCounts = {}">重置规划</button>
         </div>
         <div class="snow-reward-grid">
           <article v-for="reward in summary.event.exchangeRewards" :key="reward.id" :class="{ featured: reward.featured, affordable: remainingTokens >= reward.price }">
@@ -182,8 +182,8 @@ onMounted(() => {
             <div class="snow-reward__actions">
               <label class="snow-reward__quantity">数量 <input type="number" min="1" step="1" :max="maxQuantity(reward)" :value="selectedQuantity(reward)" :disabled="!maxQuantity(reward)" :aria-label="`${reward.name}兑换数量`" @input="setQuantity(reward, $event)" @change="setQuantity(reward, $event)" /></label>
               <button type="button" :disabled="!maxQuantity(reward)" @click="planReward(reward, $event)">兑换</button>
-              <button v-if="plannedCounts[reward.id]" type="button" class="snow-reward__undo" @click="undoReward(reward)">撤销规划</button>
-              <span v-if="plannedCounts[reward.id]">已规划 {{ plannedCounts[reward.id] }} 次</span>
+              <button :class="{ 'is-reserved': !plannedCounts[reward.id] }" :disabled="!plannedCounts[reward.id]" :aria-hidden="!plannedCounts[reward.id]" type="button" class="snow-reward__undo" @click="undoReward(reward)">撤销规划</button>
+              <span :class="{ 'is-reserved': !plannedCounts[reward.id] }" :aria-hidden="!plannedCounts[reward.id]">已规划 {{ plannedCounts[reward.id] || 0 }} 次</span>
             </div>
           </article>
         </div>

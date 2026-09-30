@@ -58,3 +58,63 @@ input::placeholder { color: var(--muted); opacity: 1; }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation: none !important; transition: none !important; scroll-behavior: auto !important; }
 }
+
+/* Reserve a stable footprint across tab, placeholder and planning states. */
+.is-reserved { visibility: hidden; pointer-events: none; }
+.performance-content { --metric-row-height: 104px; height: var(--metric-row-height); min-height: 0; overflow: auto; scrollbar-gutter: stable; }
+.performance-content > .performance-grid, .performance-content > .performance-empty, .performance-content > .performance-ranked { height: 100%; min-height: 0; margin: 0; }
+.performance-content > .performance-ranked { padding: 0; }
+.performance-content .performance-grid article, .performance-content .performance-ranked article { min-height: 0; }
+.performance-empty { padding: 10px 14px; overflow-wrap: anywhere; }
+.snow-summary__views > .is-hidden { display: grid; visibility: hidden; pointer-events: none; }
+.snow-summary__views, .snow-summary__views > * { min-width: 0; }
+.snow-exchange > .panel__header, .snow-budget { flex-shrink: 0; }
+.snow-budget span { white-space: nowrap; }
+.snow-budget strong { display: inline-block; min-width: 7ch; font-variant-numeric: tabular-nums; }
+.snow-reward-grid { scrollbar-gutter: stable; }
+.snow-reward__actions { display: grid; grid-template-columns: max-content max-content minmax(0, 1fr); }
+.snow-reward__actions .snow-reward__undo { justify-self: start; white-space: nowrap; }
+.snow-reward__actions > span { grid-column: 1 / -1; min-width: 0; overflow-wrap: anywhere; min-height: 16px; }
+@media (max-width: 1080px) { .performance-content { height: calc(var(--metric-row-height) * 2 + 8px); } }
+@media (max-width: 760px) {
+  .performance-content { height: calc(var(--metric-row-height) * 3 + 16px); }
+  .snow-reward__actions { grid-template-columns: max-content minmax(0, 1fr); }
+  .snow-reward__actions .snow-reward__undo { grid-column: 1 / -1; }
+}
+@media (min-width: 980px) and (max-height: 760px) { .performance-content { --metric-row-height: 76px; height: var(--metric-row-height); } }
+
+.battle-entry__karma { flex: 0 0 auto; color: var(--cyan); font-size: 10px; font-variant-numeric: tabular-nums; white-space: nowrap; }
+
+/* Keep both snow summary tabs compact, with scrolling inside at narrow widths. */
+.snow-summary__views { height: 80px; }
+.snow-summary__views > * { height: 100%; min-height: 0; overflow: auto; }
+.snow-tier-grid--inside article { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-content: center; align-items: center; gap: 2px 6px; padding: 6px 10px; }
+.snow-tier-grid--inside > article > strong { margin: 0; font-size: 20px; line-height: 1; white-space: nowrap; }
+.snow-tier-grid--inside article div { grid-column: 1 / -1; padding-top: 4px; }
+.snow-tier-grid--inside em, .snow-tier-grid--inside b { line-height: 1.2; }
+@media (max-width: 1080px) { .snow-summary__views { height: 160px; } }
+
+.christmas-group__header { position: sticky; top: 0; z-index: 1; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px 16px; padding: 14px 16px; border-bottom: 1px solid var(--line-strong); background: var(--panel-solid); }
+.christmas-group__header h3 { margin: 0; color: var(--cyan); font-size: 15px; }
+.christmas-group__header h3 small { margin-left: 10px; color: var(--muted); font-size: 11px; font-weight: normal; }
+.christmas-group__header > span { color: var(--muted-strong); font-size: 11px; line-height: 1.6; }
+.christmas-group[data-group="rare"] .christmas-group__header h3 { color: var(--orange); }
+
+/* Keep game karma at the upper right of the player name without moving either row. */
+.battle-entry__player-line .battle-entry__player-name { display: flex; align-items: baseline; gap: 4px; overflow: visible; }
+.battle-entry__name-text { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.battle-entry__player-name .battle-entry__karma { align-self: flex-start; position: relative; top: -3px; line-height: 1; }
+
+/* Scroll the complete stats page so the trend module cannot collapse the ship table. */
+.result-area.result-area--trends { display:flex; flex-direction:column; overflow-y:auto; scrollbar-gutter:stable; gap:14px; }
+.result-area--trends > .performance-panel { flex:0 0 auto; }
+.result-area--trends > .ship-panel { flex:0 0 440px; min-height:320px; }
+
+.performance-content > .performance-grid { grid-template-columns:repeat(7,minmax(0,1fr)); }
+.performance-grid .tone-pr strong { color:#e8bd54; }
+@media(max-width:1080px) { .performance-content > .performance-grid { grid-template-columns:repeat(4,minmax(0,1fr)); } }
+@media(max-width:760px) { .performance-content > .performance-grid { grid-template-columns:repeat(3,minmax(0,1fr)); } }
+
+@media(min-width:980px) and (max-width:1080px) and (max-height:760px) { .performance-content { height:calc(var(--metric-row-height)*2 + 8px); } }
+
+:root[data-theme="light"] .performance-grid .tone-pr strong { color:#997009; }

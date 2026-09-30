@@ -595,8 +595,8 @@ nav { display: grid; gap: 5px; margin-top: 9px; }
 .battle-mark-menu__name { overflow: hidden; padding: 6px 8px; color: var(--muted); font-size: 11px; text-overflow: ellipsis; white-space: nowrap; }
 .battle-mark-menu button { width: 100%; display: flex; align-items: center; gap: 9px; min-height: 30px; padding: 3px 8px; border: 0; border-radius: 5px; color: var(--ink); background: transparent; font-size: 11px; text-align: left; }
 .battle-mark-menu button:hover { background: rgba(72,215,210,.1); }
-.battle-mark-menu button:first-of-type .app-icon { color: #b485f5; }
-.battle-mark-menu button:nth-of-type(2) .app-icon { color: #f16c70; }
+.battle-mark-menu__favorite .app-icon { color: #b485f5; }
+.battle-mark-menu__monkey .app-icon { color: #f16c70; }
 .battle-mark-menu button span { margin-left: auto; color: var(--cyan); }
 
 /* Keep lookup in the profile header once a player or clan is loaded. */
@@ -738,12 +738,6 @@ nav { display: grid; gap: 5px; margin-top: 9px; }
 .battle-entry__identity small { color: #a9bdc7; }
 .battle-entry__identity small b { font-size: .9em; }
 .battle-roster--embedded .battle-entry__identity strong { font-size: clamp(11px, 1vw, 16px); }
-@media (max-width: 1100px) {
-  .battle-roster--embedded .battle-entry__badges { top: auto; bottom: 2px; right: auto; left: 53px; }
-  .battle-roster--embedded .battle-entry__badges .app-icon { width: 18px; height: 18px; padding: 0; }
-  .battle-roster--embedded .battle-entry:has(.battle-entry__badges .app-icon) .battle-entry__identity b { display: none; }
-  .battle-roster--embedded .battle-entry:has(.battle-entry__badges .app-icon) .battle-entry__identity small { max-width: 44px; }
-}
 
 /* Put every ship filter beside the search box at desktop widths. */
 .ship-panel__header { display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: end; gap: 14px; }
@@ -780,3 +774,197 @@ nav { display: grid; gap: 5px; margin-top: 9px; }
 :root[data-theme="light"] .snow-tier-grid b { color: var(--cyan); }
 :root[data-theme="light"] .snow-total--steel strong { color: #497d91; }
 :root[data-theme="light"] .snow-reward-grid article.affordable p { color: var(--green); }
+
+/* Compact the search landing page without stretching each history entry. */
+.workspace__content:has(.command-panel) .welcome-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.query-history__list { grid-template-columns: repeat(auto-fill, minmax(220px, 320px)); }
+
+/* Give the waiting state enough scale to fill the available canvas. */
+.overlay-hero { grid-template-columns: minmax(0, 1fr) 290px; gap: clamp(28px, 4vw, 70px); padding: clamp(36px, 4vw, 64px); }
+.overlay-hero__copy { max-width: 900px; }
+.overlay-hero h2 { font-size: clamp(36px, 3.4vw, 52px); }
+.overlay-hero p { font-size: 15px; line-height: 1.8; }
+.overlay-hero .section-kicker { font-size: 12px; }
+.overlay-hero .arena-file-card { margin-top: 26px; padding: 17px 19px; }
+.overlay-hero .arena-file-card__status strong { font-size: 15px; }
+.overlay-hero .arena-file-card__status span, .overlay-hero .arena-file-card__path { font-size: 12px; }
+.overlay-hero .overlay-actions { margin-top: 28px; }
+.overlay-hero .overlay-actions .button-primary { min-height: 50px; padding: 0 20px; font-size: 13px; }
+.overlay-hero .key-visual { width: 270px; height: 205px; }
+.overlay-hero .key-visual strong { font-size: 46px; }
+.overlay-hero .key-visual span, .overlay-hero .key-visual small { font-size: 10px; }
+
+/* Keep the full reading log beside the title; the roster uses the card width. */
+.topbar { position: relative; z-index: 20; gap: 12px; }
+.battle-topbar { min-width: 0; max-width: 550px; flex: 1; display: flex; align-items: center; gap: 9px; margin-left: auto; }
+.battle-topbar__log { position: relative; min-width: 0; flex: 1; }
+.battle-topbar__toggle { width: 100%; min-width: 0; height: 36px; display: flex; align-items: center; gap: 8px; padding: 0 10px; border: 1px solid var(--line-strong); border-radius: 7px; color: var(--ink); background: var(--panel-solid); text-align: left; cursor: pointer; }
+.battle-topbar__toggle > span { flex: 0 0 auto; font-size: 12px; font-weight: 700; }
+.battle-topbar__toggle > small { min-width: 0; overflow: hidden; color: var(--muted); font-size: 11px; text-overflow: ellipsis; white-space: nowrap; }
+.battle-topbar__toggle .app-icon { flex: 0 0 auto; color: var(--cyan); }
+.battle-topbar__refresh { flex: 0 0 auto; min-height: 36px; padding: 0 10px; font-size: 11px; white-space: nowrap; }
+.battle-topbar__history { position: absolute; top: calc(100% + 7px); right: 0; z-index: 30; width: min(480px, 80vw); max-height: 300px; overflow-y: auto; padding: 8px 12px; border: 1px solid var(--line-strong); border-radius: 8px; color: var(--ink); background: var(--panel-solid); box-shadow: 0 18px 40px rgba(0,0,0,.24); scrollbar-width: thin; }
+.battle-topbar__history > div { display: flex; gap: 10px; padding: 7px 0; border-bottom: 1px solid var(--line); font-size: 12px; line-height: 1.5; }
+.battle-topbar__history > div:last-child { border-bottom: 0; }
+.battle-topbar__history time { flex: 0 0 auto; color: var(--muted); }
+.battle-topbar__history .error { color: #ff9489; }
+.battle-topbar__history .success { color: #62cfa7; }
+.battle-board, .battle-roster--embedded .battle-board, .overlay-shell .battle-board { grid-template-columns: minmax(0, 1fr); }
+.battle-board__roster { width: 100%; }
+.battle-roster--embedded .battle-board__columns > div, .battle-roster--embedded .battle-entry { grid-template-columns: minmax(0, 1.4fr) minmax(0, .85fr) minmax(0, .85fr); }
+.battle-roster--embedded .battle-entry__identity strong { font-size: clamp(13px, 1.15vw, 18px); }
+.battle-roster--embedded .battle-entry__stats strong { font-size: clamp(15px, 1.3vw, 20px); }
+.battle-roster--embedded .battle-entry__identity small, .battle-roster--embedded .battle-entry__stats small { font-size: clamp(10px, .85vw, 13px); }
+.ship-name__nation { min-width: 0 !important; color: var(--muted) !important; white-space: nowrap; }
+.ship-name__type { min-width: 22px !important; }
+@media (max-width: 1050px) {
+  .battle-topbar { max-width: 300px; }
+  .battle-topbar__toggle > small { display: none; }
+}
+@media (max-width: 900px) {
+  .overlay-hero { grid-template-columns: 1fr; }
+  .overlay-hero .key-visual { display: none; }
+}
+@media (max-width: 800px) {
+  .query-history__list { grid-template-columns: 1fr; }
+  .battle-topbar { max-width: 180px; }
+  .battle-topbar__refresh { font-size: 0; }
+  .battle-topbar__refresh::after { content: "刷新"; font-size: 11px; }
+}
+
+/* Five requested refinements: waiting state, flags, exchange, history and clan roster. */
+.overlay-hero { align-items: stretch; }
+.overlay-hero__copy { align-self: start; }
+.overlay-hero .key-visual { align-self: end; justify-self: end; margin-bottom: 4px; border: 2px solid rgba(72,215,210,.62); background: linear-gradient(145deg, rgba(72,215,210,.2), rgba(5,29,38,.5)); box-shadow: inset 0 0 0 4px rgba(72,215,210,.08), 0 18px 42px rgba(0,0,0,.2); }
+.overlay-hero .key-visual--disabled { opacity: 1; border-color: rgba(126,170,181,.65); }
+:root[data-theme="light"] .overlay-hero .key-visual { border-color: rgba(19,170,169,.65); background: linear-gradient(145deg, #d5f1f1, #f4fafb); box-shadow: inset 0 0 0 4px rgba(19,170,169,.08), 0 18px 42px rgba(40,80,94,.16); }
+:root[data-theme="light"] .overlay-hero .key-visual--disabled { border-color: #8db3bd; }
+
+.nation-flag { width: 25px; height: 17px; flex: 0 0 auto; border: 1px solid rgba(110,143,154,.32); border-radius: 2px; box-shadow: 0 1px 2px rgba(0,0,0,.18); }
+
+.snow-summary { padding: 12px 16px; }
+.snow-account { padding-bottom: 8px; }
+.snow-account h2 { margin: 0 0 2px; font-size: 21px; }
+.snow-account__actions button { min-height: 31px; }
+.snow-summary__tabs { padding-top: 8px; }
+.snow-summary__tabs button { min-height: 31px; padding: 0 13px; }
+.snow-totals { gap: 8px; padding-top: 8px; }
+.snow-totals article { min-height: 64px; display: grid; grid-template-columns: minmax(0,1fr) auto; grid-template-rows: auto auto; align-content: center; gap: 2px 8px; padding: 8px 11px; }
+.snow-totals span { grid-column: 1; grid-row: 1; font-size: 11px; }
+.snow-totals strong, .snow-totals .snow-total--token strong, .snow-totals .snow-total--steel strong { grid-column: 2; grid-row: 1 / 3; margin: 0; font-size: clamp(18px,1.6vw,25px); white-space: nowrap; }
+.snow-totals small { grid-column: 1; grid-row: 2; }
+.snow-tier-grid--inside { padding-top: 8px; }
+.snow-tier-grid--inside article { padding: 8px 10px; }
+
+.query-history__list { display: flex; flex-wrap: wrap; align-content: flex-start; }
+.query-history__list button { flex: 1 1 calc((100% - 16px) / 3); }
+@media (max-width: 1050px) { .query-history__list button { flex-basis: calc((100% - 8px) / 2); } }
+@media (max-width: 650px) { .query-history__list button { flex-basis: 100%; } }
+
+.clan-hero { display: grid; grid-template-columns: minmax(0,1fr); grid-template-areas: none; gap: 13px; padding: 18px 20px; }
+.clan-hero__head { display: grid; grid-template-columns: 62px minmax(0,1fr) minmax(250px,330px); gap: 14px; align-items: center; }
+.clan-hero__head .clan-emblem { width: 62px; height: 62px; grid-area: auto; }
+.clan-hero__head .clan-identity { grid-area: auto; min-width: 0; }
+.clan-hero__head .clan-identity h2 { margin: 5px 0 4px; font-size: clamp(19px,1.8vw,26px); }
+.clan-hero__head .clan-identity small { color: var(--muted); font-size: 11px; }
+.clan-hero__head .clan-hero__search { grid-area: auto; justify-self: stretch; width: 100%; }
+.clan-summary-grid { display: grid; grid-template-columns: repeat(4,minmax(0,1fr)); gap: 9px; }
+.clan-summary-grid article { min-width: 0; padding: 11px 13px; border: 1px solid var(--line); border-radius: 8px; background: var(--panel-solid); }
+.clan-summary-grid span, .clan-summary-grid strong, .clan-summary-grid small { display: block; }
+.clan-summary-grid span { color: var(--muted); font-size: 11px; }
+.clan-summary-grid strong { margin: 4px 0; color: var(--ink); font-size: clamp(19px,1.8vw,27px); line-height: 1.1; }
+.clan-summary-grid small { overflow: hidden; color: var(--muted); font-size: 10px; text-overflow: ellipsis; white-space: nowrap; }
+.clan-hero__details { display: grid; grid-template-columns: minmax(0,1fr) auto; align-items: end; gap: 16px; padding-top: 10px; border-top: 1px solid var(--line); }
+.clan-description { min-width: 0; }
+.clan-description__heading { display: flex; align-items: center; gap: 12px; }
+.clan-description__heading strong { color: var(--muted-strong); font-size: 11px; }
+.clan-description__heading button { padding: 0; border: 0; color: var(--cyan); background: none; font-size: 11px; cursor: pointer; }
+.clan-description p { display: -webkit-box; overflow: hidden; margin: 5px 0 0; color: var(--muted-strong); font-size: 11px; line-height: 1.5; white-space: pre-line; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+.clan-description p.is-expanded { display: block; overflow: visible; }
+.clan-people { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 8px 16px; color: var(--muted); font-size: 10px; }
+.clan-people strong { margin-left: 5px; color: var(--ink); font-size: 11px; }
+.clan-members .member-grid { display: grid; grid-template-columns: minmax(0,1fr); gap: 7px; padding: 12px; }
+.clan-members .member-grid button { min-width: 0; min-height: 62px; grid-template-columns: 34px minmax(160px,1fr) minmax(320px,1.4fr) 18px; gap: 10px; padding: 8px 12px; }
+.clan-members .member-grid .member-metrics { min-width: 0; display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 0; }
+.clan-members .member-grid i { width: 34px; height: 34px; font-size: 12px; }
+.clan-members .member-grid .member-identity strong { font-size: 13px; }
+.clan-members .member-grid .member-identity small { font-size: 10px; }
+.clan-members .member-grid .member-identity em { color: var(--orange); font-style: normal; }
+.clan-members .member-grid .member-stat { display: flex; flex-direction: column; align-items: flex-start; min-width: 0; padding-left: 12px; border-left: 1px solid var(--line); overflow: hidden; }
+.clan-members .member-grid .member-stat small { margin: 0 0 4px; color: var(--muted); font-size: 10px; }
+.clan-members .member-grid .member-stat strong { font-size: 14px; font-variant-numeric: tabular-nums; }
+@media (max-width: 1100px) {
+  .clan-hero__head { grid-template-columns: 62px minmax(0,1fr); }
+  .clan-hero__head .clan-hero__search { grid-column: 1 / -1; }
+  .clan-hero__head .clan-hero__search { display: flex; align-items: center; }
+  .clan-hero__head .clan-hero__search .search-control--compact { flex: 1; min-width: 0; }
+}
+@media (max-width: 760px) {
+  .clan-summary-grid { grid-template-columns: repeat(2,minmax(0,1fr)); }
+  .clan-hero__details { grid-template-columns: 1fr; }
+  .clan-people { justify-content: flex-start; }
+  .clan-members .member-grid button { grid-template-columns: 34px minmax(0,1fr) 18px; }
+  .clan-members .member-grid .member-metrics { grid-column: 2 / -1; grid-row: 2; }
+  .clan-members .member-grid .member-stat { padding-left: 4px; }
+  .clan-members .member-grid .member-stat:first-child { padding-left: 0; border-left: 0; }
+}
+
+/* Battle roster: one compact line in each account and ship column. */
+.battle-comparison { flex: 0 0 auto; min-height: 40px; display: grid; grid-template-columns: minmax(0, 1fr) 40px minmax(0, 1fr); align-items: center; gap: 8px; margin-bottom: 2px; padding: 1px 10px; border-bottom: 2px solid var(--line-strong); background: var(--panel-solid); }
+.battle-comparison__side { min-width: 0; display: flex; align-items: baseline; gap: 11px; }
+.battle-comparison__side--ally { justify-content: flex-end; }
+.battle-comparison__side--enemy { justify-content: flex-start; }
+.battle-comparison__side > span { color: var(--muted-strong); font-size: clamp(11px, .85vw, 14px); font-weight: 650; white-space: nowrap; }
+.battle-comparison__rate { color: var(--ink); font-size: clamp(22px, 2.2vw, 31px); font-weight: 800; line-height: 1; font-variant-numeric: tabular-nums; }
+.battle-comparison__rate--lower { color: #ed5560; }
+:root[data-theme="light"] .battle-comparison__rate--lower { color: #d7444f; }
+.battle-comparison__vs { color: var(--muted-strong); font-size: 15px; text-align: center; letter-spacing: .08em; }
+.battle-roster--embedded .battle-board__columns { flex: 0 0 33px; }
+.battle-board__columns > div, .battle-roster--embedded .battle-board__columns > div { grid-template-columns: minmax(0, 1.25fr) minmax(0, .95fr) minmax(0, 1.05fr); align-items: center; gap: 4px; padding: 0 8px; border-radius: 3px; }
+.battle-board__columns > div > span:not(:first-child) { text-align: center; }
+.battle-board__columns--ally { background: rgba(56, 165, 217, .18); }
+.battle-board__columns--enemy { background: rgba(231, 82, 91, .18); }
+:root[data-theme="light"] .battle-board__columns--ally { background: #dceff8; }
+:root[data-theme="light"] .battle-board__columns--enemy { background: #f9e5e7; }
+.battle-pair, .battle-roster--embedded .battle-pair { gap: 6px; margin-bottom: 3px; padding-bottom: 0; border-bottom: 0; }
+.battle-entry, .battle-roster--embedded .battle-entry, .overlay-shell .battle-entry { grid-template-columns: minmax(0, 1.25fr) minmax(0, .95fr) minmax(0, 1.05fr); align-items: center; gap: 4px; padding: 3px 7px; border: 2px solid transparent; border-left-width: 11px; border-radius: 3px; background: linear-gradient(var(--battle-entry-fill, var(--panel-solid)), var(--battle-entry-fill, var(--panel-solid))) padding-box, linear-gradient(90deg, var(--win-rate-color, #78909f), color-mix(in srgb, var(--win-rate-color, #78909f) 62%, var(--line-strong)) 36%, color-mix(in srgb, var(--win-rate-color, #78909f) 16%, var(--line-strong))) border-box; box-shadow: none; }
+:root[data-theme="light"] .battle-entry, :root[data-theme="light"] .battle-roster--embedded .battle-entry { --battle-entry-fill: #f8fbfc; background: linear-gradient(var(--battle-entry-fill), var(--battle-entry-fill)) padding-box, linear-gradient(90deg, var(--win-rate-color, #78909f), color-mix(in srgb, var(--win-rate-color, #78909f) 55%, #9fb4bc) 36%, #b7c9d0) border-box; }
+.battle-entry--empty { --win-rate-color: var(--line-strong); }
+.battle-entry__identity { position: relative; min-width: 0; display: grid; gap: 4px; align-content: center; padding-right: 31px; }
+.battle-entry__ship-line, .battle-entry__player-line { min-width: 0; display: flex; align-items: center; gap: 5px; }
+.battle-entry__ship-line strong { min-width: 0; overflow: hidden; color: var(--ink); text-overflow: ellipsis; white-space: nowrap; }
+.battle-entry__tier { color: var(--muted-strong); font-size: .78em; }
+.battle-entry__player-line small { min-width: 0; overflow: hidden; margin: 0; color: var(--muted-strong); text-overflow: ellipsis; white-space: nowrap; }
+.battle-entry__player-line b { margin-right: 4px; color: var(--orange); }
+.battle-entry__badges, .battle-roster--embedded .battle-entry__badges { position: absolute; z-index: 2; top: 0; right: 0; width: 28px; height: 28px; display: grid; place-items: center; margin: 0; pointer-events: none; }
+.battle-entry__badges .app-icon { width: 26px; height: 26px; padding: 0; border-radius: 0; background: transparent; filter: none; }
+.battle-entry__player-line .battle-entry__status { position: static; flex: 0 0 auto; margin-left: auto; color: var(--cyan); font-size: 10px; white-space: nowrap; }
+.battle-entry__stat-column { min-width: 0; display: flex; align-items: center; justify-content: center; gap: 2px; overflow: hidden; padding-left: 4px; border-left: 1px solid var(--line-strong); color: var(--ink); font-size: clamp(11px, 1vw, 16px); line-height: 1.15; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.battle-entry__stat-column > span:not(.battle-entry__skeleton):not(.battle-entry__stat-separator), .battle-entry__stat-column > strong { flex: 0 0 auto; font-size: inherit; }
+.battle-entry__stat-column--overall > strong { color: var(--win-rate-color, #78909f); font-weight: 800; }
+:root[data-theme="light"] .battle-entry__stat-column--overall > strong { color: color-mix(in srgb, var(--win-rate-color, #78909f) 76%, #1a3038); }
+.battle-entry__stat-column--ship > strong { color: var(--ink); font-weight: 650; }
+.battle-entry__stat-separator { flex: 0 0 auto; color: var(--muted); }
+.battle-entry__skeleton { width: 22%; height: 9px; flex: 0 1 22%; border-radius: 3px; background: color-mix(in srgb, var(--muted) 28%, transparent); }
+.battle-entry--loading { overflow: hidden; }
+.battle-entry--loading::after { position: absolute; inset: 0; content: ""; pointer-events: none; background: linear-gradient(90deg, transparent, rgba(105, 211, 214, .13), transparent); animation: battle-loading-pulse 1.6s ease-in-out infinite; }
+.overlay-shell .battle-entry { min-height: 54px; padding-block: 3px; }
+.overlay-shell .battle-comparison { min-height: 40px; }
+.battle-mark-menu__query { margin-bottom: 4px; border-bottom: 1px solid var(--line-strong) !important; border-radius: 0 !important; color: var(--cyan) !important; font-weight: 700; }
+.battle-mark-menu__query .app-icon { color: var(--cyan) !important; }
+@keyframes battle-loading-pulse { 0%, 100% { opacity: .2; } 50% { opacity: 1; } }
+@media (prefers-reduced-motion: reduce) { .battle-entry--loading::after { animation: none; opacity: .4; } }
+@media (min-width: 1101px) and (max-width: 1200px) { .battle-entry__stat-column { gap: 1px; padding-left: 1px; font-size: 11px; } }
+@media (min-width: 1001px) and (max-width: 1100px) { .battle-entry__stat-column { gap: 1px; padding-left: 1px; font-size: 10px; } }
+@media (min-width: 851px) and (max-width: 1000px) { .battle-entry__stat-column { gap: 0; font-size: 9px; } }
+
+/* Keep page titles at the workspace edge and badges clear of the ship name. */
+.topbar { padding-left: 10px; padding-right: 20px; }
+.battle-mark-menu button:disabled { opacity: .55; cursor: default; }
+.performance-mark-controls button:disabled { cursor: default; }
+@media (max-width: 1100px) {
+  .battle-entry__identity { padding-right: 25px; }
+  .battle-entry__badges, .battle-roster--embedded .battle-entry__badges { width: 24px; height: 24px; }
+  .battle-entry__badges .app-icon { width: 23px; height: 23px; }
+}
+@media (max-width: 900px) { .topbar { padding-left: 8px; padding-right: 10px; } }

@@ -93,6 +93,9 @@ class ArenaWatcher extends EventEmitter {
     this.timer = null;
     this.lastContent = null;
     this.lastDiscoveryAt = 0;
+    this.discoveryDirty = false;
+    this.directoryWatcher = null;
+    this.watchedDirectory = "";
     this.fileExists = false;
     this.lastReportedPath = "";
     this.missingPolls = 0;
@@ -110,9 +113,46 @@ class ArenaWatcher extends EventEmitter {
     if (generation !== this.generation) return "";
     this.filePath = discovered;
     this.lastDiscoveryAt = Date.now();
+    this.watchDiscoveryDirectory();
     this.timer = setInterval(() => this.poll(), 1200);
     await this.poll();
     return generation === this.generation ? this.filePath : "";
+  }
+
+  watchDiscoveryDirectory() {
+    const parent = path.dirname(this.filePath);
+    // Watch the common replay root, including sibling version folders.
+    let root = parent;
+    for (let directory = parent; directory !== path.dirname(directory); directory = path.dirname(directory)) {
+      if (/^replays?$/i.test(path.basename(directory))) {
+        root = directory;
+        break;
+      }
+      if (directory === this.gameDirectory) break;
+    }
+    if (root === this.watchedDirectory) return;
+    this.directoryWatcher?.close();
+    this.directoryWatcher = null;
+    this.watchedDirectory = "";
+    try {
+      const watcher = fs.watch(root, { recursive: true }, (_event, filename) => {
+        const changed = filename ? String(filename).toLowerCase().replaceAll("\\", "/") : "";
+        const current = path.relative(root, this.filePath).toLowerCase().replaceAll("\\", "/");
+        if (changed && changed === current) return; // The regular stat poll handles this file.
+        if (changed && !changed.includes("temparenainfo.json") && !/(?:^|\/)replay[-_]\d/i.test(changed)) return;
+        this.discoveryDirty = true;
+        void this.poll();
+      });
+      watcher.on("error", () => {
+        watcher.close();
+        if (this.directoryWatcher === watcher) {
+          this.directoryWatcher = null;
+          this.watchedDirectory = "";
+        }
+      });
+      this.directoryWatcher = watcher;
+      this.watchedDirectory = root;
+    } catch { /* Periodic discovery remains available on unsupported file systems. */ }
   }
 
   reportFileStatus(found) {
@@ -133,7 +173,11 @@ class ArenaWatcher extends EventEmitter {
   async readPoll(generation) {
     if (!this.gameDirectory) return;
     try {
-      if (Date.now() - this.lastDiscoveryAt > 4000) {
+      const discoveryInterval = this.fileExists
+        ? (this.directoryWatcher ? 180000 : 30000)
+        : 4000;
+      if (this.discoveryDirty || Date.now() - this.lastDiscoveryAt > discoveryInterval) {
+        this.discoveryDirty = false;
         this.lastDiscoveryAt = Date.now();
         const discovered = await resolveArenaFilePath(this.gameDirectory, () => generation === this.generation);
         if (generation !== this.generation) return;
@@ -142,12 +186,14 @@ class ArenaWatcher extends EventEmitter {
           this.filePath = discovered;
           this.lastContent = null;
           this.lastSignature = null;
+          this.watchDiscoveryDirectory();
           this.emit("path", discovered);
         }
       }
       const stat = await fs.promises.stat(this.filePath, { bigint: true });
       if (generation !== this.generation) return;
       this.missingPolls = 0;
+      if (!this.directoryWatcher) this.watchDiscoveryDirectory();
       this.reportFileStatus(true);
       const signature = `${stat.mtimeNs}:${stat.ctimeNs}:${stat.size}:${stat.ino}`;
       if (signature === this.lastSignature) return;
@@ -183,6 +229,10 @@ class ArenaWatcher extends EventEmitter {
     this.generation++;
     if (this.timer) clearInterval(this.timer);
     this.timer = null;
+    this.directoryWatcher?.close();
+    this.directoryWatcher = null;
+    this.watchedDirectory = "";
+    this.discoveryDirty = false;
     this.lastContent = null;
     this.lastDiscoveryAt = 0;
     this.fileExists = false;

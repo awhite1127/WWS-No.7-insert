@@ -10,6 +10,8 @@ const envPath = app.isPackaged
 require("dotenv").config({ path: envPath, quiet: true });
 
 const { WgApi } = require("./wg-api.cjs");
+const { KarmaService, enrichRosterKarma } = require("./karma-service.cjs");
+const karmaService = new KarmaService();
 const { ArenaWatcher } = require("./arena-watcher.cjs");
 const { createNewsService, officialUrl, INTERVAL: NEWS_INTERVAL } = require("./news-service.cjs");
 let newsService;
@@ -46,6 +48,7 @@ let rosterRequestId = 0;
 let hotkeyDown = false;
 let activeHotkeyKeycode = null;
 let keyboardHook = null;
+let hookListenersInstalled = false;
 const watcher = new ArenaWatcher();
 let activeAuthServer = null;
 let updateCandidate = null;
@@ -71,9 +74,12 @@ function statsHistoryPath(player) {
   return path.join(app.getPath("userData"), "stats-history", `${player.realm}-${player.accountId}.json`);
 }
 
+const { aggregateRating } = require("./personal-rating.cjs");
+
 function attachRecentStats(player) {
   const current = makeSnapshot(player);
-  if (!current) return { ...player, recent: null };
+  if (current) current.pr = aggregateRating(player.ships);
+  if (!current) return { ...player, recent: null, history: [] };
   const filePath = statsHistoryPath(player);
   let snapshots = [];
   try {
@@ -88,7 +94,7 @@ function attachRecentStats(player) {
   } catch (error) {
     recent.storageError = error instanceof Error ? error.message : String(error);
   }
-  return { ...player, recent };
+  return { ...player, recent, history: nextSnapshots };
 }
 
 function loadAuth() {
@@ -292,6 +298,7 @@ function saveConfig(next) {
   fs.mkdirSync(path.dirname(configPath()), { recursive: true });
   fs.writeFileSync(configPath(), JSON.stringify(merged, null, 2), "utf8");
   cachedConfig = merged;
+  syncKeyboardHook();
   return publicConfig(merged);
 }
 
@@ -306,11 +313,9 @@ function sendAll(channel, payload) {
 async function loadRenderer(window, overlay = false) {
   const devUrl = process.env.VITE_DEV_SERVER_URL;
   if (devUrl) {
-    await window.loadURL(overlay ? `${devUrl}?overlay=1` : devUrl);
+    await window.loadURL(overlay ? new URL("overlay.html", devUrl).toString() : devUrl);
   } else {
-    await window.loadFile(path.join(__dirname, "..", "dist", "index.html"), {
-      query: overlay ? { overlay: "1" } : {},
-    });
+    await window.loadFile(path.join(__dirname, "..", "dist", overlay ? "overlay.html" : "index.html"));
   }
 }
 
@@ -346,7 +351,10 @@ function createWindows() {
   mainWindow.on("maximize", sendWindowState);
   mainWindow.on("unmaximize", sendWindowState);
   void loadRenderer(mainWindow, false);
+}
 
+function createOverlayWindow() {
+  if (overlayWindow && !overlayWindow.isDestroyed()) return;
   const display = screen.getPrimaryDisplay().workArea;
   overlayWindow = new BrowserWindow({
     x: Math.round(display.x + (display.width - Math.min(1180, display.width)) / 2),
@@ -367,9 +375,20 @@ function createWindows() {
       backgroundThrottling: false,
     },
   });
-  overlayWindow.setAlwaysOnTop(true, "screen-saver");
-  overlayWindow.setIgnoreMouseEvents(true, { forward: true });
-  void loadRenderer(overlayWindow, true);
+  const window = overlayWindow;
+  window.on("closed", () => { if (overlayWindow === window) overlayWindow = null; });
+  syncKeyboardHook();
+  window.setAlwaysOnTop(true, "screen-saver");
+  window.setIgnoreMouseEvents(true, { forward: true });
+  void loadRenderer(window, true).catch((error) => {
+    if (!window.isDestroyed()) sendAll("overlay:status", { error: `游戏内窗口加载失败：${error.message}` });
+  });
+}
+
+function destroyOverlayWindow() {
+  stopKeyboardHook();
+  if (overlayWindow && !overlayWindow.isDestroyed()) overlayWindow.destroy();
+  overlayWindow = null;
 }
 
 function setOverlayVisible(visible) {
@@ -383,25 +402,29 @@ function setOverlayVisible(visible) {
 }
 
 function startKeyboardHook() {
+  if (keyboardHook || !currentArena || !loadConfig().overlayEnabled || !loadConfig().overlayHotkeyEnabled) return;
   try {
     const { uIOhook, UiohookKey } = require("uiohook-napi");
-    uIOhook.on("keydown", (event) => {
-      const config = loadConfig();
-      if (!config.overlayHotkeyEnabled || !config.overlayEnabled) return;
-      const configuredKeycode = resolveHotkeyCode(config.overlayHotkey, UiohookKey);
-      if (event.keycode === configuredKeycode && !hotkeyDown) {
-        hotkeyDown = true;
-        activeHotkeyKeycode = configuredKeycode;
-        setOverlayVisible(true);
-      }
-    });
-    uIOhook.on("keyup", (event) => {
-      if (hotkeyDown && event.keycode === activeHotkeyKeycode) {
-        hotkeyDown = false;
-        activeHotkeyKeycode = null;
-        setOverlayVisible(false);
-      }
-    });
+    if (!hookListenersInstalled) {
+      uIOhook.on("keydown", (event) => {
+        const config = loadConfig();
+        if (!config.overlayHotkeyEnabled || !config.overlayEnabled) return;
+        const configuredKeycode = resolveHotkeyCode(config.overlayHotkey, UiohookKey);
+        if (event.keycode === configuredKeycode && !hotkeyDown) {
+          hotkeyDown = true;
+          activeHotkeyKeycode = configuredKeycode;
+          setOverlayVisible(true);
+        }
+      });
+      uIOhook.on("keyup", (event) => {
+        if (hotkeyDown && event.keycode === activeHotkeyKeycode) {
+          hotkeyDown = false;
+          activeHotkeyKeycode = null;
+          setOverlayVisible(false);
+        }
+      });
+      hookListenersInstalled = true;
+    }
     uIOhook.start();
     keyboardHook = uIOhook;
   } catch (error) {
@@ -409,16 +432,37 @@ function startKeyboardHook() {
   }
 }
 
+function stopKeyboardHook() {
+  if (keyboardHook) keyboardHook.stop();
+  keyboardHook = null;
+  hotkeyDown = false;
+  activeHotkeyKeycode = null;
+  if (overlayWindow && !overlayWindow.isDestroyed() && overlayWindow.isVisible()) setOverlayVisible(false);
+}
+
+function syncKeyboardHook() {
+  if (currentArena && loadConfig().overlayEnabled && loadConfig().overlayHotkeyEnabled) startKeyboardHook();
+  else stopKeyboardHook();
+}
+
 async function handleArena(arena) {
   const requestId = ++rosterRequestId;
   currentArena = arena;
+  createOverlayWindow();
   currentRoster = arena.players.map((player) => {
     const previous = currentRoster.find((item) => item.key === player.key);
     return { ...player, shipType: previous?.shipType || player.shipType, shipTier: previous?.shipTier || player.shipTier, status: "loading" };
   });
   sendAll("arena:update", arena);
   sendAll("roster:stats", currentRoster);
-  const result = await wg.rosterStats(arena.players, loadConfig().realm, () => requestId === rosterRequestId);
+  const realm = loadConfig().realm;
+  const result = await wg.rosterStats(arena.players, realm, () => requestId === rosterRequestId, (entry, index) => {
+    if (requestId !== rosterRequestId) return;
+    currentRoster[index] = entry;
+    void enrichRosterKarma(karmaService, entry, realm, () => requestId === rosterRequestId, () => {
+      if (requestId === rosterRequestId) sendAll("roster:stats", currentRoster);
+    });
+  });
   if (requestId !== rosterRequestId) return;
   currentRoster = result;
   sendAll("roster:stats", currentRoster);
@@ -428,6 +472,7 @@ watcher.on("arena", (arena) => void handleArena(arena));
 watcher.on("arena-ended", () => {
   rosterRequestId++;
   currentArena = null;
+  destroyOverlayWindow();
   currentRoster = [];
   sendAll("arena:update", null);
   sendAll("roster:stats", []);
@@ -438,6 +483,7 @@ watcher.on("file-status", (status) => sendAll("overlay:status", status));
 
 ipcMain.handle("news:get", (_event, force) => newsService.get(Boolean(force)));
 ipcMain.handle("news:detail", (_event, url) => newsService.detail(url));
+ipcMain.handle("rating:open-source", () => shell.openExternal("https://wows-numbers.com/personal/rating/"));
 ipcMain.handle("news:open", (_event, url) => {
   if (!officialUrl(url)) throw new Error("仅允许打开战舰世界官方公告");
   return shell.openExternal(url);
@@ -543,6 +589,7 @@ ipcMain.handle("arena:choose-game-directory", async () => {
 ipcMain.handle("arena:start", (_event, { gamePath }) => {
   rosterRequestId++;
   currentArena = null;
+  destroyOverlayWindow();
   currentRoster = [];
   sendAll("arena:update", null);
   sendAll("roster:stats", []);
@@ -554,6 +601,7 @@ ipcMain.handle("arena:stop", () => {
   rosterRequestId++;
   watcher.stop();
   currentArena = null;
+  destroyOverlayWindow();
   currentRoster = [];
   sendAll("arena:update", null);
   sendAll("roster:stats", []);
@@ -580,8 +628,10 @@ ipcMain.handle("arena:simulate", async () => {
   };
   const arena = parseArenaData(sample);
   currentArena = arena;
+  createOverlayWindow();
   currentRoster = arena.players.map((player, index) => ({
     ...player, status: "ok", shipTier: 10,
+    gameKarma: index === 0 ? 4 : index % 5 === 0 ? 0 : index * 3, karmaStatus: "ok",
     overall: {
       battles: 1600 + index * 267, wins: 800 + index * 130,
       winRate: 43 + ((index * 7 + Math.floor(index / 12) * 4) % 21), avgDamage: 62000 + index * 1900,
@@ -625,11 +675,11 @@ app.whenReady().then(() => {
   const userDataPath = path.join(app.getPath("appData"), "wwsmonkey");
   fs.mkdirSync(userDataPath, { recursive: true });
   app.setPath("userData", userDataPath);
+  wg.setShipCacheFile(path.join(userDataPath, "ship-metadata-cache.json"));
   newsService = createNewsService({ cacheFile: path.join(userDataPath, "news-cache.json"), seed: require("../data/news-snapshot.json"), renderOfficialPage: renderOfficialNewsPage });
   void newsService.get();
   setInterval(() => void newsService.get(), NEWS_INTERVAL).unref();
   createWindows();
-  startKeyboardHook();
   const config = loadConfig();
   if (config.gamePath) watcher.start(config.gamePath);
 });
@@ -637,6 +687,16 @@ app.whenReady().then(() => {
 app.on("window-all-closed", () => {
   watcher.stop();
   if (activeAuthServer) activeAuthServer.close();
-  if (keyboardHook) keyboardHook.stop();
+  stopKeyboardHook();
   app.quit();
+});
+
+let shipCacheFlushed = false;
+app.on("before-quit", (event) => {
+  if (shipCacheFlushed) return;
+  event.preventDefault();
+  void wg.flushShipCache().finally(() => {
+    shipCacheFlushed = true;
+    app.quit();
+  });
 });

@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, ref } from "vue";
 import type { ShipStats } from "../types";
+import NationFlag from "./NationFlag.vue";
 
 type SortKey = "battles" | "winRate" | "avgDamage" | "avgFrags";
 const props = defineProps<{ ships: ShipStats[] }>();
@@ -19,7 +20,7 @@ const typeLabels: Record<string, string> = {
 const nationLabels: Record<string, string> = {
   japan: "日本", usa: "美国", ussr: "苏联", germany: "德国", uk: "英国",
   france: "法国", italy: "意大利", pan_asia: "泛亚", pan_europe: "泛欧",
-  commonwealth: "英联邦", netherlands: "荷兰", spain: "西班牙",
+  commonwealth: "英联邦", netherlands: "荷兰", spain: "西班牙", pan_america: "泛美",
 };
 const types = computed(() => [...new Set(props.ships.map((ship) => ship.type).filter(Boolean))]
   .sort((a, b) => (typeLabels[a] || a).localeCompare(typeLabels[b] || b, "zh-CN")));
@@ -77,7 +78,7 @@ function winrateClass(value: number) {
         <button v-for="column in ([{ key: 'battles', label: '场次' }, { key: 'winRate', label: '胜率' }, { key: 'avgDamage', label: '场均伤害' }, { key: 'avgFrags', label: '场均击沉' }] as const)" :key="column.key" type="button" :class="{ active: sortKey === column.key }" :aria-label="`按${column.label}${sortKey === column.key && sortDirection === 'desc' ? '升序' : '降序'}排序`" @click="changeSort(column.key)">{{ column.label }}<span v-if="sortKey === column.key">{{ sortDirection === 'desc' ? '↓' : '↑' }}</span></button>
       </div>
       <div v-for="ship in rows" :key="ship.shipId" class="data-table__row">
-        <span class="ship-name" :title="ship.englishName && ship.englishName !== ship.name ? `${ship.name} / ${ship.englishName}` : ship.name"><i>{{ ship.type.replace('AirCarrier', 'CV').replace('Battleship', 'BB').replace('Cruiser', 'CA').replace('Destroyer', 'DD').replace('Submarine', 'SS') }}</i><strong>{{ ship.name }}</strong><small v-if="ship.englishName && ship.englishName !== ship.name">/ {{ ship.englishName }}</small></span>
+        <span class="ship-name" :title="ship.englishName && ship.englishName !== ship.name ? `${ship.name} / ${ship.englishName}` : ship.name"><NationFlag :nation="ship.nation" :label="nationLabels[ship.nation] || ship.nation || '未知国籍'" /><i class="ship-name__type">{{ ship.type.replace('AirCarrier', 'CV').replace('Battleship', 'BB').replace('Cruiser', 'CA').replace('Destroyer', 'DD').replace('Submarine', 'SS') }}</i><strong>{{ ship.name }}</strong><small v-if="ship.englishName && ship.englishName !== ship.name">/ {{ ship.englishName }}</small></span>
         <span class="muted">T{{ ship.tier }}</span>
         <span>{{ ship.battles.toLocaleString() }}</span>
         <span :class="winrateClass(ship.winRate)">{{ ship.winRate.toFixed(1) }}%</span>

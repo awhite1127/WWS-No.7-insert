@@ -106,3 +106,25 @@ test("optional WG endpoints do not make a public roster player unavailable", asy
   assert.equal(player.overall.winRate, 60);
   assert.equal(player.currentShip, null);
 });
+
+
+test("stale arena ship ID falls back to name without widening normal ship requests", async () => {
+  const api = new WgApi(() => "test-app-id");
+  api.shipMetadata = async (ids) => Object.fromEntries(ids.map((id) => [id, {
+    name: Number(id) === 123 ? "Other Ship" : "Yamato", tier: 10, type: "Battleship",
+  }]));
+  const shipRequests = [];
+  api.request = async (_realm, endpoint, params) => {
+    if (endpoint === "account/info") return { data: { 1: { nickname: "Tester", statistics: { pvp: { battles: 100, wins: 55 } } } } };
+    if (endpoint === "clans/accountinfo") return { data: { 1: null } };
+    if (endpoint === "ships/stats") {
+      shipRequests.push(params.ship_id || "all");
+      return { data: { 1: params.ship_id ? [] : [{ ship_id: 999, pvp: { battles: 40, wins: 24 } }] } };
+    }
+    return { data: {} };
+  };
+  const [player] = await api.rosterStats([{ key: "p1", name: "Tester", accountId: 1, shipId: 123, shipName: "Yamato" }]);
+  assert.deepEqual(shipRequests, ["123", "all"]);
+  assert.equal(player.currentShip.shipId, 999);
+  assert.equal(player.currentShip.winRate, 60);
+});

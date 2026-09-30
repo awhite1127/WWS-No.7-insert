@@ -5,6 +5,7 @@ const { contextBridge, ipcRenderer } = require("electron");
 contextBridge.exposeInMainWorld("wws", {
   getNews: (force) => ipcRenderer.invoke("news:get", Boolean(force)),
   getNewsDetail: (url) => ipcRenderer.invoke("news:detail", url),
+  openRatingSource: () => ipcRenderer.invoke("rating:open-source"),
   openNewsSource: (url) => ipcRenderer.invoke("news:open", url),
   getConfig: () => ipcRenderer.invoke("config:get"),
   saveConfig: (config) => ipcRenderer.invoke("config:save", config),

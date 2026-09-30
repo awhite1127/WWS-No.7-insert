@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, watch } from "vue";
 import LoadingState from "./LoadingState.vue";
+import StatsTrend from "./StatsTrend.vue";
 import PerformanceOverview from "./PerformanceOverview.vue";
 import ShipTable from "./ShipTable.vue";
 import WgAuthGate from "./WgAuthGate.vue";
@@ -40,10 +41,11 @@ watch(() => props.authStatus.authorized, () => void load(), { immediate: true })
 <template>
   <WgAuthGate v-if="!authStatus.authorized" :realm="realm" feature-name="我的战绩" @authorized="authorized" />
   <LoadingState v-else-if="loading && !player" class="panel stats-loading" label="正在读取你的随机战战绩…" detail="正在同步账号总览、历史快照与舰船数据" />
-  <section v-else-if="player" class="result-area my-stats-page" :aria-busy="loading">
+  <section v-else-if="player" class="result-area result-area--trends my-stats-page" :aria-busy="loading">
     <div v-if="error" class="refresh-error" role="alert">{{ error }} · 当前显示上次读取的战绩</div>
     <PerformanceOverview :player="player" authorized :refreshing="loading" @refresh="load" />
-    <ShipTable :ships="player.ships" />
+    <StatsTrend :key="player.realm + player.accountId" :player="player" />
+                <ShipTable :ships="player.ships" />
   </section>
   <section v-else class="panel snow-loading"><span>{{ error || '战绩暂时不可用' }}</span><button class="button-secondary" @click="load">重新加载</button></section>
 </template>

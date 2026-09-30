@@ -22,7 +22,7 @@ function readMarks(): PlayerMark[] {
         accountId: Number.isSafeInteger(item.accountId) && item.accountId > 0 ? item.accountId : null,
         nickname: item.nickname,
         favorite: item.favorite === true,
-        monkey: item.monkey === true,
+        monkey: item.monkey === true && item.favorite !== true,
       }))
       .filter((item) => item.favorite || item.monkey);
   } catch {
@@ -38,7 +38,16 @@ function matches(mark: PlayerMark, realm: string, accountId: number | null | und
   return Boolean(nickname) && mark.nickname.toLowerCase() === nickname.toLowerCase();
 }
 
-export function playerMark(realm: string, accountId: number | null | undefined, nickname: string) {
+export function automaticPlayerMark(winRate: number | null | undefined): PlayerMarkKind | null {
+  if (typeof winRate !== "number" || !Number.isFinite(winRate)) return null;
+  if (winRate < 48) return "monkey";
+  if (winRate >= 62) return "favorite";
+  return null;
+}
+
+export function playerMark(realm: string, accountId: number | null | undefined, nickname: string, winRate?: number | null) {
+  const automatic = automaticPlayerMark(winRate);
+  if (automatic) return { favorite: automatic === "favorite", monkey: automatic === "monkey" };
   return marks.value.find((item) => matches(item, realm, accountId, nickname)) ?? { favorite: false, monkey: false };
 }
 
@@ -51,7 +60,9 @@ export function togglePlayerMark(realm: string, accountId: number | null | undef
     favorite: existing?.favorite ?? false,
     monkey: existing?.monkey ?? false,
   };
-  next[kind] = !next[kind];
+  const enable = !next[kind];
+  next.favorite = kind === "favorite" && enable;
+  next.monkey = kind === "monkey" && enable;
   marks.value = marks.value.filter((item) => item !== existing);
   if (next.favorite || next.monkey) marks.value = [...marks.value, next];
   try { localStorage.setItem(STORAGE_KEY, JSON.stringify(marks.value)); } catch {}

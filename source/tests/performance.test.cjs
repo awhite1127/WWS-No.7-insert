@@ -2,6 +2,9 @@
 
 const test = require("node:test");
 const assert = require("node:assert/strict");
+const fs = require("node:fs");
+const os = require("node:os");
+const path = require("node:path");
 const { WgApi } = require("../electron/wg-api.cjs");
 const { containerDetails } = require("../electron/containers.cjs");
 
@@ -10,19 +13,19 @@ test("simultaneous equivalent requests share one fetch and failures can be retri
   let calls = 0;
   t.mock.method(globalThis, "fetch", async () => {
     calls++;
-    if (calls === 1) throw new Error("offline");
+    if (calls <= 3) throw new Error("offline");
     return { ok: true, json: async () => ({ status: "ok", data: { answer: 42 } }) };
   });
   const failed = await Promise.allSettled(Array.from({ length: 12 }, (_, index) => api.request("asia", "account/info",
     index % 2 ? { account_id: "1", fields: "nickname" } : { fields: "nickname", account_id: "1" }, 60)));
   assert.ok(failed.every((result) => result.status === "rejected"));
-  assert.equal(calls, 1);
+  assert.equal(calls, 3);
   assert.equal(api.inFlight.size, 0);
   api.nextRequestAt = 0;
   const result = await api.request("asia", "account/info", { account_id: "1", fields: "nickname" }, 60);
   assert.equal(result.data.answer, 42);
   await api.request("asia", "account/info", { account_id: "1", fields: "nickname" }, 60);
-  assert.equal(calls, 2);
+  assert.equal(calls, 4);
 });
 
 test("request cache stays bounded across a long session and removes expired responses", async (t) => {
@@ -78,7 +81,9 @@ test("24-player cold roster uses 29 requests and preserves account, ship and cla
   const roster = await api.rosterStats(players);
   assert.equal(roster.length, 24);
   assert.equal(calls.length, 29);
-  assert.equal(calls.filter((call) => call.endpoint === "ships/stats").length, 24);
+  const shipCalls = calls.filter((call) => call.endpoint === "ships/stats");
+  assert.equal(shipCalls.length, 24);
+  assert.ok(shipCalls.every((call) => call.params.ship_id === "9000"));
   for (const endpoint of ["account/info", "clans/accountinfo", "clans/info"]) {
     assert.equal(calls.filter((call) => call.endpoint === endpoint).length, 1);
   }
@@ -99,6 +104,48 @@ test("batch failure falls back to individual accounts without dropping valid pla
   };
   const roster = await api.rosterStats(players);
   assert.equal(roster.filter((player) => player.status === "ok").length, 24);
+});
+
+test("partial 24-player account batch retries only its 12 missing accounts", async () => {
+  const { api, players, calls } = rosterFixture();
+  const original = api.request;
+  api.request = async (realm, endpoint, params) => {
+    const body = await original(realm, endpoint, params);
+    if (endpoint === "account/info" && params.account_id.includes(",")) {
+      for (let id = 13; id <= 24; id++) delete body.data[id];
+    }
+    return body;
+  };
+  const roster = await api.rosterStats(players);
+  assert.equal(roster.length, 24);
+  assert.equal(roster.filter((player) => player.status === "ok").length, 24);
+  assert.equal(calls.filter((call) => call.endpoint === "account/info" && !call.params.account_id.includes(",")).length, 12);
+});
+
+test("temporary WG quota and HTTP failures are retried without retaining errors", async (t) => {
+  const api = new WgApi(() => "test");
+  let calls = 0;
+  t.mock.method(globalThis, "fetch", async () => {
+    calls++;
+    if (calls === 1) return { ok: true, json: async () => ({ status: "error", error: { code: 407, message: "REQUEST_LIMIT_EXCEEDED" } }) };
+    if (calls === 2) return { ok: false, status: 503 };
+    return { ok: true, json: async () => ({ status: "ok", data: { answer: 42 } }) };
+  });
+  assert.equal((await api.request("asia", "account/info", { account_id: "1" }, 60)).data.answer, 42);
+  assert.equal(calls, 3);
+  await api.request("asia", "account/info", { account_id: "1" }, 60);
+  assert.equal(calls, 3);
+});
+
+test("permanent WG errors are not retried", async (t) => {
+  const api = new WgApi(() => "test");
+  let calls = 0;
+  t.mock.method(globalThis, "fetch", async () => {
+    calls++;
+    return { ok: true, json: async () => ({ status: "error", error: { code: "INVALID_APPLICATION_ID", message: "invalid ID" } }) };
+  });
+  await assert.rejects(api.request("asia", "account/info", { account_id: "1" }), /invalid ID/);
+  assert.equal(calls, 1);
 });
 
 test("superseded battles stop scheduling remaining players", async () => {
@@ -150,4 +197,73 @@ test("invalid container responses are not retained in cache", async (t) => {
   await assert.rejects(containerDetails("998878"));
   assert.equal((await containerDetails("998878")).title, "Recovered");
   assert.equal(calls, 2);
+});
+
+
+test("completed roster entries arrive before the slowest player finishes", async () => {
+  const { api, players } = rosterFixture();
+  const original = api.request;
+  let releaseSlow;
+  const slow = new Promise((resolve) => { releaseSlow = resolve; });
+  let firstReady;
+  const first = new Promise((resolve) => { firstReady = resolve; });
+  api.request = async (realm, endpoint, params) => {
+    if (endpoint === "ships/stats" && params.account_id === "2") await slow;
+    return original(realm, endpoint, params);
+  };
+  const updates = [];
+  const pending = api.rosterStats(players.slice(0, 2), "asia", () => true, (entry, index) => {
+    updates.push([index, entry.status]);
+    if (index === 0) firstReady();
+  });
+  try {
+    await first;
+    assert.deepEqual(updates, [[0, "ok"]]);
+  } finally { releaseSlow(); }
+  const result = await pending;
+  assert.deepEqual(updates, [[0, "ok"], [1, "ok"]]);
+  assert.deepEqual(result.map((entry) => entry.status), ["ok", "ok"]);
+});
+
+test("ship metadata survives a restart without another encyclopedia request", async () => {
+  const directory = fs.mkdtempSync(path.join(os.tmpdir(), "wws-ship-cache-"));
+  const file = path.join(directory, "ships.json");
+  try {
+    const first = new WgApi(() => "test");
+    first.setShipCacheFile(file);
+    first.request = async () => ({ data: { 123: { ship_id: 123, name: "Cached Ship", tier: 9, type: "Cruiser" } } });
+    assert.equal((await first.shipMetadata([123], "asia"))[123].name, "Cached Ship");
+    await first.flushShipCache();
+    const second = new WgApi(() => "test");
+    second.setShipCacheFile(file);
+    second.request = async () => { throw new Error("offline"); };
+    assert.equal((await second.shipMetadata([123], "asia"))[123].name, "Cached Ship");
+  } finally { fs.rmSync(directory, { recursive: true, force: true }); }
+});
+
+test("several cold metadata groups start without waiting for the first response", async () => {
+  const api = new WgApi(() => "test");
+  const requests = [];
+  const releases = [];
+  api.request = (_realm, endpoint, params) => {
+    requests.push({ endpoint, ids: params.ship_id });
+    return new Promise((resolve) => releases.push(() => resolve({ data: {} })));
+  };
+  const pending = api.shipMetadata(Array.from({ length: 161 }, (_, index) => index + 1), "asia");
+  await new Promise((resolve) => setImmediate(resolve));
+  assert.equal(requests.length, 3);
+  releases.forEach((release) => release());
+  await pending;
+});
+
+test("ship metadata keeps successful groups when another group fails", async () => {
+  const api = new WgApi(() => "test");
+  api.request = async (_realm, _endpoint, params) => {
+    if (params.ship_id.startsWith("81,")) throw new Error("temporary failure");
+    return { data: Object.fromEntries(params.ship_id.split(",").map((id) => [id, { ship_id: Number(id), name: `Ship ${id}` }])) };
+  };
+  const metadata = await api.shipMetadata(Array.from({ length: 100 }, (_, index) => index + 1), "asia");
+  assert.equal(Object.keys(metadata).length, 80);
+  assert.equal(metadata[1].name, "Ship 1");
+  assert.equal(metadata[81], undefined);
 });

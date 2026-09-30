@@ -196,6 +196,7 @@ test("loads a file discovered later under the selected folder", async () => {
     await watcher.poll();
     assert.equal(watcher.filePath, arenaFile);
     assert.equal(watcher.fileExists, true);
+    assert.equal(watcher.watchedDirectory, path.dirname(arenaFile));
     assert.equal(arenas, 1);
     fs.writeFileSync(arenaFile, JSON.stringify({ vehicles: [{ name: "NewBattle", relation: 1 }] }));
     await watcher.poll();
@@ -292,6 +293,7 @@ test("discovers and clears a battle file in the game's versioned replay folder",
     watcher.lastDiscoveryAt = 0;
     await watcher.poll();
     assert.equal(watcher.filePath, arenaFile);
+    assert.equal(watcher.watchedDirectory, path.join(root, "replays"));
     assert.deepEqual(names, ["First"]);
 
     fs.unlinkSync(arenaFile);
@@ -305,6 +307,34 @@ test("discovers and clears a battle file in the game's versioned replay folder",
     await watcher.poll();
     assert.equal(watcher.filePath, arenaFile);
     assert.deepEqual(names, ["First", "Second"]);
+  } finally {
+    watcher.stop();
+    fs.rmSync(root, { recursive: true, force: true });
+  }
+});
+
+
+test("stable live arena avoids repeated recursive discovery but reacts to a directory change", async (t) => {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), "wws-discovery-rate-"));
+  const replays = path.join(root, "replays");
+  const arenaFile = path.join(replays, "tempArenaInfo.json");
+  fs.mkdirSync(replays);
+  fs.writeFileSync(arenaFile, JSON.stringify({ vehicles: [{ name: "Tester" }] }));
+  const watcher = new ArenaWatcher();
+  try {
+    await watcher.start(root);
+    watcher.directoryWatcher?.close();
+    watcher.directoryWatcher = null;
+    watcher.discoveryDirty = false;
+    watcher.lastDiscoveryAt = Date.now() - 5000;
+    const original = fs.promises.readdir;
+    let scans = 0;
+    t.mock.method(fs.promises, "readdir", async (...args) => { scans++; return original(...args); });
+    await watcher.poll();
+    assert.equal(scans, 0);
+    watcher.discoveryDirty = true;
+    await watcher.poll();
+    assert.ok(scans > 0);
   } finally {
     watcher.stop();
     fs.rmSync(root, { recursive: true, force: true });

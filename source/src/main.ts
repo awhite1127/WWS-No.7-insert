@@ -1,7 +1,10 @@
 import { createApp } from "vue";
 import App from "./App.vue";
-import "./web-shim";
 import "./style.css";
 import "./ui-polish.css";
 
-createApp(App).mount("#app");
+async function mount() {
+  if (import.meta.env.DEV && !window.wws) await import("./web-shim");
+  createApp(App).mount("#app");
+}
+void mount();

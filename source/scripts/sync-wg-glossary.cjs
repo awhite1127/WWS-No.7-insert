@@ -42,7 +42,7 @@ async function main() {
   fs.writeFileSync(output, JSON.stringify(catalog, null, 2) + "\n");
   const englishResponse = await fetch(source, {
     method: "POST",
-    headers: { "Content-Type": "application/json", Accept: "application/json", "User-Agent": "No7Insert/0.1.5" },
+    headers: { "Content-Type": "application/json", Accept: "application/json", "User-Agent": "No7Insert/0.1.6" },
     body: JSON.stringify({ query: "query OfficialEnglish($languageCode: String) { vehicles(lang: $languageCode) { id title } }", variables: { languageCode: "en" } }),
     signal: AbortSignal.timeout(90000),
   });

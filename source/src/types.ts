@@ -48,11 +48,21 @@ export interface ClanDetails {
   creatorName: string;
   leaderName: string;
   membersCount: number;
+  overall: {
+    battles: number;
+    winRate: number;
+    avgDamage: number;
+    avgXp: number;
+    totalXp: number;
+    publicMembers: number;
+  } | null;
   members: Array<{
     accountId: number;
     accountName: string;
     joinedAt: number | null;
     role: string;
+    statsStatus: "ok" | "hidden" | "unavailable";
+    overall: { battles: number; winRate: number; avgDamage: number; avgXp: number } | null;
   }>;
 }
 
@@ -89,7 +99,31 @@ export interface RankedSeason {
   avgDamage: number;
 }
 
+export interface PrAggregate {
+  version: string;
+  coveredBattles: number;
+  totalBattles: number;
+  damage: number;
+  wins: number;
+  frags: number;
+  expectedDamage: number;
+  expectedWins: number;
+  expectedFrags: number;
+}
+
+export interface StatsSnapshot {
+  pr?: PrAggregate | null;
+  capturedAt: number;
+  battles: number;
+  wins: number;
+  damageDealt: number;
+  xp: number;
+  frags: number;
+  survivedBattles: number;
+}
+
 export interface PlayerDetails {
+  history?: StatsSnapshot[];
   accountId: number;
   nickname: string;
   realm: string;
@@ -147,6 +181,8 @@ export interface ArenaInfo {
 }
 
 export interface RosterPlayer extends ArenaPlayer {
+  gameKarma?: number | null;
+  karmaStatus?: "loading" | "ok" | "unavailable";
   status: "loading" | "ok" | "hidden" | "not-found" | "error";
   clan?: PlayerDetails["clan"];
   overall?: OverallStats | null;

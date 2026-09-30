@@ -1,7 +1,10 @@
 "use strict";
 
+const fs = require("node:fs/promises");
+const path = require("node:path");
 const { shipsFromPort, summarizeSnowflakes } = require("./snowflake.cjs");
 const officialChinese = require("../data/wg-zh-sg-glossary.json");
+const officialEnglish = require("../data/wg-en-ship-names.json").ships;
 
 const REALM_HOSTS = {
   asia: "api.worldofwarships.asia",
@@ -25,10 +28,19 @@ function chunks(items, size) {
 
 function cacheValue(cache, key, value, ttlMs, limit) {
   const now = Date.now();
-  for (const [entryKey, entry] of cache) if (entry.expiresAt <= now) cache.delete(entryKey);
+  // Most insertions are below the capacity. Avoid scanning the entire cache
+  // for every ship in a large account; expiry is checked again on lookup.
+  if (cache.size >= limit) {
+    for (const [entryKey, entry] of cache) if (entry.expiresAt <= now) cache.delete(entryKey);
+  }
   cache.delete(key);
   cache.set(key, { value, expiresAt: now + ttlMs });
   while (cache.size > limit) cache.delete(cache.keys().next().value);
+}
+
+function retryableWgError(error, status) {
+  return status === 429 || status >= 500 || error?.code === 504 ||
+    error?.message === "REQUEST_LIMIT_EXCEEDED" || error?.message === "SOURCE_NOT_AVAILABLE";
 }
 
 async function concurrentMap(items, limit, mapper) {
@@ -50,8 +62,66 @@ class WgApi {
     this.cache = new Map();
     this.inFlight = new Map();
     this.shipCache = new Map();
+    this.shipCacheFile = "";
+    this.shipCacheLoaded = false;
+    this.shipCacheLoadPromise = null;
+    this.shipCacheSavePromise = Promise.resolve();
+    this.shipCacheSaveTimer = null;
     this.nextRequestAt = 0;
     this.requestQueue = Promise.resolve();
+  }
+
+  setShipCacheFile(filePath) {
+    this.shipCacheFile = filePath;
+    this.shipCacheLoaded = false;
+  }
+
+  async loadShipCache() {
+    if (!this.shipCacheFile || this.shipCacheLoaded) return;
+    if (this.shipCacheLoadPromise) return this.shipCacheLoadPromise;
+    this.shipCacheLoadPromise = (async () => {
+      try {
+        const saved = JSON.parse(await fs.readFile(this.shipCacheFile, "utf8"));
+        if (saved.version !== 1 || !Array.isArray(saved.entries)) return;
+        for (const [key, entry] of saved.entries.slice(-4096)) {
+          if (typeof key === "string" && entry?.expiresAt > Date.now() && entry.value && !this.shipCache.has(key)) {
+            this.shipCache.set(key, entry);
+          }
+        }
+      } catch { /* A missing or damaged cache only makes the next lookup cold. */ }
+      finally { this.shipCacheLoaded = true; this.shipCacheLoadPromise = null; }
+    })();
+    return this.shipCacheLoadPromise;
+  }
+
+  async persistShipCache() {
+    if (!this.shipCacheFile) return;
+    this.shipCacheSavePromise = this.shipCacheSavePromise.catch(() => {}).then(async () => {
+      try {
+        await fs.mkdir(path.dirname(this.shipCacheFile), { recursive: true });
+        const temporary = this.shipCacheFile + ".tmp";
+        const now = Date.now();
+        const entries = [...this.shipCache].filter(([, entry]) => entry.expiresAt > now);
+        await fs.writeFile(temporary, JSON.stringify({ version: 1, entries }), "utf8");
+        await fs.rename(temporary, this.shipCacheFile);
+      } catch { /* In-memory metadata remains usable on read-only profiles. */ }
+    });
+    return this.shipCacheSavePromise;
+  }
+
+  scheduleShipCacheSave() {
+    if (!this.shipCacheFile || this.shipCacheSaveTimer) return;
+    this.shipCacheSaveTimer = setTimeout(() => {
+      this.shipCacheSaveTimer = null;
+      void this.persistShipCache();
+    }, 500);
+    this.shipCacheSaveTimer.unref?.();
+  }
+
+  async flushShipCache() {
+    if (this.shipCacheSaveTimer) clearTimeout(this.shipCacheSaveTimer);
+    this.shipCacheSaveTimer = null;
+    await this.persistShipCache();
   }
 
   host(realm) {
@@ -76,27 +146,38 @@ class WgApi {
     this.cache.delete(cacheKey);
     if (this.inFlight.has(cacheKey)) return this.inFlight.get(cacheKey);
     const operation = (async () => {
-      // A full roster can trigger dozens of requests at once. Keep this client
-      // below WG's usual standalone application limit of 10 requests/second.
-      const turn = this.requestQueue.then(async () => {
-        const wait = Math.max(0, this.nextRequestAt - Date.now());
-        if (wait) await new Promise((resolve) => setTimeout(resolve, wait));
-        this.nextRequestAt = Date.now() + 140;
-      });
-      this.requestQueue = turn.catch(() => {});
-      await turn;
-      const response = await fetch(url, {
-        headers: { "User-Agent": "No7Insert/0.1.5" }, signal: AbortSignal.timeout(15000),
-      });
-      if (!response.ok) throw new Error(`WG API HTTP ${response.status}`);
-      const body = await response.json();
-      if (body.status !== "ok") {
-        throw new Error(body.error?.message || "WG API 返回错误");
+      for (let attempt = 0; attempt < 3; attempt++) {
+        if (attempt) await new Promise((resolve) => setTimeout(resolve, 500 * attempt));
+        // A full roster can trigger dozens of requests at once. Space every
+        // attempt below WG's usual standalone limit of 10 requests/second.
+        const turn = this.requestQueue.then(async () => {
+          const wait = Math.max(0, this.nextRequestAt - Date.now());
+          if (wait) await new Promise((resolve) => setTimeout(resolve, wait));
+          this.nextRequestAt = Date.now() + 140;
+        });
+        this.requestQueue = turn.catch(() => {});
+        await turn;
+        let response;
+        try {
+          response = await fetch(url, {
+            headers: { "User-Agent": "No7Insert/0.1.6" }, signal: AbortSignal.timeout(15000),
+          });
+        } catch (error) {
+          if (attempt === 2) throw error;
+          continue;
+        }
+        if (!response.ok) {
+          if (attempt < 2 && retryableWgError(null, response.status)) continue;
+          throw new Error(`WG API HTTP ${response.status}`);
+        }
+        const body = await response.json();
+        if (body.status !== "ok") {
+          if (attempt < 2 && retryableWgError(body.error)) continue;
+          throw new Error(body.error?.message || "WG API 返回错误");
+        }
+        if (cacheSeconds > 0) cacheValue(this.cache, cacheKey, body, cacheSeconds * 1000, 256);
+        return body;
       }
-      if (cacheSeconds > 0) {
-        cacheValue(this.cache, cacheKey, body, cacheSeconds * 1000, 256);
-      }
-      return body;
     })();
     this.inFlight.set(cacheKey, operation);
     try { return await operation; }
@@ -128,6 +209,51 @@ class WgApi {
     if (!clan) throw new Error("军团数据不存在");
     const rawMembers = clan.members ?? {};
     const members = Array.isArray(rawMembers) ? rawMembers : Object.values(rawMembers);
+    const memberIds = [...new Set(members.map((member) => Number(member.account_id))
+      .filter((memberId) => Number.isSafeInteger(memberId) && memberId > 0))];
+    const accountData = {};
+    const fields = "account_id,hidden_profile,statistics.pvp";
+    try {
+      for (const group of chunks(memberIds, 100)) {
+        const accounts = await this.request(realm, "account/info", { account_id: group.join(","), fields }, 120);
+        Object.assign(accountData, accounts.data ?? {});
+      }
+    } catch { /* Retry missing accounts individually below. */ }
+    const missingIds = memberIds.filter((memberId) => !accountData[memberId]);
+    await concurrentMap(missingIds, 3, async (memberId) => {
+      try {
+        const account = await this.request(realm, "account/info", { account_id: String(memberId), fields }, 120);
+        accountData[memberId] = account.data?.[memberId] ?? null;
+      } catch { accountData[memberId] = null; }
+    });
+    const totals = { battles: 0, wins: 0, damage: 0, xp: 0, publicMembers: 0 };
+    const enrichedMembers = members.map((member) => {
+      const account = accountData[member.account_id];
+      const pvp = account?.statistics?.pvp;
+      const battles = Number(pvp?.battles);
+      const wins = Number(pvp?.wins);
+      const damage = Number(pvp?.damage_dealt);
+      const xp = Number(pvp?.xp);
+      const valid = !account?.hidden_profile && pvp && Number.isFinite(battles) && battles > 0
+        && Number.isFinite(wins) && Number.isFinite(damage) && Number.isFinite(xp);
+      if (valid) {
+        totals.battles += battles;
+        totals.wins += wins;
+        totals.damage += damage;
+        totals.xp += xp;
+        totals.publicMembers++;
+      }
+      return {
+        accountId: member.account_id,
+        accountName: member.account_name,
+        joinedAt: member.joined_at ?? null,
+        role: member.role ?? "private",
+        statsStatus: valid ? "ok" : account?.hidden_profile ? "hidden" : "unavailable",
+        overall: valid ? {
+          battles, winRate: percent(wins, battles), avgDamage: average(damage, battles), avgXp: average(xp, battles),
+        } : null,
+      };
+    });
     return {
       clanId: clan.clan_id,
       tag: clan.tag,
@@ -137,18 +263,20 @@ class WgApi {
       creatorName: clan.creator_name ?? "",
       leaderName: clan.leader_name ?? "",
       membersCount: clan.members_count ?? members.length,
-      members: members
-        .map((member) => ({
-          accountId: member.account_id,
-          accountName: member.account_name,
-          joinedAt: member.joined_at ?? null,
-          role: member.role ?? "private",
-        }))
-        .sort((a, b) => a.accountName.localeCompare(b.accountName)),
+      overall: totals.publicMembers ? {
+        battles: totals.battles,
+        winRate: percent(totals.wins, totals.battles),
+        avgDamage: average(totals.damage, totals.battles),
+        avgXp: average(totals.xp, totals.battles),
+        totalXp: totals.xp,
+        publicMembers: totals.publicMembers,
+      } : null,
+      members: enrichedMembers.sort((a, b) => a.accountName.localeCompare(b.accountName)),
     };
   }
 
   async shipMetadata(shipIds, realm) {
+    await this.loadShipCache();
     const result = {};
     const missing = [];
     for (const id of [...new Set(shipIds.filter(Boolean).map(String))].sort()) {
@@ -156,8 +284,8 @@ class WgApi {
       if (cached && cached.expiresAt > Date.now()) result[id] = cached.value;
       else missing.push(id);
     }
-    for (const group of chunks(missing, 80)) {
-      if (group.length === 0) continue;
+    let added = false;
+    const batches = await Promise.allSettled(chunks(missing, 80).map(async (group) => {
       const body = await this.request(
         realm,
         "encyclopedia/ships",
@@ -169,7 +297,12 @@ class WgApi {
         if (!ship) continue;
         result[id] = ship;
         cacheValue(this.shipCache, `${realm}:${id}`, ship, 24 * 3600 * 1000, 4096);
+        added = true;
       }
+    }));
+    if (added) this.scheduleShipCacheSave();
+    if (batches.length && batches.every((batch) => batch.status === "rejected")) {
+      throw batches[0].reason;
     }
     for (const [id, ship] of Object.entries(result)) {
       const localized = officialChinese.ships[id];
@@ -204,16 +337,17 @@ class WgApi {
   async playerDetails(accountId, realm = "asia", accessToken = "", options = {}) {
     const id = String(accountId);
     const auth = accessToken ? { access_token: accessToken } : {};
-    if (options.accountBody && !options.accountBody.data?.[id]) throw new Error("玩家数据不存在");
     const hidden = options.accountBody?.data?.[id]?.hidden_profile;
     const [accountBody, shipsResult, rankedResult, clanAccountResult] = await Promise.all([
-      options.accountBody ?? this.request(realm, "account/info", {
+      (options.accountBody?.data?.[id] ? options.accountBody : null) ?? this.request(realm, "account/info", {
         account_id: id,
         ...(!options.rosterMetadata ? { extra: "statistics.pvp_solo,statistics.pvp_div2,statistics.pvp_div3" } : {}),
         ...auth,
       }, 120),
       hidden ? { value: null } : this.request(realm, "ships/stats", {
         account_id: id, ...auth,
+        ...(options.rosterShipId && Number.isSafeInteger(Number(options.rosterShipId))
+          ? { ship_id: String(options.rosterShipId) } : {}),
         ...(options.rosterMetadata ? { fields: "ship_id,pvp.battles,pvp.wins,pvp.damage_dealt,pvp.xp,pvp.frags" } : {}),
       }, 300).then((value) => ({ value }), (error) => ({ error })),
       options.rosterMetadata ? Promise.resolve({ value: null })
@@ -225,8 +359,8 @@ class WgApi {
     if (!account) throw new Error("玩家数据不存在");
     const rawShips = shipsResult.value?.data?.[id] ?? [];
     let metadata = options.rosterMetadata ?? {};
-    if (!options.rosterMetadata) {
-      try { metadata = await this.shipMetadata(rawShips.map((ship) => ship.ship_id), realm); } catch {}
+    if (!options.rosterMetadata || options.fullRosterShipMetadata) {
+      try { metadata = { ...metadata, ...await this.shipMetadata(rawShips.map((ship) => ship.ship_id), realm) }; } catch {}
     }
     const clanAccount = clanAccountResult.value?.data?.[id] ?? null;
     let clan = null;
@@ -291,7 +425,7 @@ class WgApi {
     };
   }
 
-  async rosterStats(players, realm = "asia", isCurrent = () => true) {
+  async rosterStats(players, realm = "asia", isCurrent = () => true, onProgress = null) {
     if (!players.length || !isCurrent()) return [];
     const metadataPromise = this.shipMetadata(players.map((player) => player.shipId), realm).catch(() => ({}));
     const unresolved = [...new Set(players.filter((player) => !Number.isSafeInteger(Number(player.accountId)) || Number(player.accountId) <= 0)
@@ -332,7 +466,11 @@ class WgApi {
     const clanIds = Object.values(clanAccountBody?.data ?? {}).map((entry) => entry?.clan_id).filter(Boolean);
     const clanBody = clanAccountBody ? await batch("clans/info", "clan_id", clanIds, 900) : undefined;
     if (!isCurrent()) return [];
-    const resolved = await concurrentMap(players, 4, async (player) => {
+    const publish = (entry, index) => {
+      if (entry && isCurrent()) onProgress?.(entry, index);
+      return entry;
+    };
+    const resolved = await concurrentMap(players, 4, async (player, index) => {
       if (!isCurrent()) return null;
       const ship = metadata[String(player.shipId)] ?? {};
       const withShip = {
@@ -346,14 +484,26 @@ class WgApi {
         if (!Number.isSafeInteger(accountId) || accountId <= 0) {
           if (lookupError) throw lookupError;
           accountId = accountsByName.get(player.name.toLowerCase());
-          if (!accountId) return { ...withShip, status: "not-found", error: "WG 未找到该昵称对应的账号" };
+          if (!accountId) return publish({ ...withShip, status: "not-found", error: "WG 未找到该昵称对应的账号" }, index);
         }
-        const details = await this.playerDetails(accountId, realm, "", { rosterMetadata: metadata, accountBody, clanAccountBody, clanBody });
-        const shipName = String(withShip.shipName || "").trim().toLocaleLowerCase();
-        const currentShip = details.ships.find((ship) => Number(ship.shipId) === Number(player.shipId))
-          || (shipName ? details.ships.find((ship) => String(ship.name || "").trim().toLocaleLowerCase() === shipName) : null)
+        const baseOptions = { rosterMetadata: metadata, accountBody, clanAccountBody, clanBody };
+        let details = await this.playerDetails(accountId, realm, "", { ...baseOptions, rosterShipId: player.shipId });
+        const shipName = String(player.shipName || withShip.shipName || "").trim().toLocaleLowerCase();
+        const findCurrentShip = (ships) => ships.find((ship) => Number(ship.shipId) === Number(player.shipId))
+          || (shipName ? ships.find((ship) => String(ship.name || "").trim().toLocaleLowerCase() === shipName
+            || String(ship.englishName || "").trim().toLocaleLowerCase() === shipName) : null)
           || null;
-        return {
+        let currentShip = findCurrentShip(details.ships);
+        // Old replay ship IDs can differ from today's encyclopedia. Only then fetch
+        // the full ship history so the name fallback still works.
+        const knownNames = [metadata[String(player.shipId)]?.name,
+          officialChinese.ships[String(player.shipId)]?.title, officialEnglish[String(player.shipId)]]
+          .filter(Boolean).map((name) => String(name).trim().toLocaleLowerCase());
+        if (!currentShip && shipName && !knownNames.includes(shipName) && isCurrent()) {
+          details = await this.playerDetails(accountId, realm, "", { ...baseOptions, fullRosterShipMetadata: true });
+          currentShip = findCurrentShip(details.ships);
+        }
+        return publish({
           ...withShip,
           status: details.hiddenProfile ? "hidden" : "ok",
           accountId: details.accountId,
@@ -363,9 +513,9 @@ class WgApi {
             ...currentShip,
             name: officialChinese.ships[String(currentShip.shipId)]?.title || currentShip.name,
           } : null,
-        };
+        }, index);
       } catch (error) {
-        return { ...withShip, status: "error", error: error instanceof Error ? error.message : String(error) };
+        return publish({ ...withShip, status: "error", error: error instanceof Error ? error.message : String(error) }, index);
       }
     });
     return resolved.filter(Boolean);

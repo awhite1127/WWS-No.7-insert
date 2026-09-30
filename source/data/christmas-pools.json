@@ -1,10 +1,47 @@
 {
-  "updatedAt": "2026-09-24T07:30:11.616Z",
+  "updatedAt": "2026-09-30T06:37:37.470Z",
   "pools": [
     {
       "year": 2025,
       "containerId": "4016231344",
       "sourceUrl": "https://worldofwarships.com/en/news/sales-and-events/santas-gifts-arrived-to-nordlyshavn/",
+      "probabilitySources": {
+        "gift": "4016231344",
+        "mega": "4015182768",
+        "ultra": "4014134192"
+      },
+      "groups": [
+        {
+          "id": "rare",
+          "label": "稀有及 X 级",
+          "officialTitle": "Tier V–X ship",
+          "probabilities": {
+            "gift": 0.1,
+            "mega": 1,
+            "ultra": 3
+          }
+        },
+        {
+          "id": "high",
+          "label": "VIII–IX 级",
+          "officialTitle": "Tier VIII–IX ship",
+          "probabilities": {
+            "gift": 0.4,
+            "mega": 3,
+            "ultra": 9
+          }
+        },
+        {
+          "id": "low",
+          "label": "V–VIII 级",
+          "officialTitle": "Tier V–VIII ship",
+          "probabilities": {
+            "gift": 2,
+            "mega": 12,
+            "ultra": 20
+          }
+        }
+      ],
       "ships": [
         {
           "id": 3544102864,
@@ -13,7 +50,8 @@
           "tier": 6,
           "nation": "uk",
           "type": "cruiser",
-          "group": "V–VIII级战舰"
+          "groupId": "low",
+          "group": "V–VIII 级"
         },
         {
           "id": 3543087056,
@@ -22,7 +60,8 @@
           "tier": 7,
           "nation": "uk",
           "type": "battleship",
-          "group": "V–VIII级战舰"
+          "groupId": "low",
+          "group": "V–VIII 级"
         },
         {
           "id": 3542071248,
@@ -31,7 +70,8 @@
           "tier": 8,
           "nation": "uk",
           "type": "aircarrier",
-          "group": "V–VIII级战舰"
+          "groupId": "low",
+          "group": "V–VIII 级"
         },
         {
           "id": 3763254992,
@@ -40,7 +80,8 @@
           "tier": 7,
           "nation": "japan",
           "type": "cruiser",
-          "group": "V–VIII级战舰"
+          "groupId": "low",
+          "group": "V–VIII 级"
         },
         {
           "id": 3764303152,
@@ -49,7 +90,8 @@
           "tier": 6,
           "nation": "europe",
           "type": "cruiser",
-          "group": "V–VIII级战舰"
+          "groupId": "low",
+          "group": "V–VIII 级"
         },
         {
           "id": 3752769264,
@@ -58,7 +100,8 @@
           "tier": 7,
           "nation": "italy",
           "type": "cruiser",
-          "group": "V–VIII级战舰"
+          "groupId": "low",
+          "group": "V–VIII 级"
         },
         {
           "id": 3762238928,
@@ -67,7 +110,8 @@
           "tier": 7,
           "nation": "ussr",
           "type": "battleship",
-          "group": "V–VIII级战舰"
+          "groupId": "low",
+          "group": "V–VIII 级"
         },
         {
           "id": 3658397424,
@@ -76,7 +120,8 @@
           "tier": 7,
           "nation": "italy",
           "type": "cruiser",
-          "group": "V–VIII级战舰"
+          "groupId": "low",
+          "group": "V–VIII 级"
         },
         {
           "id": 3544102736,
@@ -85,7 +130,8 @@
           "tier": 6,
           "nation": "france",
           "type": "cruiser",
-          "group": "V–VIII级战舰"
+          "groupId": "low",
+          "group": "V–VIII 级"
         },
         {
           "id": 3659445712,
@@ -94,7 +140,8 @@
           "tier": 6,
           "nation": "ussr",
           "type": "cruiser",
-          "group": "V–VIII级战舰"
+          "groupId": "low",
+          "group": "V–VIII 级"
         },
         {
           "id": 3522115536,
@@ -103,7 +150,8 @@
           "tier": 7,
           "nation": "uk",
           "type": "battleship",
-          "group": "V–VIII级战舰"
+          "groupId": "low",
+          "group": "V–VIII 级"
         },
         {
           "id": 3543086544,
@@ -112,7 +160,8 @@
           "tier": 7,
           "nation": "ussr",
           "type": "battleship",
-          "group": "V–VIII级战舰"
+          "groupId": "low",
+          "group": "V–VIII 级"
         },
         {
           "id": 3743364816,
@@ -121,7 +170,8 @@
           "tier": 6,
           "nation": "japan",
           "type": "battleship",
-          "group": "V–VIII级战舰"
+          "groupId": "low",
+          "group": "V–VIII 级"
         },
         {
           "id": 3752736208,
@@ -130,7 +180,8 @@
           "tier": 7,
           "nation": "ussr",
           "type": "destroyer",
-          "group": "V–VIII级战舰"
+          "groupId": "low",
+          "group": "V–VIII 级"
         },
         {
           "id": 3752769328,
@@ -139,7 +190,8 @@
           "tier": 7,
           "nation": "germany",
           "type": "cruiser",
-          "group": "V–VIII级战舰"
+          "groupId": "low",
+          "group": "V–VIII 级"
         },
         {
           "id": 3765319664,
@@ -148,7 +200,8 @@
           "tier": 5,
           "nation": "usa",
           "type": "destroyer",
-          "group": "V–VIII级战舰"
+          "groupId": "low",
+          "group": "V–VIII 级"
         },
         {
           "id": 3553572848,
@@ -157,7 +210,8 @@
           "tier": 7,
           "nation": "usa",
           "type": "battleship",
-          "group": "V–VIII级战舰"
+          "groupId": "low",
+          "group": "V–VIII 级"
         },
         {
           "id": 3765384528,
@@ -166,7 +220,8 @@
           "tier": 5,
           "nation": "pan_america",
           "type": "battleship",
-          "group": "V–VIII级战舰"
+          "groupId": "low",
+          "group": "V–VIII 级"
         },
         {
           "id": 3543021520,
@@ -175,7 +230,8 @@
           "tier": 7,
           "nation": "uk",
           "type": "destroyer",
-          "group": "V–VIII级战舰"
+          "groupId": "low",
+          "group": "V–VIII 级"
         },
         {
           "id": 3720296272,
@@ -184,7 +240,8 @@
           "tier": 8,
           "nation": "france",
           "type": "battleship",
-          "group": "V–VIII级战舰"
+          "groupId": "low",
+          "group": "V–VIII 级"
         },
         {
           "id": 3543577808,
@@ -193,7 +250,8 @@
           "tier": 6,
           "nation": "pan_asia",
           "type": "submarine",
-          "group": "V–VIII级战舰"
+          "groupId": "low",
+          "group": "V–VIII 级"
         },
         {
           "id": 3752802000,
@@ -202,7 +260,8 @@
           "tier": 7,
           "nation": "japan",
           "type": "battleship",
-          "group": "V–VIII级战舰"
+          "groupId": "low",
+          "group": "V–VIII 级"
         },
         {
           "id": 3752769232,
@@ -211,7 +270,8 @@
           "tier": 7,
           "nation": "japan",
           "type": "cruiser",
-          "group": "V–VIII级战舰"
+          "groupId": "low",
+          "group": "V–VIII 级"
         },
         {
           "id": 3764369232,
@@ -220,7 +280,8 @@
           "tier": 6,
           "nation": "france",
           "type": "aircarrier",
-          "group": "V–VIII级战舰"
+          "groupId": "low",
+          "group": "V–VIII 级"
         },
         {
           "id": 3752802288,
@@ -229,7 +290,8 @@
           "tier": 7,
           "nation": "usa",
           "type": "battleship",
-          "group": "V–VIII级战舰"
+          "groupId": "low",
+          "group": "V–VIII 级"
         },
         {
           "id": 3765352400,
@@ -238,7 +300,8 @@
           "tier": 5,
           "nation": "uk",
           "type": "cruiser",
-          "group": "V–VIII级战舰"
+          "groupId": "low",
+          "group": "V–VIII 级"
         },
         {
           "id": 3763255088,
@@ -247,7 +310,8 @@
           "tier": 7,
           "nation": "germany",
           "type": "cruiser",
-          "group": "V–VIII级战舰"
+          "groupId": "low",
+          "group": "V–VIII 级"
         },
         {
           "id": 3763254608,
@@ -256,7 +320,8 @@
           "tier": 7,
           "nation": "pan_america",
           "type": "cruiser",
-          "group": "V–VIII级战舰"
+          "groupId": "low",
+          "group": "V–VIII 级"
         },
         {
           "id": 3764271088,
@@ -265,7 +330,8 @@
           "tier": 6,
           "nation": "usa",
           "type": "destroyer",
-          "group": "V–VIII级战舰"
+          "groupId": "low",
+          "group": "V–VIII 级"
         },
         {
           "id": 3668883440,
@@ -274,7 +340,8 @@
           "tier": 7,
           "nation": "usa",
           "type": "cruiser",
-          "group": "V–VIII级战舰"
+          "groupId": "low",
+          "group": "V–VIII 级"
         },
         {
           "id": 3763255024,
@@ -283,7 +350,8 @@
           "tier": 7,
           "nation": "italy",
           "type": "cruiser",
-          "group": "V–VIII级战舰"
+          "groupId": "low",
+          "group": "V–VIII 级"
         },
         {
           "id": 3764303696,
@@ -292,7 +360,8 @@
           "tier": 6,
           "nation": "france",
           "type": "cruiser",
-          "group": "V–VIII级战舰"
+          "groupId": "low",
+          "group": "V–VIII 级"
         },
         {
           "id": 3763287760,
@@ -301,7 +370,8 @@
           "tier": 7,
           "nation": "japan",
           "type": "battleship",
-          "group": "V–VIII级战舰"
+          "groupId": "low",
+          "group": "V–VIII 级"
         },
         {
           "id": 3763222256,
@@ -310,7 +380,8 @@
           "tier": 7,
           "nation": "italy",
           "type": "destroyer",
-          "group": "V–VIII级战舰"
+          "groupId": "low",
+          "group": "V–VIII 级"
         },
         {
           "id": 3763288016,
@@ -319,7 +390,8 @@
           "tier": 7,
           "nation": "uk",
           "type": "battleship",
-          "group": "V–VIII级战舰"
+          "groupId": "low",
+          "group": "V–VIII 级"
         },
         {
           "id": 3764270416,
@@ -328,7 +400,8 @@
           "tier": 6,
           "nation": "pan_america",
           "type": "destroyer",
-          "group": "V–VIII级战舰"
+          "groupId": "low",
+          "group": "V–VIII 级"
         },
         {
           "id": 3764336336,
@@ -337,7 +410,8 @@
           "tier": 6,
           "nation": "japan",
           "type": "battleship",
-          "group": "V–VIII级战舰"
+          "groupId": "low",
+          "group": "V–VIII 级"
         },
         {
           "id": 3753818064,
@@ -346,7 +420,8 @@
           "tier": 6,
           "nation": "uk",
           "type": "cruiser",
-          "group": "V–VIII级战舰"
+          "groupId": "low",
+          "group": "V–VIII 级"
         },
         {
           "id": 3763287888,
@@ -355,7 +430,8 @@
           "tier": 7,
           "nation": "france",
           "type": "battleship",
-          "group": "V–VIII级战舰"
+          "groupId": "low",
+          "group": "V–VIII 级"
         },
         {
           "id": 3763287408,
@@ -364,7 +440,8 @@
           "tier": 7,
           "nation": "commonwealth",
           "type": "battleship",
-          "group": "V–VIII级战舰"
+          "groupId": "low",
+          "group": "V–VIII 级"
         },
         {
           "id": 3763221968,
@@ -373,7 +450,8 @@
           "tier": 7,
           "nation": "ussr",
           "type": "destroyer",
-          "group": "V–VIII级战舰"
+          "groupId": "low",
+          "group": "V–VIII 级"
         },
         {
           "id": 3753817456,
@@ -382,7 +460,8 @@
           "tier": 6,
           "nation": "commonwealth",
           "type": "cruiser",
-          "group": "V–VIII级战舰"
+          "groupId": "low",
+          "group": "V–VIII 级"
         },
         {
           "id": 3763287856,
@@ -391,7 +470,8 @@
           "tier": 7,
           "nation": "germany",
           "type": "battleship",
-          "group": "V–VIII级战舰"
+          "groupId": "low",
+          "group": "V–VIII 级"
         },
         {
           "id": 3763255120,
@@ -400,7 +480,8 @@
           "tier": 7,
           "nation": "france",
           "type": "cruiser",
-          "group": "V–VIII级战舰"
+          "groupId": "low",
+          "group": "V–VIII 级"
         },
         {
           "id": 3731830736,
@@ -409,7 +490,8 @@
           "tier": 7,
           "nation": "uk",
           "type": "battleship",
-          "group": "V–VIII级战舰"
+          "groupId": "low",
+          "group": "V–VIII 级"
         },
         {
           "id": 3765351888,
@@ -418,7 +500,8 @@
           "tier": 5,
           "nation": "ussr",
           "type": "cruiser",
-          "group": "V–VIII级战舰"
+          "groupId": "low",
+          "group": "V–VIII 级"
         },
         {
           "id": 3764271056,
@@ -427,7 +510,8 @@
           "tier": 6,
           "nation": "uk",
           "type": "destroyer",
-          "group": "V–VIII级战舰"
+          "groupId": "low",
+          "group": "V–VIII 级"
         },
         {
           "id": 3765319120,
@@ -436,7 +520,8 @@
           "tier": 5,
           "nation": "ussr",
           "type": "destroyer",
-          "group": "V–VIII级战舰"
+          "groupId": "low",
+          "group": "V–VIII 级"
         },
         {
           "id": 3540956624,
@@ -445,7 +530,8 @@
           "tier": 9,
           "nation": "ussr",
           "type": "cruiser",
-          "group": "VIII–IX级战舰"
+          "groupId": "high",
+          "group": "VIII–IX 级"
         },
         {
           "id": 3519985360,
@@ -454,7 +540,8 @@
           "tier": 9,
           "nation": "japan",
           "type": "cruiser",
-          "group": "VIII–IX级战舰"
+          "groupId": "high",
+          "group": "VIII–IX 级"
         },
         {
           "id": 3540957168,
@@ -463,7 +550,8 @@
           "tier": 9,
           "nation": "usa",
           "type": "cruiser",
-          "group": "VIII–IX级战舰"
+          "groupId": "high",
+          "group": "VIII–IX 级"
         },
         {
           "id": 3531519792,
@@ -472,7 +560,8 @@
           "tier": 8,
           "nation": "germany",
           "type": "cruiser",
-          "group": "VIII–IX级战舰"
+          "groupId": "high",
+          "group": "VIII–IX 级"
         },
         {
           "id": 3719247568,
@@ -481,7 +570,8 @@
           "tier": 9,
           "nation": "japan",
           "type": "battleship",
-          "group": "VIII–IX级战舰"
+          "groupId": "high",
+          "group": "VIII–IX 级"
         },
         {
           "id": 3540989360,
@@ -490,7 +580,8 @@
           "tier": 9,
           "nation": "spain",
           "type": "battleship",
-          "group": "VIII–IX级战舰"
+          "groupId": "high",
+          "group": "VIII–IX 级"
         },
         {
           "id": 3762206672,
@@ -499,7 +590,8 @@
           "tier": 8,
           "nation": "uk",
           "type": "cruiser",
-          "group": "VIII–IX级战舰"
+          "groupId": "high",
+          "group": "VIII–IX 级"
         },
         {
           "id": 3741234992,
@@ -508,7 +600,8 @@
           "tier": 8,
           "nation": "germany",
           "type": "cruiser",
-          "group": "VIII–IX级战舰"
+          "groupId": "high",
+          "group": "VIII–IX 级"
         },
         {
           "id": 3656333264,
@@ -517,7 +610,8 @@
           "tier": 9,
           "nation": "uk",
           "type": "battleship",
-          "group": "VIII–IX级战舰"
+          "groupId": "high",
+          "group": "VIII–IX 级"
         },
         {
           "id": 3762206032,
@@ -526,7 +620,8 @@
           "tier": 8,
           "nation": "pan_america",
           "type": "cruiser",
-          "group": "VIII–IX级战舰"
+          "groupId": "high",
+          "group": "VIII–IX 级"
         },
         {
           "id": 3540956912,
@@ -535,7 +630,8 @@
           "tier": 9,
           "nation": "italy",
           "type": "cruiser",
-          "group": "VIII–IX级战舰"
+          "groupId": "high",
+          "group": "VIII–IX 级"
         },
         {
           "id": 3541972944,
@@ -544,7 +640,8 @@
           "tier": 8,
           "nation": "uk",
           "type": "destroyer",
-          "group": "VIII–IX级战舰"
+          "groupId": "high",
+          "group": "VIII–IX 级"
         },
         {
           "id": 3541972432,
@@ -553,7 +650,8 @@
           "tier": 8,
           "nation": "ussr",
           "type": "destroyer",
-          "group": "VIII–IX级战舰"
+          "groupId": "high",
+          "group": "VIII–IX 级"
         },
         {
           "id": 3540924112,
@@ -562,7 +660,8 @@
           "tier": 9,
           "nation": "japan",
           "type": "destroyer",
-          "group": "VIII–IX级战舰"
+          "groupId": "high",
+          "group": "VIII–IX 级"
         },
         {
           "id": 4292818736,
@@ -571,7 +670,8 @@
           "tier": 8,
           "nation": "germany",
           "type": "battleship",
-          "group": "VIII–IX级战舰"
+          "groupId": "high",
+          "group": "VIII–IX 级"
         },
         {
           "id": 3761190352,
@@ -580,7 +680,8 @@
           "tier": 9,
           "nation": "ussr",
           "type": "battleship",
-          "group": "VIII–IX级战舰"
+          "groupId": "high",
+          "group": "VIII–IX 级"
         },
         {
           "id": 3762173936,
@@ -589,7 +690,8 @@
           "tier": 8,
           "nation": "usa",
           "type": "destroyer",
-          "group": "VIII–IX级战舰"
+          "groupId": "high",
+          "group": "VIII–IX 级"
         },
         {
           "id": 3540956368,
@@ -598,7 +700,8 @@
           "tier": 9,
           "nation": "pan_asia",
           "type": "cruiser",
-          "group": "VIII–IX级战舰"
+          "groupId": "high",
+          "group": "VIII–IX 级"
         },
         {
           "id": 3730814960,
@@ -607,7 +710,8 @@
           "tier": 8,
           "nation": "usa",
           "type": "aircarrier",
-          "group": "VIII–IX级战舰"
+          "groupId": "high",
+          "group": "VIII–IX 级"
         },
         {
           "id": 3762272208,
@@ -616,7 +720,8 @@
           "tier": 8,
           "nation": "uk",
           "type": "aircarrier",
-          "group": "VIII–IX级战舰"
+          "groupId": "high",
+          "group": "VIII–IX 级"
         },
         {
           "id": 3750638896,
@@ -625,7 +730,8 @@
           "tier": 9,
           "nation": "europe",
           "type": "destroyer",
-          "group": "VIII–IX级战舰"
+          "groupId": "high",
+          "group": "VIII–IX 级"
         },
         {
           "id": 3762271696,
@@ -634,7 +740,8 @@
           "tier": 8,
           "nation": "ussr",
           "type": "aircarrier",
-          "group": "VIII–IX级战舰"
+          "groupId": "high",
+          "group": "VIII–IX 级"
         },
         {
           "id": 3751196368,
@@ -643,7 +750,8 @@
           "tier": 8,
           "nation": "japan",
           "type": "submarine",
-          "group": "VIII–IX级战舰"
+          "groupId": "high",
+          "group": "VIII–IX 级"
         },
         {
           "id": 3762206704,
@@ -652,7 +760,8 @@
           "tier": 8,
           "nation": "usa",
           "type": "cruiser",
-          "group": "VIII–IX级战舰"
+          "groupId": "high",
+          "group": "VIII–IX 级"
         },
         {
           "id": 3750639408,
@@ -661,7 +770,8 @@
           "tier": 9,
           "nation": "germany",
           "type": "destroyer",
-          "group": "VIII–IX级战舰"
+          "groupId": "high",
+          "group": "VIII–IX 级"
         },
         {
           "id": 3762173232,
@@ -670,7 +780,8 @@
           "tier": 8,
           "nation": "europe",
           "type": "destroyer",
-          "group": "VIII–IX级战舰"
+          "groupId": "high",
+          "group": "VIII–IX 级"
         },
         {
           "id": 3741267408,
@@ -679,7 +790,8 @@
           "tier": 8,
           "nation": "ussr",
           "type": "battleship",
-          "group": "VIII–IX级战舰"
+          "groupId": "high",
+          "group": "VIII–IX 级"
         },
         {
           "id": 3730782032,
@@ -688,7 +800,8 @@
           "tier": 8,
           "nation": "france",
           "type": "battleship",
-          "group": "VIII–IX级战舰"
+          "groupId": "high",
+          "group": "VIII–IX 级"
         },
         {
           "id": 4076745936,
@@ -697,7 +810,8 @@
           "tier": 8,
           "nation": "pan_asia",
           "type": "destroyer",
-          "group": "VIII–IX级战舰"
+          "groupId": "high",
+          "group": "VIII–IX 级"
         },
         {
           "id": 3730782192,
@@ -706,7 +820,8 @@
           "tier": 8,
           "nation": "usa",
           "type": "battleship",
-          "group": "VIII–IX级战舰"
+          "groupId": "high",
+          "group": "VIII–IX 级"
         },
         {
           "id": 3741234640,
@@ -715,7 +830,8 @@
           "tier": 8,
           "nation": "ussr",
           "type": "cruiser",
-          "group": "VIII–IX级战舰"
+          "groupId": "high",
+          "group": "VIII–IX 级"
         },
         {
           "id": 3741235184,
@@ -724,7 +840,8 @@
           "tier": 8,
           "nation": "usa",
           "type": "cruiser",
-          "group": "VIII–IX级战舰"
+          "groupId": "high",
+          "group": "VIII–IX 级"
         },
         {
           "id": 3750704880,
@@ -733,7 +850,8 @@
           "tier": 9,
           "nation": "italy",
           "type": "battleship",
-          "group": "VIII–IX级战舰"
+          "groupId": "high",
+          "group": "VIII–IX 级"
         },
         {
           "id": 3730748880,
@@ -742,7 +860,8 @@
           "tier": 8,
           "nation": "ussr",
           "type": "cruiser",
-          "group": "VIII–IX级战舰"
+          "groupId": "high",
+          "group": "VIII–IX 级"
         },
         {
           "id": 3761157968,
@@ -751,7 +870,8 @@
           "tier": 9,
           "nation": "france",
           "type": "cruiser",
-          "group": "VIII–IX级战舰"
+          "groupId": "high",
+          "group": "VIII–IX 级"
         },
         {
           "id": 3761681872,
@@ -760,7 +880,8 @@
           "tier": 8,
           "nation": "ussr",
           "type": "submarine",
-          "group": "VIII–IX级战舰"
+          "groupId": "high",
+          "group": "VIII–IX 级"
         },
         {
           "id": 3741267760,
@@ -769,7 +890,8 @@
           "tier": 8,
           "nation": "germany",
           "type": "battleship",
-          "group": "VIII–IX级战舰"
+          "groupId": "high",
+          "group": "VIII–IX 级"
         },
         {
           "id": 3761157328,
@@ -778,7 +900,8 @@
           "tier": 9,
           "nation": "pan_asia",
           "type": "cruiser",
-          "group": "VIII–IX级战舰"
+          "groupId": "high",
+          "group": "VIII–IX 级"
         },
         {
           "id": 4276008656,
@@ -787,7 +910,8 @@
           "tier": 8,
           "nation": "japan",
           "type": "cruiser",
-          "group": "VIII–IX级战舰"
+          "groupId": "high",
+          "group": "VIII–IX 级"
         },
         {
           "id": 3730749392,
@@ -796,7 +920,8 @@
           "tier": 8,
           "nation": "uk",
           "type": "cruiser",
-          "group": "VIII–IX级战舰"
+          "groupId": "high",
+          "group": "VIII–IX 级"
         },
         {
           "id": 3762271984,
@@ -805,7 +930,8 @@
           "tier": 8,
           "nation": "italy",
           "type": "aircarrier",
-          "group": "VIII–IX级战舰"
+          "groupId": "high",
+          "group": "VIII–IX 级"
         },
         {
           "id": 3751687984,
@@ -814,7 +940,8 @@
           "tier": 8,
           "nation": "germany",
           "type": "destroyer",
-          "group": "VIII–IX级战舰"
+          "groupId": "high",
+          "group": "VIII–IX 级"
         },
         {
           "id": 3751687376,
@@ -823,7 +950,8 @@
           "tier": 8,
           "nation": "pan_asia",
           "type": "destroyer",
-          "group": "VIII–IX级战舰"
+          "groupId": "high",
+          "group": "VIII–IX 级"
         },
         {
           "id": 3740218576,
@@ -832,7 +960,8 @@
           "tier": 9,
           "nation": "pan_asia",
           "type": "battleship",
-          "group": "VIII–IX级战舰"
+          "groupId": "high",
+          "group": "VIII–IX 级"
         },
         {
           "id": 3751720912,
@@ -841,7 +970,8 @@
           "tier": 8,
           "nation": "uk",
           "type": "cruiser",
-          "group": "VIII–IX级战舰"
+          "groupId": "high",
+          "group": "VIII–IX 级"
         },
         {
           "id": 3750672368,
@@ -850,7 +980,8 @@
           "tier": 9,
           "nation": "usa",
           "type": "cruiser",
-          "group": "VIII–IX级战舰"
+          "groupId": "high",
+          "group": "VIII–IX 级"
         },
         {
           "id": 3750639600,
@@ -859,7 +990,8 @@
           "tier": 9,
           "nation": "usa",
           "type": "destroyer",
-          "group": "VIII–IX级战舰"
+          "groupId": "high",
+          "group": "VIII–IX 级"
         },
         {
           "id": 3761682384,
@@ -868,7 +1000,8 @@
           "tier": 8,
           "nation": "uk",
           "type": "submarine",
-          "group": "VIII–IX级战舰"
+          "groupId": "high",
+          "group": "VIII–IX 级"
         },
         {
           "id": 3762206128,
@@ -877,7 +1010,8 @@
           "tier": 8,
           "nation": "spain",
           "type": "cruiser",
-          "group": "VIII–IX级战舰"
+          "groupId": "high",
+          "group": "VIII–IX 级"
         },
         {
           "id": 3761190192,
@@ -886,7 +1020,8 @@
           "tier": 9,
           "nation": "europe",
           "type": "battleship",
-          "group": "VIII–IX级战舰"
+          "groupId": "high",
+          "group": "VIII–IX 级"
         },
         {
           "id": 3761124656,
@@ -895,7 +1030,8 @@
           "tier": 9,
           "nation": "europe",
           "type": "destroyer",
-          "group": "VIII–IX级战舰"
+          "groupId": "high",
+          "group": "VIII–IX 级"
         },
         {
           "id": 3720263632,
@@ -904,7 +1040,8 @@
           "tier": 8,
           "nation": "uk",
           "type": "cruiser",
-          "group": "VIII–IX级战舰"
+          "groupId": "high",
+          "group": "VIII–IX 级"
         },
         {
           "id": 3750672176,
@@ -913,7 +1050,8 @@
           "tier": 9,
           "nation": "germany",
           "type": "cruiser",
-          "group": "VIII–IX级战舰"
+          "groupId": "high",
+          "group": "VIII–IX 级"
         },
         {
           "id": 3550360912,
@@ -922,7 +1060,8 @@
           "tier": 10,
           "nation": "pan_america",
           "type": "destroyer",
-          "group": "V–X级战舰"
+          "groupId": "rare",
+          "group": "稀有及 X 级"
         },
         {
           "id": 3550393552,
@@ -931,7 +1070,8 @@
           "tier": 10,
           "nation": "pan_asia",
           "type": "cruiser",
-          "group": "V–X级战舰"
+          "groupId": "rare",
+          "group": "稀有及 X 级"
         },
         {
           "id": 4273911760,
@@ -940,7 +1080,8 @@
           "tier": 10,
           "nation": "uk",
           "type": "cruiser",
-          "group": "V–X级战舰"
+          "groupId": "rare",
+          "group": "稀有及 X 级"
         },
         {
           "id": 3550426576,
@@ -949,7 +1090,8 @@
           "tier": 10,
           "nation": "ussr",
           "type": "battleship",
-          "group": "V–X级战舰"
+          "groupId": "rare",
+          "group": "稀有及 X 级"
         },
         {
           "id": 3550394160,
@@ -958,7 +1100,8 @@
           "tier": 10,
           "nation": "germany",
           "type": "cruiser",
-          "group": "V–X级战舰"
+          "groupId": "rare",
+          "group": "稀有及 X 级"
         },
         {
           "id": 3551474896,
@@ -967,7 +1110,8 @@
           "tier": 9,
           "nation": "pan_asia",
           "type": "battleship",
-          "group": "V–X级战舰"
+          "groupId": "rare",
+          "group": "稀有及 X 级"
         },
         {
           "id": 3539941360,
@@ -976,7 +1120,8 @@
           "tier": 10,
           "nation": "usa",
           "type": "battleship",
-          "group": "V–X级战舰"
+          "groupId": "rare",
+          "group": "稀有及 X 级"
         },
         {
           "id": 3445536720,
@@ -985,7 +1130,8 @@
           "tier": 10,
           "nation": "uk",
           "type": "cruiser",
-          "group": "V–X级战舰"
+          "groupId": "rare",
+          "group": "稀有及 X 级"
         },
         {
           "id": 3760142288,
@@ -994,7 +1140,8 @@
           "tier": 10,
           "nation": "uk",
           "type": "battleship",
-          "group": "V–X级战舰"
+          "groupId": "rare",
+          "group": "稀有及 X 级"
         },
         {
           "id": 3655251408,
@@ -1003,7 +1150,8 @@
           "tier": 10,
           "nation": "ussr",
           "type": "cruiser",
-          "group": "V–X级战舰"
+          "groupId": "rare",
+          "group": "稀有及 X 级"
         },
         {
           "id": 3760076208,
@@ -1012,7 +1160,8 @@
           "tier": 10,
           "nation": "spain",
           "type": "destroyer",
-          "group": "V–X级战舰"
+          "groupId": "rare",
+          "group": "稀有及 X 级"
         },
         {
           "id": 3751753168,
@@ -1021,7 +1170,8 @@
           "tier": 8,
           "nation": "ussr",
           "type": "battleship",
-          "group": "V–X级战舰"
+          "groupId": "rare",
+          "group": "稀有及 X 级"
         },
         {
           "id": 3751720944,
@@ -1030,7 +1180,8 @@
           "tier": 8,
           "nation": "usa",
           "type": "cruiser",
-          "group": "V–X级战舰"
+          "groupId": "rare",
+          "group": "稀有及 X 级"
         },
         {
           "id": 3762239280,
@@ -1039,7 +1190,8 @@
           "tier": 8,
           "nation": "germany",
           "type": "battleship",
-          "group": "V–X级战舰"
+          "groupId": "rare",
+          "group": "稀有及 X 级"
         },
         {
           "id": 3750704848,
@@ -1048,7 +1200,8 @@
           "tier": 9,
           "nation": "japan",
           "type": "battleship",
-          "group": "V–X级战舰"
+          "groupId": "rare",
+          "group": "稀有及 X 级"
         },
         {
           "id": 3765384944,
@@ -1057,7 +1210,8 @@
           "tier": 5,
           "nation": "italy",
           "type": "battleship",
-          "group": "V–X级战舰"
+          "groupId": "rare",
+          "group": "稀有及 X 级"
         },
         {
           "id": 3763255248,
@@ -1066,7 +1220,8 @@
           "tier": 7,
           "nation": "uk",
           "type": "cruiser",
-          "group": "V–X级战舰"
+          "groupId": "rare",
+          "group": "稀有及 X 级"
         },
         {
           "id": 3761125360,
@@ -1075,7 +1230,8 @@
           "tier": 9,
           "nation": "usa",
           "type": "destroyer",
-          "group": "V–X级战舰"
+          "groupId": "rare",
+          "group": "稀有及 X 级"
         },
         {
           "id": 4268635856,
@@ -1084,7 +1240,8 @@
           "tier": 5,
           "nation": "japan",
           "type": "destroyer",
-          "group": "V–X级战舰"
+          "groupId": "rare",
+          "group": "稀有及 X 级"
         },
         {
           "id": 4267587280,
@@ -1093,7 +1250,8 @@
           "tier": 5,
           "nation": "japan",
           "type": "destroyer",
-          "group": "V–X级战舰"
+          "groupId": "rare",
+          "group": "稀有及 X 级"
         },
         {
           "id": 4277024464,
@@ -1102,7 +1260,8 @@
           "tier": 5,
           "nation": "japan",
           "type": "destroyer",
-          "group": "V–X级战舰"
+          "groupId": "rare",
+          "group": "稀有及 X 级"
         },
         {
           "id": 4293801424,
@@ -1111,7 +1270,8 @@
           "tier": 5,
           "nation": "ussr",
           "type": "destroyer",
-          "group": "V–X级战舰"
+          "groupId": "rare",
+          "group": "稀有及 X 级"
         },
         {
           "id": 3751786480,
@@ -1120,7 +1280,8 @@
           "tier": 8,
           "nation": "usa",
           "type": "aircarrier",
-          "group": "V–X级战舰"
+          "groupId": "rare",
+          "group": "稀有及 X 级"
         },
         {
           "id": 3761190896,
@@ -1129,7 +1290,8 @@
           "tier": 9,
           "nation": "usa",
           "type": "battleship",
-          "group": "V–X级战舰"
+          "groupId": "rare",
+          "group": "稀有及 X 级"
         },
         {
           "id": 3761157584,
@@ -1138,7 +1300,8 @@
           "tier": 9,
           "nation": "ussr",
           "type": "cruiser",
-          "group": "V–X级战舰"
+          "groupId": "rare",
+          "group": "稀有及 X 级"
         },
         {
           "id": 3761190608,
@@ -1147,7 +1310,8 @@
           "tier": 9,
           "nation": "japan",
           "type": "battleship",
-          "group": "V–X级战舰"
+          "groupId": "rare",
+          "group": "稀有及 X 级"
         },
         {
           "id": 3655218480,
@@ -1156,7 +1320,8 @@
           "tier": 10,
           "nation": "europe",
           "type": "destroyer",
-          "group": "V–X级战舰"
+          "groupId": "rare",
+          "group": "稀有及 X 级"
         },
         {
           "id": 3540924400,
@@ -1165,7 +1330,8 @@
           "tier": 9,
           "nation": "usa",
           "type": "destroyer",
-          "group": "V–X级战舰"
+          "groupId": "rare",
+          "group": "稀有及 X 级"
         },
         {
           "id": 3530504176,
@@ -1174,7 +1340,8 @@
           "tier": 9,
           "nation": "usa",
           "type": "battleship",
-          "group": "V–X级战舰"
+          "groupId": "rare",
+          "group": "稀有及 X 级"
         },
         {
           "id": 3764303664,
@@ -1183,7 +1350,8 @@
           "tier": 6,
           "nation": "germany",
           "type": "cruiser",
-          "group": "V–X级战舰"
+          "groupId": "rare",
+          "group": "稀有及 X 级"
         },
         {
           "id": 3751753712,
@@ -1192,7 +1360,8 @@
           "tier": 8,
           "nation": "usa",
           "type": "battleship",
-          "group": "V–X级战舰"
+          "groupId": "rare",
+          "group": "稀有及 X 级"
         },
         {
           "id": 3751753552,
@@ -1201,7 +1370,8 @@
           "tier": 9,
           "nation": "france",
           "type": "battleship",
-          "group": "V–X级战舰"
+          "groupId": "rare",
+          "group": "稀有及 X 级"
         },
         {
           "id": 3764270896,
@@ -1210,7 +1380,8 @@
           "tier": 6,
           "nation": "germany",
           "type": "destroyer",
-          "group": "V–X级战舰"
+          "groupId": "rare",
+          "group": "稀有及 X 级"
         },
         {
           "id": 3751687888,
@@ -1219,7 +1390,8 @@
           "tier": 8,
           "nation": "japan",
           "type": "destroyer",
-          "group": "V–X级战舰"
+          "groupId": "rare",
+          "group": "稀有及 X 级"
         },
         {
           "id": 3762173744,
@@ -1228,7 +1400,8 @@
           "tier": 7,
           "nation": "germany",
           "type": "destroyer",
-          "group": "V–X级战舰"
+          "groupId": "rare",
+          "group": "稀有及 X 级"
         },
         {
           "id": 3763221872,
@@ -1237,7 +1410,8 @@
           "tier": 7,
           "nation": "commonwealth",
           "type": "destroyer",
-          "group": "V–X级战舰"
+          "groupId": "rare",
+          "group": "稀有及 X 级"
         },
         {
           "id": 3764369200,
@@ -1246,7 +1420,8 @@
           "tier": 6,
           "nation": "germany",
           "type": "aircarrier",
-          "group": "V–X级战舰"
+          "groupId": "rare",
+          "group": "稀有及 X 级"
         },
         {
           "id": 3762206160,
@@ -1255,7 +1430,8 @@
           "tier": 8,
           "nation": "ussr",
           "type": "cruiser",
-          "group": "V–X级战舰"
+          "groupId": "rare",
+          "group": "稀有及 X 级"
         },
         {
           "id": 3741300688,
@@ -1264,7 +1440,8 @@
           "tier": 8,
           "nation": "uk",
           "type": "aircarrier",
-          "group": "V–X级战舰"
+          "groupId": "rare",
+          "group": "稀有及 X 级"
         },
         {
           "id": 3760109552,
@@ -1273,7 +1450,8 @@
           "tier": 9,
           "nation": "usa",
           "type": "cruiser",
-          "group": "V–X级战舰"
+          "groupId": "rare",
+          "group": "稀有及 X 级"
         },
         {
           "id": 3760076080,
@@ -1282,7 +1460,8 @@
           "tier": 9,
           "nation": "europe",
           "type": "destroyer",
-          "group": "V–X级战舰"
+          "groupId": "rare",
+          "group": "稀有及 X 级"
         },
         {
           "id": 3752802256,
@@ -1291,7 +1470,8 @@
           "tier": 7,
           "nation": "uk",
           "type": "battleship",
-          "group": "V–X级战舰"
+          "groupId": "rare",
+          "group": "稀有及 X 级"
         }
       ]
     }

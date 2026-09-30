@@ -8,6 +8,7 @@ declare global {
       getNews(force?: boolean): Promise<NewsFeed>;
       getNewsDetail(url: string): Promise<string[]>;
       openNewsSource(url: string): Promise<void>;
+      openRatingSource(): Promise<void>;
       getConfig(): Promise<AppConfig>;
       saveConfig(config: Partial<AppConfig>): Promise<AppConfig>;
       checkForUpdate(): Promise<UpdateCheckResult>;

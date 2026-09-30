@@ -57,13 +57,16 @@ function recentFromSnapshots(current, snapshots) {
 }
 
 function mergeSnapshot(snapshots, current) {
-  const result = (Array.isArray(snapshots) ? snapshots : [])
-    .filter((item) => item && Number.isFinite(item.capturedAt) && item.capturedAt >= current.capturedAt - 180 * DAY_MS)
-    .sort((a, b) => a.capturedAt - b.capturedAt);
-  const last = result[result.length - 1];
-  if (last && current.capturedAt - last.capturedAt < 30 * 60 * 1000) result[result.length - 1] = current;
-  else result.push(current);
-  return result.slice(-1000);
+  // Keep the latest local-day sample indefinitely, including pre-upgrade history.
+  const days = new Map();
+  const records = [...(Array.isArray(snapshots) ? snapshots : []), current]
+    .filter(item => item && Number.isFinite(item.capturedAt) && item.capturedAt <= current.capturedAt)
+    .sort((a,b) => a.capturedAt-b.capturedAt);
+  for (const item of records) {
+    const date = new Date(item.capturedAt);
+    days.set([date.getFullYear(),date.getMonth(),date.getDate()].join("-"),item);
+  }
+  return [...days.values()];
 }
 
 module.exports = { DAY_MS, PERIODS, makeSnapshot, mergeSnapshot, recentFromSnapshots };
