@@ -1,11 +1,12 @@
 <script setup lang="ts">
 import { computed, ref } from "vue";
+import { prGrade } from "../pr-grade";
 import AppIcon from "./AppIcon.vue";
 import { automaticPlayerMark, playerMark, togglePlayerMark } from "../player-marks";
 import { ratingValue, trendPoints } from "../stats-trend";
 import type { OverallStats, PlayerDetails } from "../types";
 
-const props = defineProps<{ player: PlayerDetails; authorized?: boolean; markable?: boolean; refreshing?: boolean }>();
+const props = defineProps<{ player: PlayerDetails; authorized?: boolean; markable?: boolean; refreshing?: boolean; compact?: boolean }>();
 const emit = defineEmits<{ refresh: [] }>();
 const mode = ref<"random" | "ranked">("random");
 const period = ref<"overall" | 1 | 7 | 30 | 90>("overall");
@@ -64,7 +65,7 @@ const metrics = computed(() => {
   if (!stats) return [];
   return [
     { label: "场次", value: stats.battles.toLocaleString(), hint: "随机战" },
-    { label: "个人评分 PR", value: pr.value.value === null ? "—" : Math.round(pr.value.value).toLocaleString(), hint: "WoWS Numbers", tone: "pr", title: pr.value.value === null ? "尚无可计算的 PR 数据" : `WoWS Numbers 公式 · 可计算场次覆盖 ${((pr.value.coverage ?? 0)*100).toFixed(1)}%` },
+    { label: "个人评分 PR", value: pr.value.value === null ? "—" : Math.round(pr.value.value).toLocaleString(), hint: "WoWS Numbers", tone: "pr", color: prGrade(pr.value.value).color, title: pr.value.value === null ? "尚无可计算的 PR 数据" : `${prGrade(pr.value.value).label} · WoWS Numbers 公式 · 可计算场次覆盖 ${((pr.value.coverage ?? 0)*100).toFixed(1)}%` },
     { label: "胜率", value: `${stats.winRate.toFixed(2)}%`, hint: "随机战", tone: winTone.value },
     { label: "场均伤害", value: Math.round(stats.avgDamage).toLocaleString(), hint: "随机战" },
     { label: "场均经验", value: Math.round(stats.avgXp).toLocaleString(), hint: "随机战" },
@@ -80,7 +81,7 @@ function formatDate(value?: number) {
 </script>
 
 <template>
-  <section class="panel performance-panel">
+  <section class="panel performance-panel" :class="{ 'performance-panel--compact': compact }">
     <header class="performance-head">
       <div class="performance-profile">
         <div>
@@ -97,14 +98,14 @@ function formatDate(value?: number) {
           <button type="button" :class="{ active: marks.monkey }" :aria-pressed="marks.monkey" :disabled="markIsAutomatic" :title="markIsAutomatic ? '按账号胜率自动标记' : '海猴标记'" @click="togglePlayerMark(player.realm, player.accountId, player.nickname, 'monkey')"><AppIcon name="monkey" :size="17" />海猴标记</button>
         </div>
         <button v-if="authorized" class="button-secondary performance-refresh" :disabled="refreshing" @click="emit('refresh')"><span v-if="refreshing" class="ui-spinner" aria-hidden="true"></span><AppIcon v-else name="pulse" :size="15" />{{ refreshing ? '正在刷新…' : '刷新战绩' }}</button>
-        <div class="performance-switch" aria-label="切换战斗模式">
+        <div v-if="!compact" class="performance-switch" aria-label="切换战斗模式">
           <button :class="{ active: mode === 'random' }" @click="mode = 'random'">随机战</button>
           <button :class="{ active: mode === 'ranked' }" @click="mode = 'ranked'">排位战</button>
         </div>
       </div>
     </header>
 
-    <div class="performance-period-bar" :class="{ 'is-reserved': mode !== 'random' }" :inert="mode !== 'random'">
+    <div v-if="!compact" class="performance-period-bar" :class="{ 'is-reserved': mode !== 'random' }" :inert="mode !== 'random'">
         <div class="performance-periods" aria-label="选择统计周期">
           <button v-for="item in periodOptions" :key="item.value" :class="{ active: period === item.value }" @click="period = item.value">
             {{ item.label }}
@@ -113,13 +114,13 @@ function formatDate(value?: number) {
         <span v-if="player.recent">本地记录始于 {{ formatDate(player.recent.trackedSince) }}</span>
       </div>
 
-    <div class="performance-content">
+    <div v-if="!compact" class="performance-content">
     <template v-if="mode === 'random'">
       <div v-if="displayedStats" class="performance-grid">
         <article v-for="metric in metrics" :key="metric.label" :class="`tone-${metric.tone || 'plain'}`" :title="metric.title">
           <span>{{ metric.label }}</span>
-          <strong>{{ metric.value }}</strong>
-          <small>{{ metric.hint === 'WoWS Numbers' ? pr.value === null ? 'WoWS Numbers · 暂不可用' : 'WoWS Numbers · ' + ((pr.coverage ?? 0)*100).toFixed(0) + '%' : period === 'overall' ? '随机战总览' : `最近 ${period} 天` }}</small>
+          <strong :style="metric.color ? { color: metric.color } : undefined">{{ metric.value }}</strong>
+          <small>{{ metric.hint === 'WoWS Numbers' ? pr.value === null ? 'WoWS Numbers · 暂不可用' : 'WoWS Numbers' : period === 'overall' ? '随机战总览' : `最近 ${period} 天` }}</small>
         </article>
       </div>
       <div v-else-if="player.hiddenProfile" class="performance-empty">

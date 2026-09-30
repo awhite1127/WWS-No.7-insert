@@ -65,7 +65,7 @@ async function checkForUpdate(currentVersion, portable = false, fetcher = fetch)
   };
 }
 
-async function downloadUpdate(asset, downloadsPath, onProgress = () => {}, fetcher = fetch) {
+async function downloadUpdate(asset, downloadsPath, onProgress = () => {}, fetcher = fetch, options = {}) {
   if (!validAsset({ name: asset?.name, browser_download_url: asset?.url })) throw new Error("更新文件地址无效");
   const expected = /^sha256:([0-9a-f]{64})$/i.exec(asset.digest || "")?.[1]?.toLowerCase() || "";
   const version = versionParts(asset.name.match(/v?\d+\.\d+\.\d+/i)?.[0]);
@@ -82,45 +82,77 @@ async function downloadUpdate(asset, downloadsPath, onProgress = () => {}, fetch
       }
     } catch {}
   }
-  const response = await fetcher(asset.url, {
-    headers: { "User-Agent": "No7Insert-Updater" },
-    signal: AbortSignal.timeout(10 * 60 * 1000),
-  });
-  if (!response.ok || !response.body) throw new Error(`更新文件下载失败（${response.status}）`);
-  const temporary = path.join(directory, `.${crypto.randomUUID()}.download`);
+
+  const maxAttempts = options.maxAttempts ?? 2;
+  for (let attempt = 0; attempt < maxAttempts; attempt++) {
+    try { return await downloadAttempt(asset, directory, destination, expected, onProgress, fetcher, options); }
+    catch (error) {
+      if (!error.retryable || attempt + 1 >= maxAttempts) throw error;
+      await new Promise(resolve => setTimeout(resolve, options.retryDelayMs ?? 500));
+    }
+  }
+}
+
+async function downloadAttempt(asset, directory, destination, expected, onProgress, fetcher, options) {
+  const controller = new AbortController();
+  let timedOut = "";
+  let timer;
+  const armTimeout = (milliseconds, stage) => {
+    clearTimeout(timer);
+    timer = setTimeout(() => { timedOut = stage; controller.abort(); }, milliseconds);
+  };
+  const temporary = path.join(directory, "." + crypto.randomUUID() + ".download");
   const hash = crypto.createHash("sha256");
-  const total = Number(asset.size) || Number(response.headers.get("content-length")) || 0;
   let received = 0;
   let lastProgressAt = 0;
   let reportedBytes = -1;
+  let total = Number(asset.size) || 0;
   const reportProgress = () => {
     reportedBytes = received;
     lastProgressAt = Date.now();
     onProgress({ received, total, percent: total ? Math.min(100, Math.round(received / total * 100)) : null });
   };
   try {
+    reportProgress();
+    armTimeout(options.connectTimeoutMs ?? 30000, "连接 GitHub 下载服务器超时");
+    const signal = AbortSignal.any([controller.signal, AbortSignal.timeout(options.totalTimeoutMs ?? 10 * 60 * 1000)]);
+    const response = await fetcher(asset.url, { headers: { "User-Agent": "No7Insert-Updater" }, signal });
+    if (!response.ok || !response.body) {
+      const error = new Error("更新文件下载失败（" + response.status + "）");
+      error.retryable = [408, 429].includes(response.status) || response.status >= 500;
+      throw error;
+    }
+    total = Number(asset.size) || Number(response.headers.get("content-length")) || 0;
+    armTimeout(options.idleTimeoutMs ?? 30000, "下载连续 30 秒没有收到数据");
     await pipeline(Readable.fromWeb(response.body), new Transform({
       transform(chunk, _encoding, callback) {
+        armTimeout(options.idleTimeoutMs ?? 30000, "下载连续 30 秒没有收到数据");
         received += chunk.length;
         hash.update(chunk);
         if (Date.now() - lastProgressAt >= 100) reportProgress();
         callback(null, chunk);
       },
-    }), fs.createWriteStream(temporary, { flags: "wx" }));
+    }), fs.createWriteStream(temporary, { flags: "wx" }), { signal });
+    clearTimeout(timer);
     if (reportedBytes !== received) reportProgress();
     if (asset.size && received !== asset.size) throw new Error("更新文件大小与发布信息不符");
     if (expected && hash.digest("hex") !== expected) throw new Error("更新文件校验失败");
     let finalPath = destination;
     try {
       await fsp.access(finalPath);
-      finalPath = path.join(directory, `${path.basename(asset.name, ".exe")} (${Date.now()}).exe`);
+      finalPath = path.join(directory, path.basename(asset.name, ".exe") + " (" + Date.now() + ").exe");
     } catch {}
     await fsp.rename(temporary, finalPath);
     return { path: finalPath, verified: Boolean(expected), installer: asset.installer };
   } catch (error) {
     await fsp.rm(temporary, { force: true }).catch(() => {});
+    if (timedOut || ["AbortError", "TimeoutError", "TypeError"].includes(error.name) || /ERR_(?:CONNECTION|NAME|NETWORK|INTERNET|TIMED_OUT)|ECONNRESET|ETIMEDOUT|terminated|fetch failed/i.test(error.message)) {
+      const failure = new Error((timedOut || (error.name === "TimeoutError" ? "更新下载总时长超时" : "无法连接 GitHub 下载服务器或连接已中断")) + "，请检查网络或系统代理后重试，也可打开发布页手动下载。");
+      failure.retryable = true;
+      throw failure;
+    }
     throw error;
-  }
+  } finally { clearTimeout(timer); controller.abort(); }
 }
 
 module.exports = { checkForUpdate, compareVersions, chooseAsset, downloadUpdate };

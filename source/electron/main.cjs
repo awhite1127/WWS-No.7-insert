@@ -3,7 +3,7 @@
 const path = require("node:path");
 const fs = require("node:fs");
 const http = require("node:http");
-const { app, BrowserWindow, dialog, ipcMain, Menu, safeStorage, screen, shell } = require("electron");
+const { app, BrowserWindow, dialog, ipcMain, Menu, net, safeStorage, screen, shell } = require("electron");
 const envPath = app.isPackaged
   ? path.join(process.resourcesPath, ".env.local")
   : path.join(__dirname, "..", ".env.local");
@@ -74,9 +74,10 @@ function statsHistoryPath(player) {
   return path.join(app.getPath("userData"), "stats-history", `${player.realm}-${player.accountId}.json`);
 }
 
-const { aggregateRating } = require("./personal-rating.cjs");
+const { aggregateRating, ratingValue, shipClassStats } = require("./personal-rating.cjs");
 
 function attachRecentStats(player) {
+  player = { ...player, shipClasses: player.hiddenProfile ? [] : shipClassStats(player.ships), ships: player.ships.map(ship => ({ ...ship, pr: ratingValue(aggregateRating([ship])) })) };
   const current = makeSnapshot(player);
   if (current) current.pr = aggregateRating(player.ships);
   if (!current) return { ...player, recent: null, history: [] };
@@ -491,7 +492,7 @@ ipcMain.handle("news:open", (_event, url) => {
 ipcMain.handle("config:get", () => publicConfig(loadConfig()));
 ipcMain.handle("config:save", (_event, config) => saveConfig(config));
 ipcMain.handle("update:check", async () => {
-  const result = await checkForUpdate(app.getVersion(), Boolean(process.env.PORTABLE_EXECUTABLE_FILE));
+  const result = await checkForUpdate(app.getVersion(), Boolean(process.env.PORTABLE_EXECUTABLE_FILE), (url, options) => net.fetch(url, options));
   updateCandidate = result.updateAvailable ? result : null;
   downloadedUpdate = null;
   return result;
@@ -499,7 +500,7 @@ ipcMain.handle("update:check", async () => {
 ipcMain.handle("update:download", async () => {
   if (!updateCandidate?.asset) throw new Error("请先检查更新，或此版本没有可下载的程序");
   if (updateDownloadPromise) return updateDownloadPromise;
-  updateDownloadPromise = downloadUpdate(updateCandidate.asset, app.getPath("downloads"), (progress) => sendAll("update:progress", progress));
+  updateDownloadPromise = downloadUpdate(updateCandidate.asset, app.getPath("downloads"), (progress) => sendAll("update:progress", progress), (url, options) => net.fetch(url, options));
   try {
     downloadedUpdate = await updateDownloadPromise;
     return downloadedUpdate;

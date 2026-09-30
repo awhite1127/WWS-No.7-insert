@@ -1,9 +1,10 @@
 <script setup lang="ts">
 import { computed, ref } from "vue";
 import type { ShipStats } from "../types";
+import { prGrade } from "../pr-grade";
 import NationFlag from "./NationFlag.vue";
 
-type SortKey = "battles" | "winRate" | "avgDamage" | "avgFrags";
+type SortKey = "battles" | "winRate" | "avgDamage" | "avgFrags" | "pr";
 const props = defineProps<{ ships: ShipStats[] }>();
 const query = ref("");
 const typeFilter = ref("");
@@ -42,7 +43,7 @@ const rows = computed(() => {
     && (!tier || ship.tier === tier)
     && ship.battles >= minimum)
   .map(({ ship }) => ship).sort((a, b) => {
-    const difference = a[sortKey.value] - b[sortKey.value];
+    const difference = (a[sortKey.value] ?? -1) - (b[sortKey.value] ?? -1);
     return (sortDirection.value === "desc" ? -difference : difference) || a.name.localeCompare(b.name, "zh-CN");
   });
 });
@@ -63,7 +64,7 @@ function winrateClass(value: number) {
 <template>
   <section class="panel ship-panel">
     <header class="panel__header ship-panel__header">
-      <h2>单舰数据</h2>
+      <h2>详细舰船查询</h2>
       <div class="ship-panel__controls" aria-label="单舰高级筛选">
       <input v-model="query" class="ship-search" aria-label="搜索舰船" placeholder="搜索中文或英文舰名" />
       <label>舰种<select v-model="typeFilter"><option value="">全部舰种</option><option v-for="type in types" :key="type" :value="type">{{ typeLabels[type] || type }}</option></select></label>
@@ -75,17 +76,29 @@ function winrateClass(value: number) {
     <div class="data-table">
       <div class="data-table__head">
         <span>舰船</span><span>等级</span>
-        <button v-for="column in ([{ key: 'battles', label: '场次' }, { key: 'winRate', label: '胜率' }, { key: 'avgDamage', label: '场均伤害' }, { key: 'avgFrags', label: '场均击沉' }] as const)" :key="column.key" type="button" :class="{ active: sortKey === column.key }" :aria-label="`按${column.label}${sortKey === column.key && sortDirection === 'desc' ? '升序' : '降序'}排序`" @click="changeSort(column.key)">{{ column.label }}<span v-if="sortKey === column.key">{{ sortDirection === 'desc' ? '↓' : '↑' }}</span></button>
+        <button v-for="column in ([{ key: 'battles', label: '场次' }, { key: 'winRate', label: '胜率' }, { key: 'avgDamage', label: '场均伤害' }, { key: 'avgFrags', label: '场均击沉' }, { key: 'pr', label: 'PR' }] as const)" :key="column.key" type="button" :class="{ active: sortKey === column.key }" :aria-label="`按${column.label}${sortKey === column.key && sortDirection === 'desc' ? '升序' : '降序'}排序`" @click="changeSort(column.key)">{{ column.label }}<span v-if="sortKey === column.key">{{ sortDirection === 'desc' ? '↓' : '↑' }}</span></button>
       </div>
       <div v-for="ship in rows" :key="ship.shipId" class="data-table__row">
-        <span class="ship-name" :title="ship.englishName && ship.englishName !== ship.name ? `${ship.name} / ${ship.englishName}` : ship.name"><NationFlag :nation="ship.nation" :label="nationLabels[ship.nation] || ship.nation || '未知国籍'" /><i class="ship-name__type">{{ ship.type.replace('AirCarrier', 'CV').replace('Battleship', 'BB').replace('Cruiser', 'CA').replace('Destroyer', 'DD').replace('Submarine', 'SS') }}</i><strong>{{ ship.name }}</strong><small v-if="ship.englishName && ship.englishName !== ship.name">/ {{ ship.englishName }}</small></span>
+        <span class="ship-name" :title="ship.englishName && ship.englishName !== ship.name ? `${ship.name} / ${ship.englishName}` : ship.name"><NationFlag :nation="ship.nation" :label="nationLabels[ship.nation] || ship.nation || '未知国籍'" /><i class="ship-name__type">{{ ship.type.replace('AirCarrier', 'CV').replace('Battleship', 'BB').replace('Cruiser', 'CL').replace('Destroyer', 'DD').replace('Submarine', 'SS') }}</i><strong>{{ ship.name }}</strong><small v-if="ship.englishName && ship.englishName !== ship.name">/ {{ ship.englishName }}</small></span>
         <span class="muted">T{{ ship.tier }}</span>
         <span>{{ ship.battles.toLocaleString() }}</span>
         <span :class="winrateClass(ship.winRate)">{{ ship.winRate.toFixed(1) }}%</span>
         <span>{{ Math.round(ship.avgDamage).toLocaleString() }}</span>
         <span>{{ ship.avgFrags.toFixed(2) }}</span>
+        <span :style="{color:prGrade(ship.pr).color}" :title="prGrade(ship.pr).label">{{ ship.pr == null ? '—' : Math.round(ship.pr).toLocaleString() }}</span>
       </div>
       <p v-if="!rows.length" class="ship-filter-empty">没有符合筛选条件的舰船。</p>
     </div>
   </section>
 </template>
+
+<style scoped>
+.ship-panel .data-table__row { font-size:14px; }
+.ship-panel .data-table__head { font-size:12px; }
+.ship-panel .ship-name i { font-size:12px; }
+.ship-panel .ship-name small { font-size:13px; }
+.ship-panel__header h2 { font-size:17px; }
+.ship-panel__controls label { font-size:12px; }
+.ship-panel__controls .ship-search, .ship-panel__controls select, .ship-panel__controls label input { font-size:13px; }
+.ship-filter-empty { font-size:13px; }
+</style>

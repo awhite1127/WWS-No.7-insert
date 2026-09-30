@@ -81,3 +81,37 @@ test("download progress is throttled while the final byte count remains exact", 
   assert.equal(progress.at(-1).received, 200);
   assert.equal(progress.at(-1).percent, 100);
 });
+
+
+test("download retries a transient failure, but not missing or corrupt assets", async (t) => {
+  const directory = await fs.mkdtemp(path.join(os.tmpdir(), "no7-retry-test-"));
+  t.after(() => fs.rm(directory, { recursive: true, force: true }));
+  const bytes = Buffer.from("test"), digest = "sha256:" + crypto.createHash("sha256").update(bytes).digest("hex");
+  const asset = { name: installer.name, url: installer.browser_download_url, size: 4, digest, installer: true };
+  let calls = 0;
+  const result = await downloadUpdate(asset, directory, () => {}, async () => ++calls === 1 ? new Response("", { status:503 }) : new Response(bytes), { retryDelayMs:0 });
+  assert.equal(calls,2); assert.equal(result.verified,true);
+  for (const status of [404,200]) {
+    calls=0;
+    await assert.rejects(downloadUpdate({...asset,digest:"sha256:"+"0".repeat(64)},directory,()=>{},async()=>{calls++;return new Response(bytes,{status});},{retryDelayMs:0}), status===404 ? /下载失败/ : /校验失败/);
+    assert.equal(calls,1);
+  }
+});
+
+test("connection timeout aborts, reports an actionable error and retries once", async (t) => {
+  const directory = await fs.mkdtemp(path.join(os.tmpdir(), "no7-connect-test-"));
+  t.after(() => fs.rm(directory, { recursive: true, force: true }));
+  let calls=0;
+  const hung=(_url,{signal})=>{calls++;return new Promise((resolve,reject)=>signal.addEventListener("abort",()=>reject(signal.reason),{once:true}));};
+  await assert.rejects(downloadUpdate({name:installer.name,url:installer.browser_download_url,size:4,digest:"",installer:true},directory,()=>{},hung,{connectTimeoutMs:15,retryDelayMs:0}),/连接.*超时.*系统代理/);
+  assert.equal(calls,2);
+});
+
+test("stalled response body is aborted and partial download is removed", async (t) => {
+  const directory = await fs.mkdtemp(path.join(os.tmpdir(), "no7-idle-test-"));
+  t.after(() => fs.rm(directory, { recursive: true, force: true }));
+  const stalled=async()=>new Response(new ReadableStream({start(c){c.enqueue(new Uint8Array([1]));}}));
+  await assert.rejects(downloadUpdate({name:installer.name,url:installer.browser_download_url,size:4,digest:"",installer:true},directory,()=>{},stalled,{idleTimeoutMs:15,maxAttempts:1}),/没有收到数据.*重试/);
+  const files=await fs.readdir(path.join(directory,"No. 7 insert updates","0.1.5"));
+  assert.deepEqual(files,[]);
+});

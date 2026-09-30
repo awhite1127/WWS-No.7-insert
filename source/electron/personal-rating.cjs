@@ -16,4 +16,24 @@ function aggregateRating(ships, table = expected) {
   }
   return ratingValue(a) === null ? null : a;
 }
-module.exports = { ratingValue, aggregateRating };
+function shipClassStats(ships, table = expected) {
+  const classes = [
+    { type: "Destroyer", code: "DD", label: "驱逐舰" },
+    { type: "Battleship", code: "BB", label: "战列舰" },
+    { type: "AirCarrier", code: "CV", label: "航空母舰" },
+    { type: "Cruiser", code: "CL", label: "巡洋舰" },
+    { type: "Submarine", code: "SS", label: "潜艇" },
+  ];
+  const valid = (ships || []).filter(s => [s.battles,s.wins,s.avgDamage,s.avgXp,s.avgFrags].every(Number.isFinite) && s.battles > 0 && s.wins >= 0 && s.wins <= s.battles && s.avgDamage >= 0 && s.avgXp >= 0 && s.avgFrags >= 0);
+  if (valid.some(s => !classes.some(c => c.type === s.type))) classes.push({ type: "Unknown", code: "—", label: "未分类" });
+  return classes.map(c => {
+    const group = valid.filter(s => c.type === "Unknown" ? !classes.slice(0,5).some(item => item.type === s.type) : s.type === c.type);
+    const battles = group.reduce((n,s)=>n+s.battles,0), wins = group.reduce((n,s)=>n+s.wins,0);
+    const average = key => battles ? group.reduce((n,s)=>n+s[key]*s.battles,0)/battles : null;
+    const pr = aggregateRating(group,table);
+    return { ...c, shipCount: group.length, battles, wins, winRate: battles ? wins/battles*100 : null,
+      avgDamage: average("avgDamage"), avgXp: average("avgXp"), avgFrags: average("avgFrags"),
+      pr: ratingValue(pr), prCoverage: pr && pr.totalBattles > 0 ? pr.coveredBattles/pr.totalBattles : null };
+  });
+}
+module.exports = { ratingValue, aggregateRating, shipClassStats };

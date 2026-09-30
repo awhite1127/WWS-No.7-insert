@@ -77,6 +77,7 @@ export interface OverallStats {
 }
 
 export interface ShipStats {
+  pr?: number | null;
   shipId: number;
   name: string;
   englishName?: string;
@@ -122,7 +123,23 @@ export interface StatsSnapshot {
   survivedBattles: number;
 }
 
+export interface ShipClassStats {
+  type: string;
+  code: string;
+  label: string;
+  shipCount: number;
+  battles: number;
+  wins: number;
+  winRate: number | null;
+  avgDamage: number | null;
+  avgXp: number | null;
+  avgFrags: number | null;
+  pr: number | null;
+  prCoverage: number | null;
+}
+
 export interface PlayerDetails {
+  shipClasses?: ShipClassStats[];
   history?: StatsSnapshot[];
   accountId: number;
   nickname: string;

@@ -1,3 +1,6 @@
+import expectedPr from "../data/pr-expected.json";
+import { ratingValue } from "./stats-trend";
+import type { PrAggregate } from "./types";
 import newsSnapshot from "../data/news-snapshot.json";
 import type { NewsFeed, AppConfig, ArenaInfo, ClanDetails, ContainerDetails, ContainerSummary, PlayerDetails, RosterPlayer, SnowflakeAuthStatus, WgAuthStatus } from "./types";
 
@@ -56,6 +59,23 @@ if (!window.wws) {
       avgFrags: 1.35 - index * 0.02,
     })),
   };
+  function previewPr(ships: PlayerDetails["ships"]) {
+    const a: PrAggregate = { version: expectedPr.version, coveredBattles:0,totalBattles:0,damage:0,frags:0,wins:0,expectedDamage:0,expectedFrags:0,expectedWins:0 };
+    for (const ship of ships) {
+      a.totalBattles+=ship.battles;
+      const e=(expectedPr.data as Record<string,{average_damage_dealt:number;average_frags:number;win_rate:number}>)[String(ship.shipId)];
+      if (!e) continue;
+      a.coveredBattles+=ship.battles; a.damage+=ship.avgDamage*ship.battles; a.frags+=ship.avgFrags*ship.battles;a.wins+=ship.wins;
+      a.expectedDamage+=e.average_damage_dealt*ship.battles; a.expectedFrags+=e.average_frags*ship.battles;a.expectedWins+=e.win_rate/100*ship.battles;
+    }
+    return { value:ratingValue(a),coverage:a.coveredBattles&&a.totalBattles?a.coveredBattles/a.totalBattles:null };
+  }
+  mockDetails.ships=mockDetails.ships.map(ship=>({...ship,pr:previewPr([ship]).value}));
+  mockDetails.shipClasses=[{type:"Destroyer",code:"DD",label:"驱逐舰"},{type:"Battleship",code:"BB",label:"战列舰"},{type:"AirCarrier",code:"CV",label:"航空母舰"},{type:"Cruiser",code:"CL",label:"巡洋舰"},{type:"Submarine",code:"SS",label:"潜艇"}].map(c=>{
+    const ships=mockDetails.ships.filter(s=>s.type===c.type);const battles=ships.reduce((n,s)=>n+s.battles,0),wins=ships.reduce((n,s)=>n+s.wins,0);
+    const avg=(key:"avgDamage"|"avgXp"|"avgFrags")=>battles?ships.reduce((n,s)=>n+s[key]*s.battles,0)/battles:null;
+    const pr=previewPr(ships);return {...c,shipCount:ships.length,battles,wins,winRate:battles?wins/battles*100:null,avgDamage:avg("avgDamage"),avgXp:avg("avgXp"),avgFrags:avg("avgFrags"),pr:pr.value,prCoverage:pr.coverage};
+  });
   const mockArena: ArenaInfo = {
     battleId: "preview",
     mapName: "北方海域",

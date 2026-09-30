@@ -5,13 +5,11 @@ import BattleRoster from "./components/BattleRoster.vue";
 import ContainerView from "./components/ContainerView.vue";
 import NewsView from "./components/NewsView.vue";
 import ChristmasPoolView from "./components/ChristmasPoolView.vue";
+import PlayerStatsPanel from "./components/PlayerStatsPanel.vue";
 import LoadingState from "./components/LoadingState.vue";
 import MyStatsView from "./components/MyStatsView.vue";
 import SnowflakeView from "./components/SnowflakeView.vue";
-import StatsTrend from "./components/StatsTrend.vue";
-import PerformanceOverview from "./components/PerformanceOverview.vue";
 import SearchControl from "./components/SearchControl.vue";
-import ShipTable from "./components/ShipTable.vue";
 import TitleBar from "./components/TitleBar.vue";
 import WgAuthGate from "./components/WgAuthGate.vue";
 import type { AppConfig, ArenaInfo, ClanDetails, ClanSearchResult, DownloadedUpdate, PlayerDetails, RosterPlayer, SearchResult, UpdateCheckResult, UpdateProgress, WgAuthStatus } from "./types";
@@ -19,6 +17,8 @@ import type { AppConfig, ArenaInfo, ClanDetails, ClanSearchResult, DownloadedUpd
 const config = ref<AppConfig>({ realm: "asia", theme: "dark", gamePath: "", overlayEnabled: true, overlayHotkeyEnabled: true, overlayHotkey: "Tab" });
 const mode = ref<"player" | "clan">("player");
 const activeView = ref<"player" | "clan" | "containers" | "christmas" | "overlay" | "my" | "snow" | "news">("overlay");
+const statsPage = ref<"overview" | "ships">("overview");
+watch(activeView, () => { statsPage.value = "overview"; });
 const authStatus = ref<WgAuthStatus>({ authorized: false });
 const snowEventName = ref("");
 const authOnboardingOpen = ref(false);
@@ -500,7 +500,7 @@ onUnmounted(() => {
       <main class="workspace">
         <header class="topbar">
           <div class="page-heading">
-            <div><h1>{{ pageMeta.title }}</h1><p>{{ pageMeta.description }}</p></div>
+            <div><div class="page-heading__title"><h1>{{ pageMeta.title }}</h1><div v-if="activeView === 'my' || activeView === 'player'" class="stats-page-tabs" role="tablist" aria-label="战绩页面"><button id="stats-tab-overview" type="button" role="tab" :aria-selected="statsPage === 'overview'" aria-controls="stats-page-overview" :class="{ active: statsPage === 'overview' }" @click="statsPage = 'overview'">总览</button><button id="stats-tab-ships" type="button" role="tab" :aria-selected="statsPage === 'ships'" aria-controls="stats-page-ships" :class="{ active: statsPage === 'ships' }" @click="statsPage = 'ships'">详细</button></div></div><p>{{ pageMeta.description }}</p></div>
           </div>
           <div v-if="activeView === 'overlay' && arena" class="battle-topbar">
             <div class="battle-topbar__log">
@@ -542,13 +542,9 @@ onUnmounted(() => {
 
               <LoadingState v-if="searching && !hasSearchResult" class="panel stats-loading stats-loading--compact" :label="mode === 'player' ? '正在读取玩家随机战战绩…' : '正在读取军团资料…'" detail="正在从 WG 官方接口同步并整理数据" />
 
-              <section v-if="mode === 'player' && player" class="result-area result-area--trends">
-                <PerformanceOverview :player="player" markable>
-                  <template #tools><button class="button-secondary query-history__back" @click="showQueryHistory">查询历史</button><SearchControl v-model="query" compact :mode="mode" :realm="config.realm" :searching="searching" :suggestions="suggestions" :clan-suggestions="clanSuggestions" :error="error" @submit="runSearch" @select-player="loadPlayer" @select-clan="loadClan" /></template>
-                </PerformanceOverview>
-                <StatsTrend :key="player.realm + player.accountId" :player="player" />
-                <ShipTable :ships="player.ships" />
-              </section>
+              <PlayerStatsPanel v-if="mode === 'player' && player" v-model:page="statsPage" :player="player" markable>
+                <template #tools><button class="button-secondary query-history__back" @click="showQueryHistory">查询历史</button><SearchControl v-model="query" compact :mode="mode" :realm="config.realm" :searching="searching" :suggestions="suggestions" :clan-suggestions="clanSuggestions" :error="error" @submit="runSearch" @select-player="loadPlayer" @select-clan="loadClan" /></template>
+              </PlayerStatsPanel>
 
               <section v-if="mode === 'clan' && clan" class="result-area clan-result">
                 <div class="panel clan-hero">
@@ -659,7 +655,7 @@ onUnmounted(() => {
             <NewsView v-else-if="activeView === 'news'" />
             <ContainerView v-else-if="activeView === 'containers'" :realm="config.realm" :auth-status="authStatus" />
             <ChristmasPoolView v-else-if="activeView === 'christmas'" :realm="config.realm" :auth-status="authStatus" @authorized="handleAuthorized" />
-            <MyStatsView v-else-if="activeView === 'my'" :auth-status="authStatus" :realm="config.realm" @authorized="handleAuthorized" />
+            <MyStatsView v-else-if="activeView === 'my'" v-model:page="statsPage" :auth-status="authStatus" :realm="config.realm" @authorized="handleAuthorized" />
             <SnowflakeView v-else :realm="config.realm" :auth-status="authStatus" @auth-changed="handleAuthorized" @event-name="snowEventName = $event" />
           </div>
         </div>
@@ -679,7 +675,7 @@ onUnmounted(() => {
           <p v-if="updateResult" role="status">当前 {{ updateResult.currentVersion }} · {{ updateResult.updateAvailable ? `发现新版本 ${updateResult.latestVersion}` : updateResult.currentVersion === updateResult.latestVersion ? '已是最新版本' : `本机版本较新（GitHub 已发布 ${updateResult.latestVersion}）` }}</p>
           <p v-if="updateResult?.updateAvailable && !updateResult.asset">新版本尚无可下载的 Windows 程序，请查看发布页。</p>
           <div v-if="updateResult?.updateAvailable" class="settings-update__actions">
-            <button v-if="updateResult.asset && !downloadedUpdate" type="button" :disabled="Boolean(updateBusy)" @click="downloadAvailableUpdate">{{ updateBusy === 'downloading' ? `下载中 ${updateProgress?.percent ?? ''}%` : '下载更新' }}</button>
+            <button v-if="updateResult.asset && !downloadedUpdate" type="button" :disabled="Boolean(updateBusy)" @click="downloadAvailableUpdate">{{ updateBusy === 'downloading' ? (updateProgress?.received ? '下载中 ' + (updateProgress.percent === null ? Math.round(updateProgress.received / 1024 / 1024) + ' MB' : updateProgress.percent + '%') : '正在连接…') : '下载更新' }}</button>
             <button v-if="downloadedUpdate" type="button" @click="showDownloadedUpdate">打开下载位置</button>
             <button v-if="downloadedUpdate?.installer && downloadedUpdate.verified" type="button" :disabled="Boolean(updateBusy)" @click="installAvailableUpdate">安装更新</button>
             <button type="button" @click="openUpdateRelease">查看发布页</button>
