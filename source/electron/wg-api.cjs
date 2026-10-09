@@ -2,6 +2,9 @@
 
 const fs = require("node:fs/promises");
 const path = require("node:path");
+const { setTimeout: delay } = require("node:timers/promises");
+const { RequestScheduler } = require("./request-scheduler.cjs");
+const { isBotPlayer } = require("./player-identity.cjs");
 const { shipsFromPort, summarizeSnowflakes } = require("./snowflake.cjs");
 const officialChinese = require("../data/wg-zh-sg-glossary.json");
 const officialEnglish = require("../data/wg-en-ship-names.json").ships;
@@ -18,6 +21,14 @@ function percent(wins, battles) {
 
 function average(total, battles) {
   return battles > 0 ? total / battles : 0;
+}
+
+function rankedTotals(statistics) {
+  const modes = [statistics?.rank_solo, statistics?.rank_div2, statistics?.rank_div3].filter(Boolean);
+  if (!modes.length) return null;
+  const total = Object.fromEntries(["battles", "wins", "damage_dealt", "xp", "frags", "survived_battles"]
+    .map(field => [field, modes.reduce((sum, mode) => sum + (Number(mode[field]) || 0), 0)]));
+  return total.battles > 0 ? total : null;
 }
 
 function chunks(items, size) {
@@ -62,14 +73,25 @@ class WgApi {
     this.cache = new Map();
     this.inFlight = new Map();
     this.shipCache = new Map();
+    this.shipCatalog = new Map();
     this.shipCacheFile = "";
     this.shipCacheLoaded = false;
     this.shipCacheLoadPromise = null;
     this.shipCacheSavePromise = Promise.resolve();
     this.shipCacheSaveTimer = null;
     this.nextRequestAt = 0;
-    this.requestQueue = Promise.resolve();
+    this.scheduler = new RequestScheduler(() => this.nextRequestAt, value => { this.nextRequestAt = value; });
+    this.signalIds = new WeakMap();
+    this.nextSignalId = 0;
   }
+
+  setShipCatalog(catalog) {
+    this.shipCatalog = new Map(catalog.ships.filter(ship => ship.gameId && ship.name).map(ship => [String(ship.gameId), {
+      ship_id: ship.gameId, name: ship.name, englishName: ship.english || "", tier: ship.tier, type: ship.type, nation: ship.nation,
+    }]));
+  }
+
+  localShipMetadata(id) { return this.shipCatalog.get(String(id)); }
 
   setShipCacheFile(filePath) {
     this.shipCacheFile = filePath;
@@ -130,7 +152,9 @@ class WgApi {
     return host;
   }
 
-  async request(realm, endpoint, params = {}, cacheSeconds = 0) {
+  async request(realm, endpoint, params = {}, cacheSeconds = 0, options = {}) {
+    const { signal, priority = 0 } = options;
+    signal?.throwIfAborted();
     const applicationId = this.getApplicationId();
     if (!applicationId) throw new Error("WG 服务尚未完成配置，请联系管理员");
     const query = new URLSearchParams({ application_id: applicationId, ...params });
@@ -144,33 +168,33 @@ class WgApi {
       return cached.value;
     }
     this.cache.delete(cacheKey);
-    if (this.inFlight.has(cacheKey)) return this.inFlight.get(cacheKey);
+    // A canceled battle must not abort an unrelated caller sharing the URL.
+    if (signal && !this.signalIds.has(signal)) this.signalIds.set(signal, ++this.nextSignalId);
+    const flightKey = signal ? `${cacheKey}#${this.signalIds.get(signal)}` : cacheKey;
+    if (this.inFlight.has(flightKey)) return this.inFlight.get(flightKey);
     const operation = (async () => {
       for (let attempt = 0; attempt < 3; attempt++) {
-        if (attempt) await new Promise((resolve) => setTimeout(resolve, 500 * attempt));
-        // A full roster can trigger dozens of requests at once. Space every
-        // attempt below WG's usual standalone limit of 10 requests/second.
-        const turn = this.requestQueue.then(async () => {
-          const wait = Math.max(0, this.nextRequestAt - Date.now());
-          if (wait) await new Promise((resolve) => setTimeout(resolve, wait));
-          this.nextRequestAt = Date.now() + 140;
-        });
-        this.requestQueue = turn.catch(() => {});
-        await turn;
-        let response;
+        if (attempt) await delay(500 * attempt, undefined, { signal });
+        await this.scheduler.take(priority, signal);
+        signal?.throwIfAborted();
+        let response, body;
         try {
           response = await fetch(url, {
-            headers: { "User-Agent": "No7Insert/0.1.6" }, signal: AbortSignal.timeout(15000),
+            headers: { "User-Agent": "No7Insert/0.1.7" },
+            signal: signal ? AbortSignal.any([signal, AbortSignal.timeout(15000)]) : AbortSignal.timeout(15000),
           });
+          if (response.ok) body = await response.json();
+          else await response.body?.cancel();
         } catch (error) {
-          if (attempt === 2) throw error;
+          signal?.throwIfAborted();
+          // Malformed JSON is a protocol error; body stream/timeouts are transient.
+          if (attempt === 2 || error instanceof SyntaxError) throw error;
           continue;
         }
         if (!response.ok) {
           if (attempt < 2 && retryableWgError(null, response.status)) continue;
           throw new Error(`WG API HTTP ${response.status}`);
         }
-        const body = await response.json();
         if (body.status !== "ok") {
           if (attempt < 2 && retryableWgError(body.error)) continue;
           throw new Error(body.error?.message || "WG API 返回错误");
@@ -179,9 +203,9 @@ class WgApi {
         return body;
       }
     })();
-    this.inFlight.set(cacheKey, operation);
+    this.inFlight.set(flightKey, operation);
     try { return await operation; }
-    finally { this.inFlight.delete(cacheKey); }
+    finally { this.inFlight.delete(flightKey); }
   }
 
   async searchPlayers(query, realm = "asia") {
@@ -189,11 +213,11 @@ class WgApi {
     return body.data ?? [];
   }
 
-  async searchPlayersExact(names, realm = "asia") {
+  async searchPlayersExact(names, realm = "asia", options = {}) {
     if (!names.length) return [];
     const body = await this.request(realm, "account/list", {
       search: names.join(","), type: "exact", limit: "100",
-    }, 60);
+    }, 60, options);
     return body.data ?? [];
   }
 
@@ -275,11 +299,13 @@ class WgApi {
     };
   }
 
-  async shipMetadata(shipIds, realm) {
+  async shipMetadata(shipIds, realm, options = {}) {
     await this.loadShipCache();
     const result = {};
     const missing = [];
     for (const id of [...new Set(shipIds.filter(Boolean).map(String))].sort()) {
+      const local = this.localShipMetadata(id);
+      if (local) { result[id] = local; continue; }
       const cached = this.shipCache.get(`${realm}:${id}`);
       if (cached && cached.expiresAt > Date.now()) result[id] = cached.value;
       else missing.push(id);
@@ -292,6 +318,7 @@ class WgApi {
         // Keep the original English name alongside the official zh-sg title.
         { ship_id: group.join(","), language: "en", fields: "ship_id,name,tier,type,nation" },
         24 * 3600,
+        { priority: 10, ...options },
       );
       for (const [id, ship] of Object.entries(body.data ?? {})) {
         if (!ship) continue;
@@ -301,10 +328,12 @@ class WgApi {
       }
     }));
     if (added) this.scheduleShipCacheSave();
-    if (batches.length && batches.every((batch) => batch.status === "rejected")) {
+    options.signal?.throwIfAborted();
+    if (!Object.keys(result).length && batches.length && batches.every((batch) => batch.status === "rejected")) {
       throw batches[0].reason;
     }
     for (const [id, ship] of Object.entries(result)) {
+      if (this.localShipMetadata(id)) { result[id] = this.localShipMetadata(id); continue; }
       const localized = officialChinese.ships[id];
       if (localized?.title) {
         result[id] = { ...ship, englishName: ship.name || "", name: localized.title, tier: ship.tier || localized.level };
@@ -338,44 +367,55 @@ class WgApi {
     const id = String(accountId);
     const auth = accessToken ? { access_token: accessToken } : {};
     const hidden = options.accountBody?.data?.[id]?.hidden_profile;
+    const rosterRanked = options.rosterBattleMode === "ranked";
+    const requestOptions = { signal: options.signal };
     const [accountBody, shipsResult, rankedResult, clanAccountResult] = await Promise.all([
       (options.accountBody?.data?.[id] ? options.accountBody : null) ?? this.request(realm, "account/info", {
         account_id: id,
-        ...(!options.rosterMetadata ? { extra: "statistics.pvp_solo,statistics.pvp_div2,statistics.pvp_div3" } : {}),
+        ...(rosterRanked ? { extra: "statistics.rank_solo,statistics.rank_div2,statistics.rank_div3" }
+          : !options.rosterMetadata ? { extra: "statistics.pvp_solo,statistics.pvp_div2,statistics.pvp_div3" } : {}),
         ...auth,
-      }, 120),
+      }, 120, requestOptions),
       hidden ? { value: null } : this.request(realm, "ships/stats", {
         account_id: id, ...auth,
         ...(options.rosterShipId && Number.isSafeInteger(Number(options.rosterShipId))
           ? { ship_id: String(options.rosterShipId) } : {}),
-        ...(options.rosterMetadata ? { fields: "ship_id,pvp.battles,pvp.wins,pvp.damage_dealt,pvp.xp,pvp.frags" } : {}),
-      }, 300).then((value) => ({ value }), (error) => ({ error })),
+        ...(rosterRanked ? { extra: "rank_solo,rank_div2,rank_div3" } : {}),
+        ...(options.rosterMetadata ? { fields: "ship_id," + (rosterRanked
+          ? ["rank_solo", "rank_div2", "rank_div3"].flatMap(mode => ["battles", "wins", "damage_dealt", "xp", "frags"].map(field => mode + "." + field)).join(",")
+          : "pvp.battles,pvp.wins,pvp.damage_dealt,pvp.xp,pvp.frags") } : {}),
+      }, 300, requestOptions).then((value) => ({ value }), (error) => ({ error })),
       options.rosterMetadata ? Promise.resolve({ value: null })
-        : this.request(realm, "seasons/accountinfo", { account_id: id, ...auth }, 600).then((value) => ({ value }), (error) => ({ error })),
-      options.clanAccountBody ? { value: options.clanAccountBody }
-        : this.request(realm, "clans/accountinfo", { account_id: id }, 600).then((value) => ({ value }), (error) => ({ error })),
+        : this.request(realm, "seasons/accountinfo", { account_id: id, ...auth }, 600, { ...requestOptions, priority: 20 }).then((value) => ({ value }), (error) => ({ error })),
+      options.skipClan ? { value: null } : options.clanAccountBody ? { value: options.clanAccountBody }
+        : this.request(realm, "clans/accountinfo", { account_id: id }, 600, { ...requestOptions, priority: 20 }).then((value) => ({ value }), (error) => ({ error })),
     ]);
+    options.signal?.throwIfAborted();
     const account = accountBody.data?.[id];
     if (!account) throw new Error("玩家数据不存在");
-    const rawShips = shipsResult.value?.data?.[id] ?? [];
+    const rawShips = Array.isArray(shipsResult.value?.data?.[id]) ? shipsResult.value.data[id] : [];
+    const shipsStatus = hidden || account.hidden_profile ? "hidden"
+      : shipsResult.error || !Array.isArray(shipsResult.value?.data?.[id]) ? "unavailable" : "ok";
     let metadata = options.rosterMetadata ?? {};
     if (!options.rosterMetadata || options.fullRosterShipMetadata) {
-      try { metadata = { ...metadata, ...await this.shipMetadata(rawShips.map((ship) => ship.ship_id), realm) }; } catch {}
+      try { metadata = { ...metadata, ...await this.shipMetadata(rawShips.map((ship) => ship.ship_id), realm, requestOptions) }; } catch {}
     }
     const clanAccount = clanAccountResult.value?.data?.[id] ?? null;
     let clan = null;
     if (clanAccount?.clan_id) {
       try {
-        const clanBody = options.clanBody ?? await this.request(realm, "clans/info", { clan_id: String(clanAccount.clan_id) }, 900);
+        const clanBody = options.clanBody ?? await this.request(realm, "clans/info", { clan_id: String(clanAccount.clan_id) }, 900, { ...requestOptions, priority: 20 });
         clan = clanBody.data?.[String(clanAccount.clan_id)] ?? clanAccount;
       } catch { clan = null; }
     }
-    const pvp = account.statistics?.pvp ?? null;
+    const pvp = rosterRanked ? rankedTotals(account.statistics) : account.statistics?.pvp ?? null;
     return {
       accountId: Number(id),
       nickname: account.nickname,
       realm,
-      hiddenProfile: Boolean(account.hidden_profile || !pvp),
+      shipsStatus,
+      shipsError: shipsStatus === "unavailable" ? "单舰战绩暂时读取失败，请稍后重试" : "",
+      hiddenProfile: Boolean(account.hidden_profile || (!rosterRanked && !pvp)),
       createdAt: account.created_at ?? null,
       lastBattleTime: account.last_battle_time ?? null,
       clan: clan ? { id: clan.clan_id, tag: clan.tag, name: clan.name } : null,
@@ -402,12 +442,12 @@ class WgApi {
         : null,
       ships: rawShips
         .map((ship) => {
-          const stats = ship.pvp ?? {};
+          const stats = (rosterRanked ? rankedTotals(ship) : ship.pvp) ?? {};
           const battles = stats.battles ?? 0;
           const meta = metadata[String(ship.ship_id)] ?? {};
           return {
             shipId: ship.ship_id,
-            name: officialChinese.ships[String(ship.ship_id)]?.title || meta.name || `#${ship.ship_id}`,
+            name: meta.name || officialChinese.ships[String(ship.ship_id)]?.title || `#${ship.ship_id}`,
             englishName: meta.englishName || (/[a-z]/i.test(meta.name || "") ? meta.name : ""),
             tier: meta.tier ?? 0,
             type: meta.type ?? "Unknown",
@@ -420,65 +460,91 @@ class WgApi {
             avgFrags: average(stats.frags ?? 0, battles),
           };
         })
+        .filter(ship => !rosterRanked || ship.battles > 0)
         .sort((a, b) => b.battles - a.battles),
       ranked: this.normalizeRanked(rankedResult.value?.data?.[id]),
     };
   }
 
-  async rosterStats(players, realm = "asia", isCurrent = () => true, onProgress = null) {
-    if (!players.length || !isCurrent()) return [];
-    const metadataPromise = this.shipMetadata(players.map((player) => player.shipId), realm).catch(() => ({}));
-    const unresolved = [...new Set(players.filter((player) => !Number.isSafeInteger(Number(player.accountId)) || Number(player.accountId) <= 0)
-      .map((player) => player.name))];
-    let exactMatches = [];
-    let lookupError = null;
+  async rosterStats(players, realm = "asia", isCurrent = () => true, onProgress = null, battleMode = "random", options = {}) {
+    battleMode = battleMode === "ranked" ? "ranked" : "random";
+    const current = () => isCurrent() && !options.signal?.aborted;
+    if (!players.length || !current()) return [];
+    let metadata = {};
+    const metadataPromise = this.shipMetadata(players.map(player => player.shipId), realm, options)
+      .then(value => { metadata = value; }).catch(() => {});
+    const humans = players.filter(player => !isBotPlayer(player));
+    const unresolved = [...new Set(humans.filter(player => !Number.isSafeInteger(Number(player.accountId)) || Number(player.accountId) <= 0).map(player => player.name))];
+    let exactMatches = [], lookupError = null;
     try {
-      for (const group of chunks(unresolved, 100)) exactMatches.push(...await this.searchPlayersExact(group, realm));
+      for (const group of chunks(unresolved, 100)) {
+        if (!current()) return [];
+        exactMatches.push(...await this.searchPlayersExact(group, realm, options));
+      }
     } catch (error) { lookupError = error; }
-    const metadata = await metadataPromise;
-    if (!isCurrent()) return [];
-    const accountsByName = new Map(exactMatches.map((match) => [match.nickname.toLowerCase(), match.account_id]));
-    const accountIds = players.map((player) => Number(player.accountId) > 0 ? Number(player.accountId) : accountsByName.get(player.name.toLowerCase()))
-      .filter((id) => Number.isSafeInteger(id) && id > 0);
-    // Batch endpoints replace two requests per player and one per clan.
-    // On a batch failure, playerDetails retains its individual-request fallback.
+    if (!current()) return [];
+    const accountsByName = new Map(exactMatches.map(match => [match.nickname.toLowerCase(), match.account_id]));
+    const accountIds = humans.map(player => Number(player.accountId) > 0 ? Number(player.accountId) : accountsByName.get(player.name.toLowerCase()))
+      .filter(id => Number.isSafeInteger(id) && id > 0);
     const batch = async (endpoint, field, ids, ttl) => {
       const body = { data: {} };
       const fields = {
-        "account/info": "account_id,nickname,hidden_profile,statistics.pvp,created_at,last_battle_time",
+        "account/info": "account_id,nickname,hidden_profile,statistics.pvp,created_at,last_battle_time"
+          + (battleMode === "ranked" ? ",statistics.rank_solo,statistics.rank_div2,statistics.rank_div3" : ""),
         "clans/accountinfo": "account_id,clan_id",
         "clans/info": "clan_id,tag,name",
       }[endpoint];
       try {
         for (const group of chunks([...new Set(ids)].sort((a, b) => a - b), 100)) {
-          if (!isCurrent()) return undefined;
-          const result = await this.request(realm, endpoint, { [field]: group.join(","), fields }, ttl);
+          if (!current()) return undefined;
+          const result = await this.request(realm, endpoint, { [field]: group.join(","), fields,
+            ...(endpoint === "account/info" && battleMode === "ranked"
+              ? { extra: "statistics.rank_solo,statistics.rank_div2,statistics.rank_div3" } : {}),
+          }, ttl, { ...options, priority: endpoint === "account/info" ? 0 : 20 });
           Object.assign(body.data, result.data ?? {});
         }
         return body;
       } catch { return undefined; }
     };
-    const [accountBody, clanAccountBody] = await Promise.all([
-      batch("account/info", "account_id", accountIds, 120),
-      batch("clans/accountinfo", "account_id", accountIds, 600),
-    ]);
-    if (!isCurrent()) return [];
-    const clanIds = Object.values(clanAccountBody?.data ?? {}).map((entry) => entry?.clan_id).filter(Boolean);
-    const clanBody = clanAccountBody ? await batch("clans/info", "clan_id", clanIds, 900) : undefined;
-    if (!isCurrent()) return [];
-    const publish = (entry, index) => {
-      if (entry && isCurrent()) onProgress?.(entry, index);
-      return entry;
-    };
-    const resolved = await concurrentMap(players, 4, async (player, index) => {
-      if (!isCurrent()) return null;
+    const accountsPromise = batch("account/info", "account_id", accountIds, 120);
+    let clans = {};
+    const clansPromise = (async () => {
+      const memberships = await batch("clans/accountinfo", "account_id", accountIds, 600);
+      if (!current()) return;
+      const missing = [...new Set(accountIds)].filter(id => !memberships || !(id in memberships.data));
+      const accounts = memberships?.data ?? {};
+      await concurrentMap(missing, 3, async id => {
+        if (!current()) return;
+        try {
+          const body = await this.request(realm, "clans/accountinfo", { account_id: String(id) }, 600, { ...options, priority: 20 });
+          accounts[id] = body.data?.[id] ?? null;
+        } catch {}
+      });
+      const ids = Object.values(accounts).map(value => value?.clan_id).filter(Boolean);
+      const info = await batch("clans/info", "clan_id", ids, 900);
+      for (const [id, membership] of Object.entries(accounts)) {
+        const clan = info?.data?.[membership?.clan_id];
+        if (clan) clans[id] = { id: clan.clan_id, tag: clan.tag, name: clan.name };
+      }
+    })().catch(() => {});
+    const accountBody = await accountsPromise;
+    if (!current()) return [];
+    const shipFields = player => {
       const ship = metadata[String(player.shipId)] ?? {};
-      const withShip = {
-        ...player,
-        shipName: officialChinese.ships[String(player.shipId)]?.title || ship.name || player.shipName,
+      return {
+        shipName: ship.name || officialChinese.ships[String(player.shipId)]?.title || player.shipName,
         shipType: ship.type || player.shipType || "",
         shipTier: ship.tier || player.shipTier || 0,
       };
+    };
+    const publish = (entry, index) => {
+      if (entry && current()) onProgress?.(entry, index);
+      return entry;
+    };
+    const resolved = await concurrentMap(players, 4, async (player, index) => {
+      if (!current()) return null;
+      const withShip = { ...player, ...shipFields(player), realm, battleMode };
+      if (isBotPlayer(player)) return publish({ ...withShip, isBot: true, accountId: null, status: "bot", overall: null, currentShip: null }, index);
       try {
         let accountId = Number(player.accountId);
         if (!Number.isSafeInteger(accountId) || accountId <= 0) {
@@ -486,38 +552,58 @@ class WgApi {
           accountId = accountsByName.get(player.name.toLowerCase());
           if (!accountId) return publish({ ...withShip, status: "not-found", error: "WG 未找到该昵称对应的账号" }, index);
         }
-        const baseOptions = { rosterMetadata: metadata, accountBody, clanAccountBody, clanBody };
+        const baseOptions = { ...options, rosterMetadata: metadata, accountBody, skipClan: true, rosterBattleMode: battleMode };
         let details = await this.playerDetails(accountId, realm, "", { ...baseOptions, rosterShipId: player.shipId });
+        if (!current()) return null;
         const shipName = String(player.shipName || withShip.shipName || "").trim().toLocaleLowerCase();
-        const findCurrentShip = (ships) => ships.find((ship) => Number(ship.shipId) === Number(player.shipId))
-          || (shipName ? ships.find((ship) => String(ship.name || "").trim().toLocaleLowerCase() === shipName
-            || String(ship.englishName || "").trim().toLocaleLowerCase() === shipName) : null)
-          || null;
+        const findCurrentShip = ships => ships.find(ship => Number(ship.shipId) === Number(player.shipId))
+          || (shipName ? ships.find(ship => String(ship.name || "").trim().toLocaleLowerCase() === shipName
+            || String(ship.englishName || "").trim().toLocaleLowerCase() === shipName) : null) || null;
         let currentShip = findCurrentShip(details.ships);
-        // Old replay ship IDs can differ from today's encyclopedia. Only then fetch
-        // the full ship history so the name fallback still works.
-        const knownNames = [metadata[String(player.shipId)]?.name,
-          officialChinese.ships[String(player.shipId)]?.title, officialEnglish[String(player.shipId)]]
-          .filter(Boolean).map((name) => String(name).trim().toLocaleLowerCase());
-        if (!currentShip && shipName && !knownNames.includes(shipName) && isCurrent()) {
-          details = await this.playerDetails(accountId, realm, "", { ...baseOptions, fullRosterShipMetadata: true });
-          currentShip = findCurrentShip(details.ships);
+        if (!currentShip && shipName && details.shipsStatus !== "unavailable") {
+          // Only the legacy-ID fallback needs to wait for fresh encyclopedia names.
+          await metadataPromise;
+          const knownNames = [metadata[String(player.shipId)]?.name,
+            officialChinese.ships[String(player.shipId)]?.title, officialEnglish[String(player.shipId)]]
+            .filter(Boolean).map(name => String(name).trim().toLocaleLowerCase());
+          if (!knownNames.includes(shipName) && current()) {
+            details = await this.playerDetails(accountId, realm, "", { ...baseOptions, rosterMetadata: metadata, fullRosterShipMetadata: true });
+            currentShip = findCurrentShip(details.ships);
+          }
         }
         return publish({
-          ...withShip,
+          ...withShip, ...shipFields(player),
           status: details.hiddenProfile ? "hidden" : "ok",
           accountId: details.accountId,
-          clan: details.clan,
+          clan: clans[accountId] ?? details.clan,
           overall: details.overall,
-          currentShip: currentShip ? {
-            ...currentShip,
-            name: officialChinese.ships[String(currentShip.shipId)]?.title || currentShip.name,
-          } : null,
+          shipsStatus: details.shipsStatus,
+          shipsError: details.shipsError,
+          currentShip: currentShip ? { ...currentShip, name: this.localShipMetadata(currentShip.shipId)?.name || officialChinese.ships[String(currentShip.shipId)]?.title || currentShip.name } : null,
         }, index);
       } catch (error) {
         return publish({ ...withShip, status: "error", error: error instanceof Error ? error.message : String(error) }, index);
       }
     });
+    // Core entries have already been published. Optional requests cannot hold them back.
+    await Promise.all([metadataPromise, clansPromise]);
+    if (!current()) return [];
+    for (const [index, entry] of resolved.entries()) {
+      if (!entry) continue;
+      const fields = shipFields(players[index]);
+      const clan = clans[entry.accountId] ?? entry.clan;
+      const changed = Object.entries(fields).some(([key, value]) => entry[key] !== value) || clan !== entry.clan;
+      Object.assign(entry, fields, { clan });
+      if (entry.currentShip) {
+        const ship = metadata[String(entry.currentShip.shipId)];
+        if (ship) Object.assign(entry.currentShip, {
+          name: ship.name || officialChinese.ships[String(entry.currentShip.shipId)]?.title || entry.currentShip.name,
+          tier: ship.tier ?? entry.currentShip.tier, type: ship.type || entry.currentShip.type,
+          nation: ship.nation || entry.currentShip.nation, englishName: ship.englishName || ship.name,
+        });
+      }
+      if (changed) publish(entry, index);
+    }
     return resolved.filter(Boolean);
   }
 
@@ -547,7 +633,10 @@ class WgApi {
   async snowflakeSummary(accountId, nickname, accessToken, realm = "asia") {
     const ships = await this.portShipIds(accountId, accessToken, realm);
     const metadata = await this.shipMetadata(ships, realm);
-    return summarizeSnowflakes(ships.map((ship_id) => ({ ship_id })), metadata, { accountId, nickname, realm });
+    const summary = summarizeSnowflakes(ships.map(ship_id => ({ ship_id })), metadata, { accountId, nickname, realm });
+    const missing = ships.filter(id => !metadata[id]?.tier).length;
+    if (missing) summary.warning = `${missing} 艘舰船资料暂未加载，奖励统计尚不完整，请稍后刷新`;
+    return summary;
   }
 }
 

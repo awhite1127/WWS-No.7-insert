@@ -5,6 +5,7 @@ export interface AppConfig {
   overlayEnabled: boolean;
   overlayHotkeyEnabled: boolean;
   overlayHotkey: string;
+  overlayBattleMode: "random" | "ranked" | "operations";
 }
 
 export interface UpdateCheckResult {
@@ -113,6 +114,7 @@ export interface PrAggregate {
 }
 
 export interface StatsSnapshot {
+  prUnavailable?: boolean;
   pr?: PrAggregate | null;
   capturedAt: number;
   battles: number;
@@ -139,6 +141,8 @@ export interface ShipClassStats {
 }
 
 export interface PlayerDetails {
+  shipsStatus?: "ok" | "hidden" | "unavailable";
+  shipsError?: string;
   shipClasses?: ShipClassStats[];
   history?: StatsSnapshot[];
   accountId: number;
@@ -178,6 +182,7 @@ export interface PlayerDetails {
 }
 
 export interface ArenaPlayer {
+  isBot?: boolean;
   key: string;
   name: string;
   side: "ally" | "enemy";
@@ -190,17 +195,27 @@ export interface ArenaPlayer {
 }
 
 export interface ArenaInfo {
+  realm?: string;
   battleId: string;
   mapName: string;
+  mapId?: string;
+  matchGroup?: string;
+  scenario?: string;
+  isOperation?: boolean;
+  operationId?: string;
   gameMode: string;
   updatedAt: number;
   players: ArenaPlayer[];
 }
 
 export interface RosterPlayer extends ArenaPlayer {
+  realm?: string;
+  shipsStatus?: "ok" | "hidden" | "unavailable";
+  shipsError?: string;
+  battleMode?: "random" | "ranked";
   gameKarma?: number | null;
   karmaStatus?: "loading" | "ok" | "unavailable";
-  status: "loading" | "ok" | "hidden" | "not-found" | "error";
+  status: "loading" | "ok" | "hidden" | "not-found" | "error" | "bot";
   clan?: PlayerDetails["clan"];
   overall?: OverallStats | null;
   currentShip?: ShipStats | null;
@@ -208,6 +223,7 @@ export interface RosterPlayer extends ArenaPlayer {
 }
 
 export interface ArenaState {
+  visible?: boolean;
   arena: ArenaInfo | null;
   roster: RosterPlayer[];
   watchedPath?: string;
@@ -254,6 +270,7 @@ export interface SnowflakeTierSummary {
 }
 
 export interface SnowflakeSummary {
+  warning?: string;
   accountId: number;
   nickname: string;
   realm: "asia" | "eu" | "na";

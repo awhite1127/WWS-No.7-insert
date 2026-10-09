@@ -59,7 +59,7 @@ class KarmaService {
 // The request guard prevents a late response changing a later battle or realm.
 function enrichRosterKarma(service, entry, realm, isCurrent, publish) {
   entry.gameKarma = null;
-  const valid = Number.isSafeInteger(entry.accountId) && entry.accountId > 0;
+  const valid = entry.status !== "bot" && !entry.isBot && Number.isSafeInteger(entry.accountId) && entry.accountId > 0;
   entry.karmaStatus = valid ? "loading" : "unavailable";
   publish();
   if (!valid) return Promise.resolve();

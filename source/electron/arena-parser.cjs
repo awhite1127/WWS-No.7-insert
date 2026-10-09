@@ -1,6 +1,8 @@
 "use strict";
 
 const fs = require("node:fs");
+const { detectOperation } = require("./operation-detection.cjs");
+const { isBotPlayer } = require("./player-identity.cjs");
 
 function firstValue(object, keys) {
   for (const key of keys) {
@@ -29,6 +31,7 @@ function normalizePlayer(raw, index = 0) {
   return {
     key: String(firstValue(raw, ["id", "accountId", "account_id"]) ?? `${side}-${index}-${name}`),
     name: name.trim(),
+    isBot: isBotPlayer({ ...raw, name }),
     side,
     relation: Number.isFinite(relation) ? relation : null,
     accountId: Number.isSafeInteger(accountId) && accountId > 0 ? accountId : null,
@@ -65,10 +68,15 @@ function parseArenaData(raw) {
     (player, index, list) => list.findIndex((candidate) => candidate.name === player.name) === index,
   );
   if (players.length === 0) throw new Error("未在 JSON 中找到玩家名单");
+  const mapId = String(firstValue(raw, ["mapName", "map_name", "mapId", "map_id"]) ?? "");
+  const mapName = String(firstValue(raw, ["mapDisplayName", "mapName", "map_name"]) ?? "");
+  const gameMode = String(firstValue(raw, ["gameLogic", "gameMode", "game_mode"]) ?? "");
+  const matchGroup = String(firstValue(raw, ["matchGroup", "match_group"]) ?? "");
+  const scenario = String(firstValue(raw, ["scenario", "scenarioName", "scenario_name", "operationName"]) ?? "");
   return {
     battleId: String(firstValue(raw, ["arenaId", "arena_id", "battleId", "battle_id"]) ?? ""),
-    mapName: String(firstValue(raw, ["mapDisplayName", "mapName", "map_name"]) ?? ""),
-    gameMode: String(firstValue(raw, ["gameLogic", "gameMode", "game_mode"]) ?? ""),
+    mapName, mapId, gameMode, matchGroup, scenario,
+    ...detectOperation({ mapId, mapName, gameMode, matchGroup, scenario }),
     updatedAt: Date.now(),
     players,
   };

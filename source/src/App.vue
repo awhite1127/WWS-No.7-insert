@@ -1,7 +1,9 @@
 <script setup lang="ts">
-import { computed, onMounted, onUnmounted, ref, watch } from "vue";
+import { defineAsyncComponent, computed, onMounted, onUnmounted, ref, watch } from "vue";
+const BuildPlannerView = defineAsyncComponent(() => import("./components/BuildPlannerView.vue"));
 import AppIcon from "./components/AppIcon.vue";
 import BattleRoster from "./components/BattleRoster.vue";
+import OperationGuide from "./components/OperationGuide.vue";
 import ContainerView from "./components/ContainerView.vue";
 import NewsView from "./components/NewsView.vue";
 import ChristmasPoolView from "./components/ChristmasPoolView.vue";
@@ -14,9 +16,9 @@ import TitleBar from "./components/TitleBar.vue";
 import WgAuthGate from "./components/WgAuthGate.vue";
 import type { AppConfig, ArenaInfo, ClanDetails, ClanSearchResult, DownloadedUpdate, PlayerDetails, RosterPlayer, SearchResult, UpdateCheckResult, UpdateProgress, WgAuthStatus } from "./types";
 
-const config = ref<AppConfig>({ realm: "asia", theme: "dark", gamePath: "", overlayEnabled: true, overlayHotkeyEnabled: true, overlayHotkey: "Tab" });
+const config = ref<AppConfig>({ realm: "asia", theme: "dark", gamePath: "", overlayEnabled: true, overlayHotkeyEnabled: true, overlayHotkey: "Tab", overlayBattleMode: "random" });
 const mode = ref<"player" | "clan">("player");
-const activeView = ref<"player" | "clan" | "containers" | "christmas" | "overlay" | "my" | "snow" | "news">("overlay");
+const activeView = ref<"player" | "clan" | "containers" | "christmas" | "overlay" | "my" | "snow" | "news" | "planner" | "operations">("overlay");
 const statsPage = ref<"overview" | "ships">("overview");
 watch(activeView, () => { statsPage.value = "overview"; });
 const authStatus = ref<WgAuthStatus>({ authorized: false });
@@ -31,6 +33,8 @@ const clan = ref<ClanDetails | null>(null);
 const clanDescriptionExpanded = ref(false);
 const error = ref("");
 const settingsOpen = ref(false);
+const shipDataStatus = ref<ShipDataStatus | null>(null);
+const shipDataBusy = ref(false);
 const settingsSaving = ref(false);
 const updateBusy = ref<"" | "checking" | "downloading" | "installing">("");
 const updateResult = ref<UpdateCheckResult | null>(null);
@@ -49,6 +53,34 @@ const battleLogOpen = ref(false);
 const latestBattleLog = computed(() => battleLogs.value.at(-1));
 const rosterRefreshing = ref(false);
 const capturingHotkey = ref(false);
+const realmSaving = ref(false);
+const windowActive = ref(true);
+let queryRequestId = 0;
+let historyRequestId = 0;
+function invalidateQuery() { queryRequestId++; searching.value = false; }
+function queryIsCurrent(id: number, realm: string, kind: string) {
+  return id === queryRequestId && realm === config.value.realm && kind === mode.value;
+}
+watch(() => config.value.realm, () => {
+  invalidateQuery();
+  player.value = null; clan.value = null;
+  suggestions.value = []; clanSuggestions.value = []; error.value = "";
+}, { flush: "sync" });
+watch(activeView, () => invalidateQuery(), { flush: "sync" });
+async function changeRealm(realm: AppConfig["realm"]): Promise<boolean> {
+  if (realm === config.value.realm) return true;
+  if (realmSaving.value) return false;
+  realmSaving.value = true;
+  invalidateQuery();
+  try {
+    const saved = await window.wws.saveConfig({ realm });
+    config.value.realm = saved.realm;
+    return true;
+  } catch (reason) {
+    showSaveFeedback("error", "区服切换失败：" + (reason instanceof Error ? reason.message : String(reason)));
+    return false;
+  } finally { realmSaving.value = false; }
+}
 
 function logBattle(message: string, tone = "") {
   battleLogs.value = [...battleLogs.value, {
@@ -72,7 +104,9 @@ async function refreshBattleRoster() {
 }
 
 let cleanups: Array<() => void> = [];
+let appDisposed = false;
 let rosterLoadingLogged = false;
+let rosterCompletedLogged = false;
 let saveFeedbackTimer: ReturnType<typeof setTimeout> | null = null;
 type QueryHistoryEntry = { kind: "player" | "clan"; realm: AppConfig["realm"]; id: number; label: string; queriedAt: number };
 const HISTORY_KEY = "wwsmonkey.queryHistory.v1";
@@ -97,6 +131,8 @@ function rememberQuery(entry: QueryHistoryEntry) {
   try { localStorage.setItem(HISTORY_KEY, JSON.stringify(queryHistory.value)); } catch { /* History still works until the app closes. */ }
 }
 function showQueryHistory() {
+  historyRequestId++;
+  invalidateQuery();
   if (mode.value === "player") player.value = null;
   else clan.value = null;
   query.value = "";
@@ -104,15 +140,18 @@ function showQueryHistory() {
   suggestions.value = [];
   clanSuggestions.value = [];
 }
-function openHistory(entry: QueryHistoryEntry) {
+async function openHistory(entry: QueryHistoryEntry) {
+  const selection = ++historyRequestId;
   selectMode(entry.kind);
-  config.value.realm = entry.realm;
-  if (entry.kind === "player") void loadPlayer(entry.id);
-  else void loadClan(entry.id);
+  if (!await changeRealm(entry.realm) || selection !== historyRequestId || activeView.value !== entry.kind) return;
+  if (entry.kind === "player") await loadPlayer(entry.id);
+  else await loadClan(entry.id);
 }
 const hasSearchResult = computed(() => mode.value === "player" ? Boolean(player.value) : Boolean(clan.value));
 
 const pageMeta = computed(() => {
+  if (activeView.value === "operations") return { eyebrow: "OPERATION ROUTES", title: "行动路线", description: "全流程敌舰点位总图 · 按主要护送目标的实际航线切换" };
+  if (activeView.value === "planner") return { eyebrow: "SHIP BUILD WORKSHOP", title: "舰船配装", description: "舰长技能与升级品规划 · 推荐玩法 · 参数即时对比" };
   if (activeView.value === "news") return { eyebrow: "OFFICIAL NEWS", title: "公告中心", description: "舰船调整与大版本更新 · 官方资讯中文导读" };
   if (activeView.value === "clan") return { eyebrow: "CLAN INTELLIGENCE", title: "军团情报", description: "检索军团档案与完整成员名单" };
   if (activeView.value === "containers") return { eyebrow: "CONTAINER INTELLIGENCE", title: "箱子查询", description: "检索官网公布的补给箱奖励和掉落概率" };
@@ -129,53 +168,52 @@ watch(() => config.value.theme, (theme) => {
 
 async function runSearch() {
   const text = query.value.trim();
-  if (!text) return;
+  if (!text || realmSaving.value) return;
+  const requestId = ++queryRequestId, realm = config.value.realm, kind = mode.value;
   searching.value = true;
-  error.value = "";
-  suggestions.value = [];
-  clanSuggestions.value = [];
+  error.value = ""; suggestions.value = []; clanSuggestions.value = [];
   try {
-    if (mode.value === "clan") {
-      const matches = await window.wws.searchClans(text, config.value.realm);
-      const exact = matches.find((item) => item.tag.toLowerCase() === text.toLowerCase() || item.name.toLowerCase() === text.toLowerCase());
-      if (exact) await loadClan(exact.clan_id);
+    if (kind === "clan") {
+      const matches = await window.wws.searchClans(text, realm);
+      if (!queryIsCurrent(requestId, realm, kind)) return;
+      const exact = matches.find(item => item.tag.toLowerCase() === text.toLowerCase() || item.name.toLowerCase() === text.toLowerCase());
+      if (exact) await loadClan(exact.clan_id, realm, requestId);
       else clanSuggestions.value = matches;
-      if (matches.length === 0) error.value = "没有找到该军团";
-      return;
+      if (!matches.length) error.value = "没有找到该军团";
+    } else if (/^\d+$/.test(text)) {
+      await loadPlayer(Number(text), realm, requestId);
+    } else {
+      const matches = await window.wws.searchPlayers(text, realm);
+      if (!queryIsCurrent(requestId, realm, kind)) return;
+      const exact = matches.find(match => match.nickname.toLowerCase() === text.toLowerCase());
+      if (exact) await loadPlayer(exact.account_id, realm, requestId);
+      else suggestions.value = matches;
+      if (!matches.length) error.value = "没有找到该玩家";
     }
-    if (/^\d+$/.test(text)) {
-      await loadPlayer(Number(text));
-      return;
-    }
-    const matches = await window.wws.searchPlayers(text, config.value.realm);
-    const exact = matches.find((match) => match.nickname.toLowerCase() === text.toLowerCase());
-    if (exact) await loadPlayer(exact.account_id);
-    else suggestions.value = matches;
-    if (matches.length === 0) error.value = "没有找到该玩家";
   } catch (reason) {
-    error.value = reason instanceof Error ? reason.message : String(reason);
+    if (queryIsCurrent(requestId, realm, kind)) error.value = reason instanceof Error ? reason.message : String(reason);
   } finally {
-    searching.value = false;
+    if (queryIsCurrent(requestId, realm, kind)) searching.value = false;
   }
 }
 
-async function loadClan(clanId: number) {
-  searching.value = true;
-  error.value = "";
+async function loadClan(clanId: number, realm = config.value.realm, requestId = ++queryRequestId) {
+  searching.value = true; error.value = "";
   try {
-    const realm = config.value.realm;
+    const result = await window.wws.clanDetails(clanId, realm);
+    if (!queryIsCurrent(requestId, realm, "clan")) return;
     clanDescriptionExpanded.value = false;
-    clan.value = await window.wws.clanDetails(clanId, realm);
-    query.value = clan.value.tag;
-    rememberQuery({ kind: "clan", realm, id: clanId, label: `[${clan.value.tag}] ${clan.value.name}`, queriedAt: Date.now() });
+    clan.value = result; query.value = result.tag;
+    rememberQuery({ kind: "clan", realm, id: clanId, label: `[${result.tag}] ${result.name}`, queriedAt: Date.now() });
   } catch (reason) {
-    error.value = reason instanceof Error ? reason.message : String(reason);
+    if (queryIsCurrent(requestId, realm, "clan")) error.value = reason instanceof Error ? reason.message : String(reason);
   } finally {
-    searching.value = false;
+    if (queryIsCurrent(requestId, realm, "clan")) searching.value = false;
   }
 }
 
 function selectMode(next: "player" | "clan") {
+  invalidateQuery();
   activeView.value = next;
   mode.value = next;
   query.value = "";
@@ -224,7 +262,9 @@ function openMember(accountId: number) {
   selectMode("player");
   void loadPlayer(accountId);
 }
-function openRosterPlayer(target: RosterPlayer) {
+async function openRosterPlayer(target: RosterPlayer) {
+  const realm = target.realm || arena.value?.realm;
+  if (realm && !await changeRealm(realm as AppConfig["realm"])) return;
   selectMode("player");
   player.value = null;
   if (Number.isSafeInteger(target.accountId) && Number(target.accountId) > 0) {
@@ -235,19 +275,29 @@ function openRosterPlayer(target: RosterPlayer) {
   }
 }
 
-async function loadPlayer(accountId: number) {
-  searching.value = true;
-  error.value = "";
+async function loadPlayer(accountId: number, realm = config.value.realm, requestId = ++queryRequestId) {
+  searching.value = true; error.value = "";
   try {
-    const realm = config.value.realm;
-    player.value = await window.wws.playerDetails(accountId, realm);
-    query.value = player.value.nickname;
-    rememberQuery({ kind: "player", realm, id: accountId, label: player.value.nickname, queriedAt: Date.now() });
+    const result = await window.wws.playerDetails(accountId, realm);
+    if (!queryIsCurrent(requestId, realm, "player")) return;
+    player.value = result; query.value = result.nickname;
+    rememberQuery({ kind: "player", realm, id: accountId, label: result.nickname, queriedAt: Date.now() });
   } catch (reason) {
-    error.value = reason instanceof Error ? reason.message : String(reason);
+    if (queryIsCurrent(requestId, realm, "player")) error.value = reason instanceof Error ? reason.message : String(reason);
   } finally {
-    searching.value = false;
+    if (queryIsCurrent(requestId, realm, "player")) searching.value = false;
   }
+}
+
+async function setOverlayBattleMode(mode: AppConfig["overlayBattleMode"]) {
+  if (arena.value || settingsSaving.value || config.value.overlayBattleMode === mode) return;
+  settingsSaving.value = true;
+  try {
+    config.value = await window.wws.saveConfig({ ...config.value, overlayBattleMode: mode });
+    showSaveFeedback("success", "七号插已设为" + (mode === "operations" ? "行动模式" : mode === "ranked" ? "排位战" : "随机战"));
+  } catch (reason) {
+    showSaveFeedback("error", "模式保存失败：" + (reason instanceof Error ? reason.message : String(reason)));
+  } finally { settingsSaving.value = false; }
 }
 
 async function saveSettings() {
@@ -260,6 +310,7 @@ async function saveSettings() {
       overlayEnabled: config.value.overlayEnabled,
       overlayHotkeyEnabled: config.value.overlayHotkeyEnabled,
       overlayHotkey: config.value.overlayHotkey,
+      overlayBattleMode: config.value.overlayBattleMode,
     };
     const gamePathChanged = plainConfig.gamePath !== watchedGamePath.value;
     config.value = await window.wws.saveConfig(plainConfig);
@@ -297,6 +348,14 @@ async function checkUpdates() {
   } finally {
     updateBusy.value = "";
   }
+}
+
+async function checkShipData() {
+  shipDataBusy.value = true;
+  try { shipDataStatus.value = await window.wws.checkShipData(); }
+  catch (reason) {
+    shipDataStatus.value = {state:"error",version:shipDataStatus.value?.version || "",revision:shipDataStatus.value?.revision || 0,shipCount:shipDataStatus.value?.shipCount || 0,checkedAt:Date.now(),updated:false,error:reason instanceof Error ? reason.message : String(reason)};
+  } finally { shipDataBusy.value = false; }
 }
 
 async function downloadAvailableUpdate() {
@@ -351,10 +410,6 @@ async function chooseGameDirectoryFromHero() {
   await saveSettings();
 }
 
-async function simulate() {
-  await window.wws.simulateArena();
-}
-
 function hotkeyLabel(code: string) {
   if (code.startsWith("Key")) return code.slice(3);
   if (code.startsWith("Digit")) return code.slice(5);
@@ -384,31 +439,20 @@ async function captureHotkey(event: KeyboardEvent, persist = false) {
 }
 
 onMounted(async () => {
-  const [savedConfig, current, savedAuth] = await Promise.all([
-    window.wws.getConfig(),
-    window.wws.getArenaState(),
-    window.wws.getWgAuthStatus(),
-  ]);
-  config.value = savedConfig;
-  watchedGamePath.value = savedConfig.gamePath;
-  authStatus.value = savedAuth;
-  authOnboardingOpen.value = !savedAuth.authorized && localStorage.getItem("wwsmonkey.authPromptSeen") !== "1";
-  arena.value = current.arena;
-  roster.value = current.roster;
-  watchedPath.value = current.watchedPath || "";
-  arenaFileFound.value = Boolean(current.arenaFileFound);
-  if (current.arena) {
-    logBattle("已载入当前对局：" + current.arena.players.length + " 名玩家");
-    if (current.roster.some((item) => item.status === "loading")) logBattle("正在读取公开战绩…");
-  }
+  let arenaRevision = 0, rosterRevision = 0, configRevision = 0, pathRevision = 0, activityRevision = 0;
   cleanups = [
+    window.wws.onShipDataStatus((status) => { shipDataStatus.value = status; }),
+    window.wws.onConfigChanged((saved) => { configRevision++; config.value.realm = saved.realm; }),
+    window.wws.onWindowActivity((status) => { activityRevision++; windowActive.value = status.active; }),
     window.wws.onArenaUpdate((value) => {
+      arenaRevision++;
       const previousBattleId = arena.value?.battleId;
       arena.value = value;
       if (value) {
         if (value.battleId !== previousBattleId) {
           activeView.value = "overlay";
           rosterLoadingLogged = false;
+          rosterCompletedLogged = false;
         }
         logBattle("识别对局：" + (value.mapName || "未知地图") + "，" + value.players.length + " 名玩家");
       } else {
@@ -417,22 +461,27 @@ onMounted(async () => {
       }
     }),
     window.wws.onRosterStats((value) => {
+      rosterRevision++;
       roster.value = value;
       if (!value.length) { rosterLoadingLogged = false; return; }
       if (value.some((item) => item.status === "loading")) {
         if (!rosterLoadingLogged) {
           logBattle("正在读取 " + value.length + " 名玩家的账号与单舰数据…");
           rosterLoadingLogged = true;
+          rosterCompletedLogged = false;
         }
-      } else {
+      } else if (!rosterCompletedLogged) {
+        rosterCompletedLogged = true;
         rosterLoadingLogged = false;
         const available = value.filter((item) => item.status === "ok").length;
         const hidden = value.filter((item) => item.status === "hidden").length;
-        const failed = value.length - available - hidden;
-        logBattle("读取完成：" + available + " 名公开、" + hidden + " 名隐藏、" + failed + " 名不可用", failed ? "error" : "success");
+        const bots = value.filter((item) => item.status === "bot").length;
+        const failed = value.length - available - hidden - bots;
+        logBattle("读取完成：" + available + " 名公开、" + hidden + " 名隐藏、" + failed + " 名不可用" + (bots ? "、" + bots + " 艘机器人" : ""), failed ? "error" : "success");
       }
     }),
     window.wws.onOverlayStatus((value) => {
+      if (typeof value.watchedPath === "string" || typeof value.arenaFileFound === "boolean") pathRevision++;
       if (typeof value.watchedPath === "string") watchedPath.value = value.watchedPath;
       if (typeof value.arenaFileFound === "boolean") {
         arenaFileFound.value = value.arenaFileFound;
@@ -445,15 +494,43 @@ onMounted(async () => {
     }),
     window.wws.onUpdateProgress((progress) => { updateProgress.value = progress; }),
   ];
+  void window.wws.getShipDataStatus().then(status => {
+    if(!appDisposed && (!shipDataStatus.value || (status.checkedAt || 0) >= (shipDataStatus.value.checkedAt || 0)))shipDataStatus.value = status;
+  }).catch(() => {});
+  try {
+    const [savedConfig, current, savedAuth] = await Promise.all([
+      window.wws.getConfig(),
+      window.wws.getArenaState(),
+      window.wws.getWgAuthStatus(),
+    ]);
+    if (appDisposed) return;
+    if (!configRevision) config.value = savedConfig;
+    watchedGamePath.value = savedConfig.gamePath;
+    authStatus.value = savedAuth;
+    authOnboardingOpen.value = !savedAuth.authorized && localStorage.getItem("wwsmonkey.authPromptSeen") !== "1";
+    if (!arenaRevision) arena.value = current.arena;
+    if (!rosterRevision) roster.value = current.roster;
+    if (!activityRevision) windowActive.value = current.visible ?? true;
+    if (!pathRevision) { watchedPath.value = current.watchedPath || ""; arenaFileFound.value = Boolean(current.arenaFileFound); }
+    if (!arenaRevision && current.arena) {
+      logBattle("已载入当前对局：" + current.arena.players.length + " 名玩家");
+      if (current.roster.some((item) => item.status === "loading")) logBattle("正在读取公开战绩…");
+    }
+  } catch (reason) {
+    if (!appDisposed) showSaveFeedback("error", "初始化失败：" + (reason instanceof Error ? reason.message : String(reason)));
+  }
 });
 onUnmounted(() => {
+  appDisposed = true;
+  invalidateQuery();
+  historyRequestId++;
   cleanups.forEach((cleanup) => cleanup());
   if (saveFeedbackTimer) clearTimeout(saveFeedbackTimer);
 });
 </script>
 
 <template>
-  <div class="app-frame">
+  <div class="app-frame" :data-resting="!windowActive">
     <TitleBar />
     <div class="app-shell">
       <aside class="sidebar">
@@ -464,6 +541,7 @@ onUnmounted(() => {
               <AppIcon name="overlay" /><span>七号插</span><i class="nav-live">LIVE</i>
             </button>
             <button class="nav-item" :class="{ 'nav-item--active': activeView === 'news' }" @click="activeView = 'news'"><AppIcon name="overlay" :size="18" /><span>公告中心</span><AppIcon name="chevron" :size="13" /></button>
+            <button class="nav-item" :class="{ 'nav-item--active': activeView === 'operations' }" @click="activeView = 'operations'"><AppIcon name="database" :size="18" /><span>行动路线</span><i class="beta-badge">Beta</i><AppIcon class="nav-chevron" name="chevron" :size="14" /></button>
             <button class="nav-item" :class="{ 'nav-item--active': activeView === 'my' }" @click="openMyStats">
               <AppIcon name="user" /><span>我的战绩</span><AppIcon class="nav-chevron" name="chevron" :size="14" />
             </button>
@@ -482,6 +560,7 @@ onUnmounted(() => {
             <button class="nav-item" :class="{ 'nav-item--active': activeView === 'clan' }" @click="selectMode('clan')">
               <AppIcon name="clan" /><span>军团情报</span><AppIcon class="nav-chevron" name="chevron" :size="14" />
             </button>
+            <button class="nav-item" :class="{ 'nav-item--active': activeView === 'planner' }" @click="activeView = 'planner'"><AppIcon name="database" /><span>舰船配装</span><i class="beta-badge">Beta</i><AppIcon class="nav-chevron" name="chevron" :size="14" /></button>
             <button class="nav-item" :class="{ 'nav-item--active': activeView === 'containers' }" @click="openContainers">
               <AppIcon name="database" /><span>箱子查询</span><AppIcon class="nav-chevron" name="chevron" :size="14" />
             </button>
@@ -497,11 +576,12 @@ onUnmounted(() => {
         </div>
       </aside>
 
-      <main class="workspace">
+      <main class="workspace" :class="{'workspace--planner':activeView==='planner'}">
         <header class="topbar">
           <div class="page-heading">
             <div><div class="page-heading__title"><h1>{{ pageMeta.title }}</h1><div v-if="activeView === 'my' || activeView === 'player'" class="stats-page-tabs" role="tablist" aria-label="战绩页面"><button id="stats-tab-overview" type="button" role="tab" :aria-selected="statsPage === 'overview'" aria-controls="stats-page-overview" :class="{ active: statsPage === 'overview' }" @click="statsPage = 'overview'">总览</button><button id="stats-tab-ships" type="button" role="tab" :aria-selected="statsPage === 'ships'" aria-controls="stats-page-ships" :class="{ active: statsPage === 'ships' }" @click="statsPage = 'ships'">详细</button></div></div><p>{{ pageMeta.description }}</p></div>
           </div>
+          <div v-if="activeView==='planner'" id="planner-header-controls" class="planner-header-controls"></div>
           <div v-if="activeView === 'overlay' && arena" class="battle-topbar">
             <div class="battle-topbar__log">
               <button type="button" class="battle-topbar__toggle" :aria-expanded="battleLogOpen" aria-controls="battle-topbar-history" @click="battleLogOpen = !battleLogOpen">
@@ -512,12 +592,12 @@ onUnmounted(() => {
                 <div v-if="!battleLogs.length"><time>—</time><span>等待对局数据</span></div>
               </div>
             </div>
-            <button type="button" class="battle-topbar__refresh button-secondary" :disabled="rosterRefreshing" @click="refreshBattleRoster"><span v-if="rosterRefreshing" class="ui-spinner" aria-hidden="true"></span>{{ rosterRefreshing ? '刷新中…' : '刷新数据' }}</button>
+            <button v-if="!arena.isOperation && config.overlayBattleMode !== 'operations'" type="button" class="battle-topbar__refresh button-secondary" :disabled="rosterRefreshing" @click="refreshBattleRoster"><span v-if="rosterRefreshing" class="ui-spinner" aria-hidden="true"></span>{{ rosterRefreshing ? '刷新中…' : '刷新战绩' }}</button>
           </div>
-          <div v-if="activeView !== 'news'" class="topbar__tools">
+          <div v-if="activeView !== 'news' && activeView !== 'planner'" class="topbar__tools">
             <span class="realm-label">服务器</span>
             <div class="realm-switch" aria-label="选择服务器">
-              <button v-for="realm in ['asia', 'eu', 'na']" :key="realm" :class="{ active: config.realm === realm }" @click="config.realm = realm as AppConfig['realm']">
+              <button v-for="realm in ['asia', 'eu', 'na']" :key="realm" :class="{ active: config.realm === realm }" :disabled="realmSaving || settingsSaving" @click="changeRealm(realm as AppConfig['realm'])">
                 {{ realm.toUpperCase() }}
               </button>
             </div>
@@ -533,7 +613,7 @@ onUnmounted(() => {
                   <h2>{{ mode === 'player' ? '输入昵称或 UID，调取公开战绩' : '输入标签或名称，查看军团阵容' }}</h2>
                   <p>{{ mode === 'player' ? '支持亚服、欧服与美服；数据来自 Wargaming 官方接口。' : '查看成员规模、管理层与完整成员列表。' }}</p>
                 </div>
-                <SearchControl v-model="query" :mode="mode" :realm="config.realm" :searching="searching" :suggestions="suggestions" :clan-suggestions="clanSuggestions" :error="error" @submit="runSearch" @select-player="loadPlayer" @select-clan="loadClan" />
+                <SearchControl v-model="query" :mode="mode" :realm="config.realm" :searching="searching" :suggestions="suggestions" :clan-suggestions="clanSuggestions" :error="error" @submit="runSearch" @select-player="id => loadPlayer(id)" @select-clan="id => loadClan(id)" />
                 <div class="command-panel__meta">
                   <span><AppIcon name="shield" :size="14" />仅读取公开数据</span>
                   <span><AppIcon name="database" :size="14" />官方 API 实时查询</span>
@@ -543,7 +623,7 @@ onUnmounted(() => {
               <LoadingState v-if="searching && !hasSearchResult" class="panel stats-loading stats-loading--compact" :label="mode === 'player' ? '正在读取玩家随机战战绩…' : '正在读取军团资料…'" detail="正在从 WG 官方接口同步并整理数据" />
 
               <PlayerStatsPanel v-if="mode === 'player' && player" v-model:page="statsPage" :player="player" markable>
-                <template #tools><button class="button-secondary query-history__back" @click="showQueryHistory">查询历史</button><SearchControl v-model="query" compact :mode="mode" :realm="config.realm" :searching="searching" :suggestions="suggestions" :clan-suggestions="clanSuggestions" :error="error" @submit="runSearch" @select-player="loadPlayer" @select-clan="loadClan" /></template>
+                <template #tools><button class="button-secondary query-history__back" @click="showQueryHistory">查询历史</button><SearchControl v-model="query" compact :mode="mode" :realm="config.realm" :searching="searching" :suggestions="suggestions" :clan-suggestions="clanSuggestions" :error="error" @submit="runSearch" @select-player="id => loadPlayer(id)" @select-clan="id => loadClan(id)" /></template>
               </PlayerStatsPanel>
 
               <section v-if="mode === 'clan' && clan" class="result-area clan-result">
@@ -555,7 +635,7 @@ onUnmounted(() => {
                       <h2>[{{ clan.tag }}] {{ clan.name }}</h2>
                       <small>公开成员随机战绩汇总 · {{ clan.overall?.publicMembers || 0 }}/{{ clan.membersCount }} 名成员可统计</small>
                     </div>
-                    <div class="clan-hero__search"><SearchControl v-model="query" compact :mode="mode" :realm="config.realm" :searching="searching" :suggestions="suggestions" :clan-suggestions="clanSuggestions" :error="error" @submit="runSearch" @select-player="loadPlayer" @select-clan="loadClan" /><button class="button-secondary query-history__back" @click="showQueryHistory">查询历史</button></div>
+                    <div class="clan-hero__search"><SearchControl v-model="query" compact :mode="mode" :realm="config.realm" :searching="searching" :suggestions="suggestions" :clan-suggestions="clanSuggestions" :error="error" @submit="runSearch" @select-player="id => loadPlayer(id)" @select-clan="id => loadClan(id)" /><button class="button-secondary query-history__back" @click="showQueryHistory">查询历史</button></div>
                   </div>
                   <div class="clan-summary-grid">
                     <article><span>成员人数</span><strong>{{ clan.membersCount }}</strong><small>{{ clan.overall?.publicMembers || 0 }} 名公开战绩</small></article>
@@ -619,7 +699,7 @@ onUnmounted(() => {
             <template v-else-if="activeView === 'overlay'">
               <section class="overlay-dashboard">
                 <section v-if="arena" class="panel battle-panel battle-panel--active">
-                  <BattleRoster :arena="arena" :roster="roster" :realm="config.realm" embedded @open-player="openRosterPlayer" />
+                  <BattleRoster :arena="arena" :roster="roster" :realm="arena?.realm || config.realm" :battle-mode="config.overlayBattleMode" embedded @open-player="openRosterPlayer" />
                 </section>
 
                 <template v-else>
@@ -628,15 +708,23 @@ onUnmounted(() => {
                     <span class="section-kicker"><i></i>OVERLAY READY</span>
                     <h2>战斗开始时，情报自动就位。</h2>
                     <p>设置一次游戏安装目录，程序会自动监控对局文件。新对局开始后，双方公开战绩会直接显示在本页。{{ config.overlayHotkeyEnabled ? `按住 ${hotkeyLabel(config.overlayHotkey)} 可呼出游戏内透明覆盖层。` : '按键呼出已在设置中关闭。' }}</p>
+                    <div class="overlay-stat-mode">
+                      <span>对局辅助模式</span>
+                      <div class="performance-switch" role="group" aria-label="七号插战绩类型">
+                        <button type="button" :class="{ active: config.overlayBattleMode === 'random' }" :aria-pressed="config.overlayBattleMode === 'random'" :disabled="settingsSaving" @click="setOverlayBattleMode('random')">随机战</button>
+                        <button type="button" :class="{ active: config.overlayBattleMode === 'ranked' }" :aria-pressed="config.overlayBattleMode === 'ranked'" :disabled="settingsSaving" @click="setOverlayBattleMode('ranked')">排位战</button>
+                        <button type="button" :class="{ active: config.overlayBattleMode === 'operations' }" :aria-pressed="config.overlayBattleMode === 'operations'" :disabled="settingsSaving" @click="setOverlayBattleMode('operations')">行动模式</button>
+                      </div>
+                      <small>随机 / 排位切换战绩；行动模式显示敌舰刷新点位图，点击切换不同分支。已识别的行动地图会自动显示点位图。</small>
+                    </div>
                     <div class="arena-file-card" :class="{ 'arena-file-card--found': arenaFileFound }">
                       <div class="arena-file-card__status"><AppIcon name="database" :size="19" /><div><strong>{{ !config.gamePath ? '尚未设置游戏路径' : arenaFileFound ? '已找到对局文件' : '等待进入战斗' }}</strong><span>{{ !config.gamePath ? '请选择《战舰世界》安装目录' : arenaFileFound ? '监控已就绪，等待对局文件更新' : '战斗开始后自动查找 replays 及其子目录；若无响应，请确认游戏路径' }}</span></div><i></i></div>
                       <div class="arena-file-card__path"><span>游戏路径</span><code :title="config.gamePath">{{ config.gamePath || '尚未设置' }}</code><button type="button" :disabled="settingsSaving" @click="chooseGameDirectoryFromHero">{{ config.gamePath ? '更改路径' : '设置游戏路径' }}</button></div>
                       <div v-if="arenaFileFound" class="arena-file-card__path"><span>对局文件</span><code :title="watchedPath">{{ watchedPath }}</code></div>
                       <small v-if="arenaWarning" class="arena-file-card__warning">{{ arenaWarning }}</small>
                     </div>
-                    <div class="overlay-actions">
-                      <div v-if="arenaFileFound" class="arena-waiting" role="status"><AppIcon name="pulse" :size="17" />等待对局文件更新…</div>
-                      <button v-else class="button-primary" @click="simulate"><AppIcon name="pulse" :size="17" />载入模拟对局</button>
+                    <div v-if="arenaFileFound" class="overlay-actions">
+                      <div class="arena-waiting" role="status"><AppIcon name="pulse" :size="17" />等待对局文件更新…</div>
                     </div>
                   </div>
                   <button type="button" class="key-visual key-visual--editable" :class="{ 'key-visual--disabled': !config.overlayHotkeyEnabled }" aria-label="修改游戏内战绩面板呼出按键" @click="capturingHotkey = true" @keydown.stop.prevent="captureHotkey($event, true)" @blur="capturingHotkey = false">
@@ -652,6 +740,8 @@ onUnmounted(() => {
                 </template>
               </section>
             </template>
+            <BuildPlannerView v-else-if="activeView === 'planner'" />
+            <OperationGuide v-else-if="activeView === 'operations'" :arena="null" browse />
             <NewsView v-else-if="activeView === 'news'" />
             <ContainerView v-else-if="activeView === 'containers'" :realm="config.realm" :auth-status="authStatus" />
             <ChristmasPoolView v-else-if="activeView === 'christmas'" :realm="config.realm" :auth-status="authStatus" @authorized="handleAuthorized" />
@@ -670,6 +760,12 @@ onUnmounted(() => {
         <label class="toggle"><input v-model="config.overlayEnabled" type="checkbox" /><span></span><b>启用游戏内透明覆盖层</b></label>
         <label class="toggle"><input v-model="config.overlayHotkeyEnabled" type="checkbox" /><span></span><b>启用按键呼出战绩面板</b></label>
         <label><span>七号插呼出按键</span><button class="hotkey-input" @keydown.stop.prevent="captureHotkey">{{ hotkeyLabel(config.overlayHotkey) }}<small>点击后按下新按键</small></button></label>
+        <div class="settings-update settings-ship-data">
+          <div class="settings-update__top"><div><strong>舰船数据</strong><small>每次启动自动检查；配装与七号插共用</small></div><button type="button" :disabled="shipDataBusy || shipDataStatus?.state === 'checking'" @click="checkShipData">{{ shipDataBusy || shipDataStatus?.state === 'checking' ? '检查中…' : '检查舰船数据' }}</button></div>
+          <p v-if="shipDataStatus?.version">当前 {{ shipDataStatus.version }} · {{ shipDataStatus.shipCount }} 艘舰船<span v-if="shipDataStatus.state === 'ready'"> · {{ shipDataStatus.updated ? '已更新' : '已检查，暂无新版' }}</span></p>
+          <p class="settings-update__hint">有新版才下载舰名及配装基础数据；推荐方案随程序版本更新。</p>
+          <p v-if="shipDataStatus?.state === 'error'" class="settings-update__error" role="alert">检查失败，继续使用本地舰船数据：{{ shipDataStatus.error }}</p>
+        </div>
         <div class="settings-update">
           <div class="settings-update__top"><div><strong>程序更新</strong><small>从 GitHub 正式发布版本检查</small></div><button type="button" :disabled="Boolean(updateBusy)" @click="checkUpdates">{{ updateBusy === 'checking' ? '检查中…' : '检查更新' }}</button></div>
           <p v-if="updateResult" role="status">当前 {{ updateResult.currentVersion }} · {{ updateResult.updateAvailable ? `发现新版本 ${updateResult.latestVersion}` : updateResult.currentVersion === updateResult.latestVersion ? '已是最新版本' : `本机版本较新（GitHub 已发布 ${updateResult.latestVersion}）` }}</p>

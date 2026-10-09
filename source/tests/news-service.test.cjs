@@ -1,7 +1,7 @@
 "use strict";
 const { test } = require("node:test");
 const assert = require("node:assert/strict");
-const { createNewsService, parseBlog, parseNews, parseDetail, parseChineseArticle, recentDate, officialUrl, INTERVAL } = require("../electron/news-service.cjs");
+const { createNewsService, parseBlog, parseNews, parseDetail, parseChineseArticle, recentDate, officialUrl } = require("../electron/news-service.cjs");
 const NOW = Date.parse("2026-09-29T12:00:00Z");
 const blog = { items: [{ id: 1, title: "Closed Test 15.8 - Changes to Test ships", slug: "changes", publication_date: "2026-09-24 10:00:00", categories: ["Test Ships Changes"], short_content: "<p>Based on testing results, we are applying changes to the ships Arag&oacute;n and New Jersey:</p>" }] };
 const news = { items: [
@@ -33,14 +33,15 @@ test("news links only allow HTTPS official articles", () => {
   for (const url of ["javascript:alert(1)", "https://worldofwarships.asia.evil.com/zh-sg/news/x", "https://x@worldofwarships.asia/zh-sg/news/x", "http://blog.worldofwarships.com/blog/x"]) assert.equal(officialUrl(url), false);
   assert(officialUrl("https://blog.worldofwarships.com/blog/changes"));
 });
-test("refresh deduplicates, respects TTL, retains failed source, and loads details", async () => {
+test("startup deduplicates, page reads never refresh, restart retains failed source, and detail is cached", async () => {
   let time = NOW, count = 0, failBlog = false;
-  const service = createNewsService({ now: () => time, fetchImpl: async url => {
+  const options = { now: () => time, fetchImpl: async url => {
     count++;
     if (failBlog && url.includes("blog.") && !url.includes("/api/posts/changes/")) throw Error("offline");
     const body = url.includes("/api/posts/changes/") ? { content: '<p><span class="ship" ship-id="3530470832">IX Aragón</span>:</p><ul><li>Maximum damage increased: 10 to 20</li></ul>' } : url.includes("blog.") ? blog : url.includes("categories") ? categories : news;
     return { ok: true, json: async () => body };
-  } });
+  } };
+  const service = createNewsService(options);
   const [first, second] = await Promise.all([service.get(), service.get(true)]);
   assert.deepEqual(first, second);
   assert.equal(count, 3);
@@ -50,11 +51,41 @@ test("refresh deduplicates, respects TTL, retains failed source, and loads detai
   await service.detail(first.items.find(item => item.category === "ships").url);
   assert.equal(count, 4);
   await service.get(); assert.equal(count, 4);
-  time += INTERVAL + 1; failBlog = true;
-  const partial = await service.get();
+  time += 24 * 60 * 60 * 1000; failBlog = true;
+  await service.get(); await service.get(true);
+  assert.equal(count, 4, 'Even legacy forced reads must not update again during this session');
+  const restarted = createNewsService({ ...options, seed: first });
+  const partial = await restarted.get();
+  assert.equal(count, 7, 'New app session makes one fresh three-request attempt');
   assert.equal(partial.items.length, 3);
   assert(partial.sources[0].error);
   assert.equal(partial.sources[1].error, "");
+});
+
+test("failed startup does not retry on later reads, but the next session tries again", async () => {
+  let count = 0, time = NOW;
+  const options = { now: () => time, fetchImpl: async () => { count++; throw Error('offline'); } };
+  const service = createNewsService(options);
+  await service.get(); assert.equal(count,3);
+  time += 2 * 24 * 60 * 60 * 1000;
+  await service.get(); await service.get(true); assert.equal(count,3);
+  await createNewsService(options).get(); assert.equal(count,6);
+});
+
+test("startup refreshes even a recently saved disk cache once, then keeps it for the session", async t => {
+  const fs = require('node:fs/promises'), path = require('node:path'), os = require('node:os');
+  const dir = await fs.mkdtemp(path.join(os.tmpdir(),'no7-news-startup-'));
+  t.after(() => fs.rm(dir,{recursive:true,force:true}));
+  const cacheFile = path.join(dir,'news.json');
+  await fs.writeFile(cacheFile,JSON.stringify({items:[],sources:[],checkedAt:NOW}));
+  let count=0;
+  const options = {cacheFile, now:() => NOW, fetchImpl:async url => {
+    count++; return {ok:true,json:async()=>url.includes('blog.')?blog:url.includes('categories')?categories:news};
+  }};
+  const first = createNewsService(options);
+  assert.equal((await first.get()).items.length,3); assert.equal(count,3);
+  await first.get(); assert.equal(count,3);
+  assert.equal((await createNewsService(options).get()).items.length,3); assert.equal(count,6);
 });
 test("offline startup drops old and unrelated bundled news", async () => {
   const seed = { items: [

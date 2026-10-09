@@ -13,8 +13,10 @@ const { WgApi } = require("./wg-api.cjs");
 const { KarmaService, enrichRosterKarma } = require("./karma-service.cjs");
 const karmaService = new KarmaService();
 const { ArenaWatcher } = require("./arena-watcher.cjs");
-const { createNewsService, officialUrl, INTERVAL: NEWS_INTERVAL } = require("./news-service.cjs");
+const { createNewsService, officialUrl } = require("./news-service.cjs");
 let newsService;
+const { createPlannerService } = require("./planner-service.cjs");
+let plannerService;
 async function renderOfficialNewsPage(url) {
   if (!officialUrl(url) || !url.startsWith("https://worldofwarships.asia/zh-sg/news/")) throw new Error("无效的官网文章链接");
   const viewer = new BrowserWindow({ show: false, width: 1024, height: 768, webPreferences: { sandbox: true, nodeIntegration: false, contextIsolation: true, backgroundThrottling: false } });
@@ -35,9 +37,7 @@ async function renderOfficialNewsPage(url) {
 }
 const { listContainers, containerDetails } = require("./containers.cjs");
 const christmasPools = require("../data/christmas-pools.json");
-const { parseArenaData } = require("./arena-parser.cjs");
 const { normalizeHotkey, resolveHotkeyCode } = require("./hotkey-config.cjs");
-const { makeSnapshot, mergeSnapshot, recentFromSnapshots } = require("./stats-history.cjs");
 const { checkForUpdate, downloadUpdate } = require("./update-service.cjs");
 
 let mainWindow = null;
@@ -45,6 +45,7 @@ let overlayWindow = null;
 let currentArena = null;
 let currentRoster = [];
 let rosterRequestId = 0;
+let rosterController = null;
 let hotkeyDown = false;
 let activeHotkeyKeycode = null;
 let keyboardHook = null;
@@ -70,33 +71,9 @@ function authPath() {
   return path.join(app.getPath("userData"), "wg-auth.json");
 }
 
-function statsHistoryPath(player) {
-  return path.join(app.getPath("userData"), "stats-history", `${player.realm}-${player.accountId}.json`);
-}
-
-const { aggregateRating, ratingValue, shipClassStats } = require("./personal-rating.cjs");
-
-function attachRecentStats(player) {
-  player = { ...player, shipClasses: player.hiddenProfile ? [] : shipClassStats(player.ships), ships: player.ships.map(ship => ({ ...ship, pr: ratingValue(aggregateRating([ship])) })) };
-  const current = makeSnapshot(player);
-  if (current) current.pr = aggregateRating(player.ships);
-  if (!current) return { ...player, recent: null, history: [] };
-  const filePath = statsHistoryPath(player);
-  let snapshots = [];
-  try {
-    const stored = JSON.parse(fs.readFileSync(filePath, "utf8"));
-    snapshots = Array.isArray(stored?.snapshots) ? stored.snapshots : [];
-  } catch {}
-  const recent = recentFromSnapshots(current, snapshots);
-  const nextSnapshots = mergeSnapshot(snapshots, current);
-  try {
-    fs.mkdirSync(path.dirname(filePath), { recursive: true });
-    fs.writeFileSync(filePath, JSON.stringify({ version: 1, accountId: player.accountId, realm: player.realm, snapshots: nextSnapshots }, null, 2), "utf8");
-  } catch (error) {
-    recent.storageError = error instanceof Error ? error.message : String(error);
-  }
-  return { ...player, recent, history: nextSnapshots };
-}
+const { StatsHistoryStore } = require("./stats-history-store.cjs");
+const statsHistory = new StatsHistoryStore(() => path.join(app.getPath("userData"), "stats-history"));
+function attachRecentStats(player) { return statsHistory.attach(player); }
 
 function loadAuth() {
   try {
@@ -154,6 +131,7 @@ async function wgAuthRequest(realm, method, params = {}) {
     usesPost ? `https://${host}/wot/auth/${method}/` : `https://${host}/wot/auth/${method}/?${query}`,
     {
       method: usesPost ? "POST" : "GET",
+      signal: AbortSignal.timeout(15000),
       headers: {
         "User-Agent": "No7Insert/0.1.3",
         ...(usesPost ? { "Content-Type": "application/x-www-form-urlencoded" } : {}),
@@ -269,6 +247,7 @@ function loadConfig() {
     overlayEnabled: saved.overlayEnabled !== false,
     overlayHotkeyEnabled: saved.overlayHotkeyEnabled !== false,
     overlayHotkey: normalizeHotkey(saved.overlayHotkey),
+    overlayBattleMode: ["ranked", "operations"].includes(saved.overlayBattleMode) ? saved.overlayBattleMode : "random",
   };
   return cachedConfig;
 }
@@ -281,6 +260,7 @@ function publicConfig(config) {
     overlayEnabled: config.overlayEnabled,
     overlayHotkeyEnabled: config.overlayHotkeyEnabled,
     overlayHotkey: config.overlayHotkey,
+    overlayBattleMode: config.overlayBattleMode,
   };
 }
 
@@ -295,17 +275,27 @@ function saveConfig(next) {
     overlayEnabled: typeof next?.overlayEnabled === "boolean" ? next.overlayEnabled : current.overlayEnabled,
     overlayHotkeyEnabled: typeof next?.overlayHotkeyEnabled === "boolean" ? next.overlayHotkeyEnabled : current.overlayHotkeyEnabled,
     overlayHotkey: typeof next?.overlayHotkey === "string" ? normalizeHotkey(next.overlayHotkey) : current.overlayHotkey,
+    overlayBattleMode: ["random", "ranked", "operations"].includes(next?.overlayBattleMode) ? next.overlayBattleMode : current.overlayBattleMode,
   };
   fs.mkdirSync(path.dirname(configPath()), { recursive: true });
   fs.writeFileSync(configPath(), JSON.stringify(merged, null, 2), "utf8");
   cachedConfig = merged;
+  if (!merged.overlayEnabled) destroyOverlayWindow();
+  else if (currentArena) createOverlayWindow();
   syncKeyboardHook();
+  sendAll("config:changed", publicConfig(merged));
+  if (currentArena && (current.realm !== merged.realm || current.overlayBattleMode !== merged.overlayBattleMode)) {
+    void handleArena(currentArena);
+  }
   return publicConfig(merged);
 }
 
 const wg = new WgApi(() => loadConfig().applicationId);
+const { RosterBroadcaster } = require("./roster-broadcaster.cjs");
+const rosterBroadcaster = new RosterBroadcaster(() => [mainWindow, overlayWindow]);
 
 function sendAll(channel, payload) {
+  if (channel === "roster:stats") { rosterBroadcaster.update(payload); return; }
   for (const window of [mainWindow, overlayWindow]) {
     if (window && !window.isDestroyed()) window.webContents.send(channel, payload);
   }
@@ -335,11 +325,18 @@ function createWindows() {
       preload: path.join(__dirname, "preload.cjs"),
       contextIsolation: true,
       nodeIntegration: false,
-      backgroundThrottling: false,
+      backgroundThrottling: true,
     },
   });
   Menu.setApplicationMenu(null);
   mainWindow.once("ready-to-show", () => mainWindow.show());
+  const activity = () => {
+    if (!mainWindow || mainWindow.isDestroyed()) return;
+    const active = mainWindow.isVisible() && !mainWindow.isMinimized();
+    mainWindow.webContents.send("window:activity", { active });
+    if (active) rosterBroadcaster.send(mainWindow);
+  };
+  for (const event of ["show", "hide", "minimize", "restore"]) mainWindow.on(event, activity);
   mainWindow.on("closed", () => {
     mainWindow = null;
     if (overlayWindow && !overlayWindow.isDestroyed()) overlayWindow.destroy();
@@ -354,14 +351,27 @@ function createWindows() {
   void loadRenderer(mainWindow, false);
 }
 
+function getOverlayBounds() {
+  const display = screen.getDisplayNearestPoint(screen.getCursorScreenPoint()).bounds;
+  const width = Math.min(1440, Math.round(display.width * .94));
+  const height = Math.min(860, Math.round(display.height * .9));
+  return {
+    x: Math.round(display.x + (display.width - width) / 2),
+    y: Math.round(display.y + (display.height - height) / 2),
+    width,
+    height,
+  };
+}
+
 function createOverlayWindow() {
-  if (overlayWindow && !overlayWindow.isDestroyed()) return;
-  const display = screen.getPrimaryDisplay().workArea;
+  if (!currentArena || !loadConfig().overlayEnabled) return;
+  const interactive = currentArena.isOperation || loadConfig().overlayBattleMode === "operations";
+  if (overlayWindow && !overlayWindow.isDestroyed()) {
+    overlayWindow.setIgnoreMouseEvents(!interactive, { forward: true });
+    return;
+  }
   overlayWindow = new BrowserWindow({
-    x: Math.round(display.x + (display.width - Math.min(1180, display.width)) / 2),
-    y: Math.round(display.y + display.height * 0.12),
-    width: Math.min(1180, display.width),
-    height: Math.min(720, Math.round(display.height * 0.76)),
+    ...getOverlayBounds(),
     transparent: true,
     frame: false,
     show: false,
@@ -373,14 +383,14 @@ function createOverlayWindow() {
       preload: path.join(__dirname, "preload.cjs"),
       contextIsolation: true,
       nodeIntegration: false,
-      backgroundThrottling: false,
+      backgroundThrottling: true,
     },
   });
   const window = overlayWindow;
   window.on("closed", () => { if (overlayWindow === window) overlayWindow = null; });
   syncKeyboardHook();
   window.setAlwaysOnTop(true, "screen-saver");
-  window.setIgnoreMouseEvents(true, { forward: true });
+  window.setIgnoreMouseEvents(!interactive, { forward: true });
   void loadRenderer(window, true).catch((error) => {
     if (!window.isDestroyed()) sendAll("overlay:status", { error: `游戏内窗口加载失败：${error.message}` });
   });
@@ -395,7 +405,10 @@ function destroyOverlayWindow() {
 function setOverlayVisible(visible) {
   if (!overlayWindow || overlayWindow.isDestroyed()) return;
   if (visible && loadConfig().overlayEnabled && currentArena) {
+    // Recenter the complete roster on the current display without stealing game focus.
+    overlayWindow.setBounds(getOverlayBounds());
     overlayWindow.showInactive();
+    rosterBroadcaster.send(overlayWindow);
   } else {
     overlayWindow.hide();
   }
@@ -448,22 +461,37 @@ function syncKeyboardHook() {
 
 async function handleArena(arena) {
   const requestId = ++rosterRequestId;
-  currentArena = arena;
+  rosterController?.abort();
+  rosterController = new AbortController();
+  const controller = rosterController;
+  const enriched = new Set();
+  const realm = loadConfig().realm;
+  currentArena = { ...arena, realm };
   createOverlayWindow();
+  const battleMode = loadConfig().overlayBattleMode;
+  if (arena.isOperation || battleMode === "operations") {
+    currentRoster = [];
+    sendAll("arena:update", currentArena);
+    sendAll("roster:stats", currentRoster);
+    return;
+  }
   currentRoster = arena.players.map((player) => {
     const previous = currentRoster.find((item) => item.key === player.key);
-    return { ...player, shipType: previous?.shipType || player.shipType, shipTier: previous?.shipTier || player.shipTier, status: "loading" };
+    return { ...player, realm, battleMode, shipType: previous?.shipType || player.shipType, shipTier: previous?.shipTier || player.shipTier, status: player.isBot ? "bot" : "loading" };
   });
-  sendAll("arena:update", arena);
+  sendAll("arena:update", currentArena);
   sendAll("roster:stats", currentRoster);
-  const realm = loadConfig().realm;
   const result = await wg.rosterStats(arena.players, realm, () => requestId === rosterRequestId, (entry, index) => {
     if (requestId !== rosterRequestId) return;
     currentRoster[index] = entry;
-    void enrichRosterKarma(karmaService, entry, realm, () => requestId === rosterRequestId, () => {
-      if (requestId === rosterRequestId) sendAll("roster:stats", currentRoster);
-    });
-  });
+    sendAll("roster:stats", currentRoster);
+    if (!enriched.has(index)) {
+      enriched.add(index);
+      void enrichRosterKarma(karmaService, entry, realm, () => requestId === rosterRequestId, () => {
+        if (requestId === rosterRequestId) sendAll("roster:stats", currentRoster);
+      });
+    }
+  }, battleMode, { signal: controller.signal });
   if (requestId !== rosterRequestId) return;
   currentRoster = result;
   sendAll("roster:stats", currentRoster);
@@ -472,6 +500,7 @@ async function handleArena(arena) {
 watcher.on("arena", (arena) => void handleArena(arena));
 watcher.on("arena-ended", () => {
   rosterRequestId++;
+  rosterController?.abort();
   currentArena = null;
   destroyOverlayWindow();
   currentRoster = [];
@@ -482,7 +511,10 @@ watcher.on("warning", (message) => sendAll("overlay:status", { warning: message 
 watcher.on("path", (watchedPath) => sendAll("overlay:status", { watchedPath }));
 watcher.on("file-status", (status) => sendAll("overlay:status", status));
 
-ipcMain.handle("news:get", (_event, force) => newsService.get(Boolean(force)));
+ipcMain.handle("planner:catalog", (_event, force) => plannerService.get(Boolean(force)));
+ipcMain.handle("ships:data-status", () => plannerService.getStatus());
+ipcMain.handle("ships:check-data", () => plannerService.check());
+ipcMain.handle("news:get", () => newsService.get());
 ipcMain.handle("news:detail", (_event, url) => newsService.detail(url));
 ipcMain.handle("rating:open-source", () => shell.openExternal("https://wows-numbers.com/personal/rating/"));
 ipcMain.handle("news:open", (_event, url) => {
@@ -526,7 +558,11 @@ ipcMain.handle("update:open-release", () => {
   if (!updateCandidate?.releaseUrl) throw new Error("请先检查更新");
   return shell.openExternal(updateCandidate.releaseUrl);
 });
-ipcMain.handle("arena:get-state", () => ({ arena: currentArena, roster: currentRoster, watchedPath: watcher.filePath, arenaFileFound: watcher.fileExists }));
+ipcMain.handle("arena:get-state", (event) => {
+  const window = BrowserWindow.fromWebContents(event.sender);
+  return { visible: Boolean(window && window.isVisible() && !window.isMinimized()), arena: currentArena,
+    roster: currentRoster, watchedPath: watcher.filePath, arenaFileFound: watcher.fileExists };
+});
 ipcMain.handle("containers:list", (_event, { realm }) => listContainers(realm));
 ipcMain.handle("containers:details", (_event, { id, realm }) => containerDetails(id, realm));
 ipcMain.handle("containers:open-source", (_event, { realm }) => {
@@ -589,6 +625,7 @@ ipcMain.handle("arena:choose-game-directory", async () => {
 });
 ipcMain.handle("arena:start", (_event, { gamePath }) => {
   rosterRequestId++;
+  rosterController?.abort();
   currentArena = null;
   destroyOverlayWindow();
   currentRoster = [];
@@ -600,6 +637,7 @@ ipcMain.handle("arena:start", (_event, { gamePath }) => {
 });
 ipcMain.handle("arena:stop", () => {
   rosterRequestId++;
+  rosterController?.abort();
   watcher.stop();
   currentArena = null;
   destroyOverlayWindow();
@@ -608,46 +646,6 @@ ipcMain.handle("arena:stop", () => {
   sendAll("roster:stats", []);
   sendAll("overlay:status", { watchedPath: "", arenaFileFound: false });
   return true;
-});
-ipcMain.handle("arena:simulate", async () => {
-  rosterRequestId++;
-  const ships = [
-    ["白龙", "AirCarrier"], ["大和", "Battleship"], ["蒙大拿", "Battleship"],
-    ["勃艮第", "Battleship"], ["俄亥俄", "Battleship"], ["威尼斯", "Cruiser"],
-    ["得梅因", "Cruiser"], ["彼得罗巴甫洛夫斯克", "Cruiser"], ["米诺陶斯", "Cruiser"],
-    ["莫斯科", "Cruiser"], ["岛风", "Destroyer"], ["春云", "Destroyer"],
-  ];
-  const sample = {
-    arenaId: "mock-battle",
-    mapDisplayName: "模拟海域",
-    gameLogic: "Domination",
-    vehicles: [1, 2].flatMap((relation) => ships.map(([shipName, shipType], index) => ({
-      id: relation * 100 + index,
-      name: (relation === 1 ? "FleetMate_" : "SeaRival_") + String(index + 1).padStart(2, "0"),
-      relation, shipId: 4000000000 + index, shipName, shipType,
-    }))),
-  };
-  const arena = parseArenaData(sample);
-  currentArena = arena;
-  createOverlayWindow();
-  currentRoster = arena.players.map((player, index) => ({
-    ...player, status: "ok", shipTier: 10,
-    gameKarma: index === 0 ? 4 : index % 5 === 0 ? 0 : index * 3, karmaStatus: "ok",
-    overall: {
-      battles: 1600 + index * 267, wins: 800 + index * 130,
-      winRate: 43 + ((index * 7 + Math.floor(index / 12) * 4) % 21), avgDamage: 62000 + index * 1900,
-      avgXp: 1180 + index * 28, avgFrags: 0.7, survivalRate: 40,
-    },
-    currentShip: {
-      shipId: player.shipId, name: player.shipName, tier: 10, type: player.shipType,
-      nation: "japan", battles: 42 + index * 13, wins: 20 + index * 6,
-      winRate: 39 + (index * 9 % 25), avgDamage: 78000 + index * 1800,
-      avgXp: 1250 + index * 32, avgFrags: 0.8,
-    },
-  }));
-  sendAll("arena:update", arena);
-  sendAll("roster:stats", currentRoster);
-  return arena;
 });
 ipcMain.handle("overlay:visible", (_event, { visible }) => {
   setOverlayVisible(Boolean(visible));
@@ -676,10 +674,23 @@ app.whenReady().then(() => {
   const userDataPath = path.join(app.getPath("appData"), "wwsmonkey");
   fs.mkdirSync(userDataPath, { recursive: true });
   app.setPath("userData", userDataPath);
+  plannerService = createPlannerService({
+    cacheFile: path.join(userDataPath, "planner-catalog.json"),
+    seedFile: path.join(__dirname, app.isPackaged ? "../dist/planner-catalog.json.gz" : "../public/planner-catalog.json.gz"),
+    onCatalog(catalog) {
+      wg.setShipCatalog(catalog);
+      currentRoster = currentRoster.map(player => {
+        const ship = wg.localShipMetadata(player.shipId);
+        return ship ? {...player,shipName:ship.name,shipTier:ship.tier,shipType:ship.type} : player;
+      });
+      if(currentRoster.length)sendAll("roster:stats",currentRoster);
+    },
+    onStatus(status) { sendAll("ships:data-status",status); },
+  });
+  void plannerService.start();
   wg.setShipCacheFile(path.join(userDataPath, "ship-metadata-cache.json"));
   newsService = createNewsService({ cacheFile: path.join(userDataPath, "news-cache.json"), seed: require("../data/news-snapshot.json"), renderOfficialPage: renderOfficialNewsPage });
   void newsService.get();
-  setInterval(() => void newsService.get(), NEWS_INTERVAL).unref();
   createWindows();
   const config = loadConfig();
   if (config.gamePath) watcher.start(config.gamePath);
@@ -687,6 +698,7 @@ app.whenReady().then(() => {
 
 app.on("window-all-closed", () => {
   watcher.stop();
+  rosterController?.abort();
   if (activeAuthServer) activeAuthServer.close();
   stopKeyboardHook();
   app.quit();
@@ -696,7 +708,7 @@ let shipCacheFlushed = false;
 app.on("before-quit", (event) => {
   if (shipCacheFlushed) return;
   event.preventDefault();
-  void wg.flushShipCache().finally(() => {
+  void Promise.allSettled([wg.flushShipCache(), statsHistory.flush()]).finally(() => {
     shipCacheFlushed = true;
     app.quit();
   });

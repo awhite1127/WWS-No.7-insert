@@ -16,6 +16,7 @@ watch(() => props.page, async () => { await nextTick(); if (content.value) conte
   <section class="result-area stats-panel" :aria-busy="refreshing">
     <div ref="content" class="stats-panel__content" :class="'stats-panel__content--'+page">
       <slot name="notice" />
+      <p v-if="player.shipsStatus === 'unavailable'" class="refresh-error" role="status">{{ player.shipsError || '单舰战绩暂时读取失败，请稍后重试' }}。已有完整历史记录已保留。</p>
       <PerformanceOverview v-show="page==='overview'" :player="player" :authorized="authorized" :markable="markable" :refreshing="refreshing" @refresh="emit('refresh')"><template #tools><slot name="tools" /></template></PerformanceOverview>
       <div v-show="page==='overview'" id="stats-page-overview" class="stats-panel__page" role="tabpanel" aria-labelledby="stats-tab-overview"><StatsTrend :key="player.realm+player.accountId" :player="player" /></div>
       <div v-show="page==='ships'" id="stats-page-ships" class="stats-panel__page" role="tabpanel" aria-labelledby="stats-tab-ships"><ShipClassSummary :player="player" :owned="authorized"><template #tools><slot name="tools" /><button v-if="authorized" type="button" class="button-secondary" :disabled="refreshing" @click="emit('refresh')">{{ refreshing ? '正在刷新…' : '刷新战绩' }}</button></template></ShipClassSummary><ShipTable :ships="player.hiddenProfile ? [] : player.ships" /></div>

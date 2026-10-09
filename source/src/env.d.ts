@@ -2,14 +2,31 @@
 
 import type { NewsFeed, AppConfig, ArenaInfo, ArenaState, ClanDetails, ClanSearchResult, ContainerDetails, ContainerSummary, ChristmasPortShips, DownloadedUpdate, PlayerDetails, RosterPlayer, SearchResult, SnowflakeAuthStatus, UpdateCheckResult, UpdateProgress, WgAuthStatus } from "./types";
 
+import type { PlannerCatalog } from "./build-planner";
+
 declare global {
+  interface ShipDataStatus {
+    state: "idle" | "checking" | "ready" | "error";
+    version: string;
+    revision: number;
+    shipCount: number;
+    checkedAt: number | null;
+    updated: boolean;
+    error: string;
+  }
   interface Window {
     wws: {
-      getNews(force?: boolean): Promise<NewsFeed>;
+      getPlannerCatalog(force?: boolean): Promise<PlannerCatalog>;
+      getShipDataStatus(): Promise<ShipDataStatus>;
+      checkShipData(): Promise<ShipDataStatus>;
+      onShipDataStatus(callback: (status: ShipDataStatus) => void): () => void;
+      getNews(): Promise<NewsFeed>;
       getNewsDetail(url: string): Promise<string[]>;
       openNewsSource(url: string): Promise<void>;
       openRatingSource(): Promise<void>;
       getConfig(): Promise<AppConfig>;
+      onConfigChanged(callback: (config: AppConfig) => void): () => void;
+      onWindowActivity(callback: (status: { active: boolean }) => void): () => void;
       saveConfig(config: Partial<AppConfig>): Promise<AppConfig>;
       checkForUpdate(): Promise<UpdateCheckResult>;
       downloadUpdate(): Promise<DownloadedUpdate>;
@@ -38,7 +55,6 @@ declare global {
       chooseGameDirectory(): Promise<string>;
       startArenaWatch(gamePath: string): Promise<string>;
       stopArenaWatch(): Promise<boolean>;
-      simulateArena(): Promise<ArenaInfo>;
       setOverlayVisible(visible: boolean): Promise<boolean>;
       minimizeWindow(): Promise<boolean>;
       toggleMaximizeWindow(): Promise<boolean>;

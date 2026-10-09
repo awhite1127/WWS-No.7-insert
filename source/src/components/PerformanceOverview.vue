@@ -52,7 +52,7 @@ const winTone = computed(() => {
 
 const pr = computed(() => {
   const history = props.player.history ?? [], current = history.at(-1);
-  if (!current || props.player.hiddenProfile) return { value: null, coverage: null };
+  if (!current || props.player.hiddenProfile || props.player.shipsStatus === "unavailable") return { value: null, coverage: null };
   if (period.value === "overall") return { value: ratingValue(current.pr), coverage: current.pr && current.pr.totalBattles > 0 ? current.pr.coveredBattles/current.pr.totalBattles : null };
   if (!recentPeriod.value?.available || history.length<2) return { value: null, coverage: null };
   const target=current.capturedAt-recentPeriod.value.actualDays*86400000;
@@ -111,7 +111,7 @@ function formatDate(value?: number) {
             {{ item.label }}
           </button>
         </div>
-        <span v-if="player.recent">本地记录始于 {{ formatDate(player.recent.trackedSince) }}</span>
+        <span v-if="player.recent">本地记录始于 {{ formatDate(player.recent.trackedSince) }}<template v-if="recentPeriod?.available"> · 实际跨度 {{ recentPeriod.actualDays.toFixed(1) }} 天</template></span>
       </div>
 
     <div v-if="!compact" class="performance-content">

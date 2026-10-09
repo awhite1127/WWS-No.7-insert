@@ -3,11 +3,29 @@
 const { contextBridge, ipcRenderer } = require("electron");
 
 contextBridge.exposeInMainWorld("wws", {
-  getNews: (force) => ipcRenderer.invoke("news:get", Boolean(force)),
+  getPlannerCatalog: (force) => ipcRenderer.invoke("planner:catalog", Boolean(force)),
+  getShipDataStatus: () => ipcRenderer.invoke("ships:data-status"),
+  checkShipData: () => ipcRenderer.invoke("ships:check-data"),
+  onShipDataStatus: (callback) => {
+    const listener = (_event, payload) => callback(payload);
+    ipcRenderer.on("ships:data-status", listener);
+    return () => ipcRenderer.removeListener("ships:data-status", listener);
+  },
+  getNews: () => ipcRenderer.invoke("news:get"),
   getNewsDetail: (url) => ipcRenderer.invoke("news:detail", url),
   openRatingSource: () => ipcRenderer.invoke("rating:open-source"),
   openNewsSource: (url) => ipcRenderer.invoke("news:open", url),
   getConfig: () => ipcRenderer.invoke("config:get"),
+  onConfigChanged: (callback) => {
+    const listener = (_event, payload) => callback(payload);
+    ipcRenderer.on("config:changed", listener);
+    return () => ipcRenderer.removeListener("config:changed", listener);
+  },
+  onWindowActivity: (callback) => {
+    const listener = (_event, payload) => callback(payload);
+    ipcRenderer.on("window:activity", listener);
+    return () => ipcRenderer.removeListener("window:activity", listener);
+  },
   saveConfig: (config) => ipcRenderer.invoke("config:save", config),
   checkForUpdate: () => ipcRenderer.invoke("update:check"),
   downloadUpdate: () => ipcRenderer.invoke("update:download"),
@@ -39,7 +57,6 @@ contextBridge.exposeInMainWorld("wws", {
   chooseGameDirectory: () => ipcRenderer.invoke("arena:choose-game-directory"),
   startArenaWatch: (gamePath) => ipcRenderer.invoke("arena:start", { gamePath }),
   stopArenaWatch: () => ipcRenderer.invoke("arena:stop"),
-  simulateArena: () => ipcRenderer.invoke("arena:simulate"),
   refreshRoster: () => ipcRenderer.invoke("arena:refresh-roster"),
   setOverlayVisible: (visible) => ipcRenderer.invoke("overlay:visible", { visible }),
   minimizeWindow: () => ipcRenderer.invoke("window:minimize"),

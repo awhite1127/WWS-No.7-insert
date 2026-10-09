@@ -2,7 +2,6 @@
 const fs = require("node:fs/promises");
 const path = require("node:path");
 const { translateShipDetail } = require("./news-detail-zh.cjs");
-const INTERVAL = 30 * 60 * 1000;
 const BLOG = "https://blog.worldofwarships.com";
 const NEWS = "https://worldofwarships.asia";
 const chineseShips = require("../data/wg-zh-sg-glossary.json").ships;
@@ -83,7 +82,7 @@ function cleanRenderedArticle(lines) {
   return lines.map(line => localizeShips(String(line).trim())).filter(line => /[\p{Script=Han}]/u.test(line) && line.length < 2000);
 }
 function createNewsService({ cacheFile, fetchImpl = fetch, now = Date.now, seed = { items: [], sources: [] }, renderOfficialPage } = {}) {
-  let snapshot = structuredClone(seed), pending, lastAttempt = 0, initialized = false;
+  let snapshot = structuredClone(seed), pending, initialized = false;
   const details = new Map();
   const eligible = item => officialUrl(item.url) && recentDate(item.publishedAt, now()) && (item.category === "ships" || (item.category === "events" && ((item.stage === "开发汇报" && /\/work-in-progress-\d+(?:-|\/)/.test(item.url)) || (item.stage === "版本更新" && /\/update-\d+(?:-|\/)/.test(item.url) && !/(?:teaser|trailer)/i.test(item.url)))));
   const clean = items => items.filter(eligible).map(item => item.category === "ships" ? { ...item, summary: localizeShips(item.summary).replace(/(?:具体参数|详细舰船参数与变更说明)请查看官方原文。/, "点击查看详细改动。"), language: "中文翻译 · 英文原文" } : item);
@@ -120,7 +119,6 @@ function createNewsService({ cacheFile, fetchImpl = fetch, now = Date.now, seed 
         if (Array.isArray(saved.items) && Array.isArray(saved.sources) && saved.items.every(i => officialUrl(i.url))) snapshot = saved;
       } catch { /* Keep bundled snapshot on first run or damaged cache. */ }
     }
-    lastAttempt = now();
     const results = await Promise.allSettled([
       json(BLOG + "/api/posts/?limit=100").then(parseBlog),
       Promise.all([json(NEWS + "/papi/v1/news/?lang=zh-sg&limit=100"), json(NEWS + "/papi/v1/categories/?lang=zh-sg")]).then(([data, categories]) => parseNews(data, categories)),
@@ -152,12 +150,13 @@ function createNewsService({ cacheFile, fetchImpl = fetch, now = Date.now, seed 
       details.set(url, lines);
       return lines;
     },
-    get(force = false) {
+    get() {
       if (pending) return pending;
-      if (initialized && now() - lastAttempt < (force ? 10000 : INTERVAL)) return Promise.resolve({ ...snapshot, items: clean(snapshot.items) });
+      // One network attempt per app session, including failed attempts. Page visits read the snapshot.
+      if (initialized) return Promise.resolve({ ...snapshot, items: clean(snapshot.items) });
       pending = update().finally(() => { pending = undefined; });
       return pending;
     },
   };
 }
-module.exports = { createNewsService, parseBlog, parseNews, parseDetail, parseChineseArticle, localizeShips, recentDate, officialUrl, INTERVAL };
+module.exports = { createNewsService, parseBlog, parseNews, parseDetail, parseChineseArticle, localizeShips, recentDate, officialUrl };

@@ -4,7 +4,7 @@ export type TeamWinRate = { value: number | null; available: number; total: numb
 
 export function summarizeBattleTeams(players: Pick<RosterPlayer, "side" | "status" | "overall">[]) {
   const summarize = (side: RosterPlayer["side"]): TeamWinRate => {
-    const team = players.filter((player) => player.side === side);
+    const team = players.filter((player) => player.side === side && player.status !== "bot");
     const publicStats = team.filter((player) => player.status === "ok"
       && Number.isFinite(player.overall?.winRate) && Number(player.overall?.battles) > 0);
     return {

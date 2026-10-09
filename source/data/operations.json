@@ -1,0 +1,2578 @@
+{
+  "reviewedAt": "2026-10-08",
+  "notice": "实线方框表示资料中的格位范围，虚线区域表示大致方向；数字仅对应右侧说明。底图原有箭头是社区总览，不随选择变化；请以当前高亮标记为准。",
+  "operations": [
+    {
+      "id": "narai",
+      "name": "纳莱",
+      "englishName": "Narai",
+      "aliases": [
+        "纳莱",
+        "纳莱行动",
+        "纳莱作战",
+        "那莱",
+        "Narai",
+        "Sunda Islands"
+      ],
+      "maps": [
+        "s07_Advance"
+      ],
+      "source": "https://wiki.worldofwarships.com/Ship:Operation_Narai",
+      "sourceUpdated": "2023-07-05",
+      "legacy": true,
+      "image": "/operation-maps/narai-overview.svg",
+      "bounds": [
+        4,
+        4,
+        92,
+        92
+      ],
+      "pointSets": [
+        {
+          "stage": "首波接敌",
+          "title": "首波 · 船队南侧",
+          "points": [
+            {
+              "label": "首波敌舰 · 南侧岛后",
+              "x": 26,
+              "y": 43,
+              "towards": {
+                "x": 30,
+                "y": 27
+              }
+            }
+          ],
+          "description": "虚线区域只表示资料中的接近方向，具体刷新格位未核实。",
+          "route": "*",
+          "evidence": "directional"
+        },
+        {
+          "stage": "第二波接敌",
+          "title": "第二波 · 南侧与东南",
+          "points": [
+            {
+              "label": "巡洋舰与驱逐舰 · 南侧岛后",
+              "x": 34,
+              "y": 51,
+              "towards": {
+                "x": 39,
+                "y": 34
+              }
+            },
+            {
+              "label": "战列舰 · 东南方向",
+              "x": 46,
+              "y": 52,
+              "towards": {
+                "x": 39,
+                "y": 35
+              }
+            }
+          ],
+          "description": "虚线区域只表示资料中的接近方向，具体刷新格位未核实。",
+          "route": "*",
+          "evidence": "directional"
+        },
+        {
+          "stage": "支线推进",
+          "title": "主线 · 港口入口",
+          "points": [
+            {
+              "label": "入口巡洋舰 · D7",
+              "cell": "D7"
+            },
+            {
+              "label": "水道巡洋舰 · G6",
+              "cell": "G6"
+            },
+            {
+              "label": "突击战列舰 · 港口入口内侧",
+              "x": 72,
+              "y": 54,
+              "towards": {
+                "x": 48,
+                "y": 44
+              }
+            }
+          ],
+          "description": "D7、G6 是入口巡洋舰格位；战列舰从入口内侧向船队突进。",
+          "route": "convoy",
+          "evidence": "directional"
+        },
+        {
+          "stage": "支线推进",
+          "title": "北线 · 航母及护卫",
+          "points": [
+            {
+              "label": "航母、巡洋舰与驱逐舰 · 东侧航道",
+              "x": 96,
+              "y": 62,
+              "towards": {
+                "x": 95,
+                "y": 36
+              }
+            },
+            {
+              "label": "10 列北上通行格位",
+              "cell": "C10",
+              "kind": "movement"
+            }
+          ],
+          "description": "航母和护卫沿东侧 10 列向北撤离；C10 是通行格位。",
+          "route": "carrier",
+          "evidence": "directional"
+        },
+        {
+          "stage": "支线推进",
+          "title": "南线 · 运输船及护卫",
+          "points": [
+            {
+              "label": "运输船与护卫 · 南侧港湾",
+              "x": 47,
+              "y": 77,
+              "towards": {
+                "x": 29,
+                "y": 83
+              }
+            },
+            {
+              "label": "部分运输船通过 H5",
+              "cell": "H5",
+              "kind": "movement"
+            }
+          ],
+          "description": "运输船从南侧港湾驶出，分经南侧水道和 H5；青色标记表示通行位置。",
+          "route": "transports",
+          "evidence": "directional"
+        },
+        {
+          "stage": "港湾守军",
+          "title": "港湾守军 · 两个入口",
+          "points": [
+            {
+              "label": "巡洋舰与驱逐舰 · 港湾北侧入口",
+              "x": 72,
+              "y": 62,
+              "towards": {
+                "x": 72,
+                "y": 51
+              }
+            },
+            {
+              "label": "巡洋舰与驱逐舰 · 港湾南侧入口",
+              "x": 66,
+              "y": 76,
+              "towards": {
+                "x": 54,
+                "y": 72
+              }
+            }
+          ],
+          "description": "守军可能从南北入口接近；这不是两套随机撤离路线。虚线区域只表示资料中的接近方向，具体刷新格位未核实。",
+          "route": "*",
+          "evidence": "directional"
+        },
+        {
+          "stage": "港湾反击",
+          "title": "港湾反击 · 第一组",
+          "points": [
+            {
+              "label": "首组反击 · 东侧边界",
+              "x": 95,
+              "y": 70,
+              "towards": {
+                "x": 78,
+                "y": 72
+              }
+            }
+          ],
+          "description": "虚线区域只表示资料中的接近方向，具体刷新格位未核实。",
+          "route": "*",
+          "evidence": "directional"
+        },
+        {
+          "stage": "港湾反击",
+          "title": "港湾反击 · 第二组",
+          "points": [
+            {
+              "label": "后续反击 · 10 列边界",
+              "x": 95,
+              "y": 70,
+              "towards": {
+                "x": 76,
+                "y": 67
+              }
+            }
+          ],
+          "description": "后续舰群从 10 列边界进入；分组手动查看，不提供计时。",
+          "route": "*",
+          "evidence": "directional"
+        },
+        {
+          "stage": "港湾反击",
+          "title": "港湾反击 · 第三组",
+          "points": [
+            {
+              "label": "末组反击 · 东侧边界",
+              "x": 95,
+              "y": 70,
+              "towards": {
+                "x": 75,
+                "y": 64
+              }
+            }
+          ],
+          "description": "虚线区域只表示资料中的接近方向，具体刷新格位未核实。",
+          "route": "*",
+          "evidence": "directional"
+        }
+      ],
+      "routes": [
+        {
+          "id": "convoy",
+          "label": "主线 · 船队护航"
+        },
+        {
+          "id": "carrier",
+          "label": "北线 · 航母目标"
+        },
+        {
+          "id": "transports",
+          "label": "南线 · 运输船目标"
+        }
+      ],
+      "reviewedAt": "2026-10-08",
+      "routeLabel": "目标支线",
+      "routeSource": "https://steamcommunity.com/sharedfiles/filedetails/?id=3392428008",
+      "routeNotice": "阶段与格位据官方 Wiki 重新整理；方向区域参考较早社区图，仅作示意。社区图未包含 14.11 后改动，不能保证当前版本的精确刷新位置。",
+      "stages": [
+        "首波接敌",
+        "第二波接敌",
+        "支线推进",
+        "港湾守军",
+        "港湾反击"
+      ],
+      "overview": {
+        "routeSelection": false,
+        "groups": [
+          {
+            "number": "1",
+            "title": "首波接敌",
+            "stages": [
+              "首波接敌"
+            ],
+            "note": "船队南侧岛后接敌。"
+          },
+          {
+            "number": "2",
+            "title": "第二波接敌",
+            "stages": [
+              "第二波接敌"
+            ],
+            "note": "两处接近区域同时画出，无需切换方向。"
+          },
+          {
+            "number": "3",
+            "title": "主线与两侧目标",
+            "stages": [
+              "支线推进"
+            ],
+            "note": "护航主线、北侧航母、南侧运输船均在本图展示；这些目标可以同时存在。"
+          },
+          {
+            "number": "4",
+            "title": "港湾守军",
+            "stages": [
+              "港湾守军"
+            ],
+            "note": "进入港湾时留意港内守军与两侧入口。"
+          },
+          {
+            "number": "5",
+            "title": "港湾后续反击",
+            "stages": [
+              "港湾反击"
+            ],
+            "note": "后续多组舰群从东侧边界进入；共用一个参考区域，不代表它们同时刷新。"
+          }
+        ]
+      },
+      "terrainSource": "https://github.com/WoWs-Builder-Team/minimap_renderer/tree/0cc781355535906f6f4817e40bc7d902325537b6/src/renderer/resources/spaces"
+    },
+    {
+      "id": "aegis",
+      "name": "神盾",
+      "englishName": "Aegis",
+      "aliases": [
+        "神盾",
+        "神盾行动",
+        "Aegis"
+      ],
+      "maps": [
+        "37_Ridge"
+      ],
+      "source": "https://wiki.worldofwarships.com/Ship:Operation_Aegis",
+      "sourceUpdated": "2026-07-12",
+      "legacy": false,
+      "image": "/operation-maps/aegis-overview.svg",
+      "bounds": [
+        4,
+        4,
+        92,
+        92
+      ],
+      "pointSets": [
+        {
+          "stage": "首波接敌",
+          "title": "首波 · 中央北侧",
+          "points": [
+            {
+              "label": "首波舰群 · 中央北侧",
+              "x": 53,
+              "y": 29,
+              "towards": {
+                "x": 54,
+                "y": 51
+              }
+            }
+          ],
+          "description": "首波沿地图中央由北向南接近。虚线区域只表示资料中的接近方向，具体刷新格位未核实。",
+          "route": "*",
+          "evidence": "directional"
+        },
+        {
+          "stage": "西北增援",
+          "title": "第二组 · 西北来袭",
+          "points": [
+            {
+              "label": "西北增援 · 西北岛间",
+              "x": 27,
+              "y": 34,
+              "towards": {
+                "x": 51,
+                "y": 45
+              }
+            }
+          ],
+          "description": "敌舰从西北岛间通道接近。虚线区域只表示资料中的接近方向，具体刷新格位未核实。",
+          "route": "*",
+          "evidence": "directional"
+        },
+        {
+          "stage": "解救船队",
+          "title": "船队护卫 · 北侧通道",
+          "points": [
+            {
+              "label": "护卫巡洋舰 · 船队两侧",
+              "x": 58,
+              "y": 16,
+              "towards": {
+                "x": 60,
+                "y": 41
+              }
+            }
+          ],
+          "description": "护卫舰随被俘船队沿北侧通道接近。虚线区域只表示资料中的接近方向，具体刷新格位未核实。",
+          "route": "*",
+          "evidence": "directional"
+        },
+        {
+          "stage": "解救船队",
+          "title": "条件增援 · 北侧战列舰",
+          "points": [
+            {
+              "label": "额外战列舰 · 北侧边界",
+              "x": 62,
+              "y": 5,
+              "towards": {
+                "x": 63,
+                "y": 25
+              }
+            }
+          ],
+          "description": "船队走得过远或玩家提前进入东北时可能出现；与正常末段增援分开查看。",
+          "route": "*",
+          "evidence": "directional"
+        },
+        {
+          "stage": "撤离掩护",
+          "title": "末段 · 北侧战列舰",
+          "points": [
+            {
+              "label": "北侧战列舰 · 北侧边界",
+              "x": 48,
+              "y": 5,
+              "towards": {
+                "x": 62,
+                "y": 18
+              }
+            }
+          ],
+          "description": "虚线区域只表示资料中的接近方向，具体刷新格位未核实。",
+          "route": "*",
+          "evidence": "directional"
+        },
+        {
+          "stage": "撤离掩护",
+          "title": "末段 · 东北舰群",
+          "points": [
+            {
+              "label": "东北舰群 · 东北方向",
+              "x": 89,
+              "y": 12,
+              "towards": {
+                "x": 87,
+                "y": 31
+              }
+            }
+          ],
+          "description": "北侧和东北侧均可能有敌舰，并非二选一。虚线区域只表示资料中的接近方向，具体刷新格位未核实。",
+          "route": "*",
+          "evidence": "directional"
+        }
+      ],
+      "routes": [
+        {
+          "id": "standard",
+          "label": "固定护航流程"
+        }
+      ],
+      "reviewedAt": "2026-10-08",
+      "routeLabel": "路线 / 出口",
+      "routeSource": "https://steamcommunity.com/sharedfiles/filedetails/?id=3392428008",
+      "routeNotice": "阶段与格位据官方 Wiki 重新整理；方向区域参考较早社区图，仅作示意。社区图未包含 14.11 后改动，不能保证当前版本的精确刷新位置。",
+      "stages": [
+        "首波接敌",
+        "西北增援",
+        "解救船队",
+        "撤离掩护"
+      ],
+      "overview": {
+        "routeSelection": false,
+        "groups": [
+          {
+            "number": "1",
+            "title": "首波接敌",
+            "stages": [
+              "首波接敌"
+            ],
+            "note": "中央北侧舰群向南接近。"
+          },
+          {
+            "number": "2",
+            "title": "西北增援",
+            "stages": [
+              "西北增援"
+            ],
+            "note": "第二组敌舰从西北岛间通道进入。"
+          },
+          {
+            "number": "3",
+            "title": "船队护卫与条件增援",
+            "stages": [
+              "解救船队"
+            ],
+            "note": "护卫舰随被俘船队南下；北侧额外战列舰为条件增援，可能因船队前进过远或玩家提前进入东北区域触发。"
+          },
+          {
+            "number": "4",
+            "title": "撤离掩护",
+            "stages": [
+              "撤离掩护"
+            ],
+            "note": "北侧战列舰与东北舰群均需留意，这两个位置并非二选一。"
+          }
+        ]
+      },
+      "terrainSource": "https://github.com/WoWs-Builder-Team/minimap_renderer/tree/0cc781355535906f6f4817e40bc7d902325537b6/src/renderer/resources/spaces"
+    },
+    {
+      "id": "killer-whale",
+      "name": "杀人鲸",
+      "englishName": "Killer Whale",
+      "aliases": [
+        "杀人鲸",
+        "虎鲸",
+        "Killer Whale",
+        "Naval Base"
+      ],
+      "maps": [
+        "s01_NavalBase"
+      ],
+      "source": "https://wiki.worldofwarships.com/Ship:Operation_Killer_Whale",
+      "sourceUpdated": "2023-10-29",
+      "legacy": true,
+      "image": "/operation-maps/killer-whale-west.svg",
+      "bounds": [
+        4,
+        4,
+        92,
+        92
+      ],
+      "pointSets": [
+        {
+          "stage": "港内守军",
+          "title": "港内 · 南入口守军",
+          "points": [
+            {
+              "label": "战列舰与驱逐舰 · I4",
+              "cell": "I4"
+            },
+            {
+              "label": "巡洋舰 · J6",
+              "cell": "J6"
+            }
+          ],
+          "description": "南入口的 I4 敌舰，以及从 J6 接近的巡洋舰。",
+          "route": "*",
+          "evidence": "grid"
+        },
+        {
+          "stage": "港内守军",
+          "title": "港内 · 中入口与船坞",
+          "points": [
+            {
+              "label": "巡洋舰 · F7",
+              "cell": "F7"
+            },
+            {
+              "label": "战列舰 · J7",
+              "cell": "J7"
+            },
+            {
+              "label": "船坞内固定战列舰",
+              "x": 73,
+              "y": 88
+            }
+          ],
+          "description": "船坞内固定守军与 J7 活动战列舰分开标记；船坞精确格位未核实。",
+          "route": "*",
+          "evidence": "directional"
+        },
+        {
+          "stage": "港内守军",
+          "title": "港内 · 支援运输船",
+          "points": [
+            {
+              "label": "支援运输船 · I7",
+              "cell": "I7"
+            }
+          ],
+          "description": "支援运输船从 I7 船坞向外逃离。",
+          "route": "*",
+          "evidence": "grid"
+        },
+        {
+          "stage": "第一波增援",
+          "title": "第一波 · 西北与北侧",
+          "points": [
+            {
+              "label": "战列舰与驱逐舰 · A1",
+              "cell": "A1"
+            },
+            {
+              "label": "驱逐舰 · C1",
+              "cell": "C1"
+            },
+            {
+              "label": "巡洋舰 · A9",
+              "cell": "A9"
+            }
+          ],
+          "description": "两种撤离路线均应留意这些增援；出口选择只高亮当前撤离点，不据此删掉其他刷新点。",
+          "route": "*",
+          "evidence": "grid"
+        },
+        {
+          "stage": "第二波增援",
+          "title": "第二波 · 西侧与北侧",
+          "points": [
+            {
+              "label": "巡洋舰 · D1",
+              "cell": "D1"
+            },
+            {
+              "label": "战列舰 · A8",
+              "cell": "A8"
+            }
+          ],
+          "description": "北侧 A8 增援接近北出口；西出口也应留意西侧 D1。",
+          "route": "*",
+          "evidence": "grid"
+        },
+        {
+          "stage": "固定增援",
+          "title": "固定目标 · A1",
+          "points": [
+            {
+              "label": "目标战列舰及巡洋舰 · A1",
+              "cell": "A1"
+            }
+          ],
+          "description": "固定目标单独显示，不按撤离路线推测刷新变化。",
+          "route": "*",
+          "evidence": "grid"
+        },
+        {
+          "stage": "后续撤离",
+          "title": "后续增援 · 西侧",
+          "points": [
+            {
+              "label": "西侧边界增援",
+              "x": 5,
+              "y": 35,
+              "towards": {
+                "x": 34,
+                "y": 54
+              }
+            }
+          ],
+          "description": "虚线区域只表示资料中的接近方向，具体刷新格位未核实。",
+          "route": "*",
+          "evidence": "directional"
+        },
+        {
+          "stage": "后续撤离",
+          "title": "后续增援 · 北侧",
+          "points": [
+            {
+              "label": "北侧边界增援",
+              "x": 76,
+              "y": 5,
+              "towards": {
+                "x": 76,
+                "y": 35
+              }
+            }
+          ],
+          "description": "虚线区域只表示资料中的接近方向，具体刷新格位未核实。",
+          "route": "*",
+          "evidence": "directional"
+        }
+      ],
+      "routes": [
+        {
+          "id": "west",
+          "label": "西侧撤离 · F1",
+          "exitCell": "F1",
+          "image": "/operation-maps/killer-whale-west.svg",
+          "baseMarkers": [
+            {
+              "x": 8.600000000000001,
+              "y": 54.6,
+              "width": 7,
+              "height": 7
+            },
+            {
+              "x": 19.6,
+              "y": 46.6,
+              "width": 15,
+              "height": 6
+            }
+          ]
+        },
+        {
+          "id": "north",
+          "label": "北侧撤离 · A8",
+          "exitCell": "A8",
+          "image": "/operation-maps/killer-whale-north.svg",
+          "baseMarkers": [
+            {
+              "x": 73,
+              "y": 8.600000000000001,
+              "width": 7,
+              "height": 7
+            },
+            {
+              "x": 62,
+              "y": 6,
+              "width": 15,
+              "height": 6
+            }
+          ]
+        }
+      ],
+      "reviewedAt": "2026-10-08",
+      "routeLabel": "路线 / 出口",
+      "routeSource": "https://steamcommunity.com/sharedfiles/filedetails/?id=3392428008",
+      "routeNotice": "阶段与格位据官方 Wiki 重新整理；方向区域参考较早社区图，仅作示意。社区图未包含 14.11 后改动，不能保证当前版本的精确刷新位置。",
+      "stages": [
+        "港内守军",
+        "第一波增援",
+        "第二波增援",
+        "固定增援",
+        "后续撤离"
+      ],
+      "overview": {
+        "routeSelection": true,
+        "groups": [
+          {
+            "number": "1",
+            "title": "港内守军",
+            "stages": [
+              "港内守军"
+            ],
+            "note": "开局已有守军、船坞目标及逃离运输船；共用编号不表示所有目标同时新刷出。"
+          },
+          {
+            "number": "2",
+            "title": "第一波增援",
+            "stages": [
+              "第一波增援"
+            ],
+            "note": "A1、C1、A9 的增援位置。"
+          },
+          {
+            "number": "3",
+            "title": "第二波增援",
+            "stages": [
+              "第二波增援"
+            ],
+            "note": "D1 巡洋舰与 A8 战列舰。"
+          },
+          {
+            "number": "4",
+            "title": "固定目标增援",
+            "stages": [
+              "固定增援"
+            ],
+            "note": "目标战列舰及巡洋舰从 A1 进入，与编号 2 共用该格位。"
+          },
+          {
+            "number": "5",
+            "title": "后续撤离增援",
+            "stages": [
+              "后续撤离"
+            ],
+            "note": "西侧与北侧边界均需留意；当前出口在底图中标出；两种出口的敌舰刷新位置相同。"
+          }
+        ]
+      },
+      "terrainSource": "https://github.com/WoWs-Builder-Team/minimap_renderer/tree/0cc781355535906f6f4817e40bc7d902325537b6/src/renderer/resources/spaces"
+    },
+    {
+      "id": "raptor",
+      "name": "拯救猛禽",
+      "englishName": "Raptor Rescue",
+      "aliases": [
+        "拯救猛禽",
+        "猛禽救援",
+        "猛禽救援行动",
+        "Raptor Rescue",
+        "Labyrinth"
+      ],
+      "maps": [
+        "s03_Labyrinth"
+      ],
+      "source": "https://wiki.worldofwarships.com/Ship:Operation_Raptor_Rescue",
+      "sourceUpdated": "页面修订日未核定",
+      "legacy": false,
+      "image": "/operation-maps/raptor-south-south.svg",
+      "bounds": [
+        4,
+        4,
+        92,
+        92
+      ],
+      "pointSets": [
+        {
+          "stage": "开局接敌",
+          "title": "开局 · 北侧与西侧",
+          "points": [
+            {
+              "label": "北侧巡洋舰与战列舰",
+              "x": 60,
+              "y": 6,
+              "towards": {
+                "x": 60,
+                "y": 25
+              }
+            },
+            {
+              "label": "西侧驱逐舰",
+              "x": 47,
+              "y": 24,
+              "towards": {
+                "x": 62,
+                "y": 25
+              }
+            }
+          ],
+          "description": "北侧岛旁舰群与船队西侧驱逐舰分开标记。虚线区域只表示资料中的接近方向，具体刷新格位未核实。",
+          "route": "*",
+          "evidence": "directional"
+        },
+        {
+          "stage": "维修阶段",
+          "title": "维修接敌 · 北侧",
+          "points": [
+            {
+              "label": "北侧巡洋舰群",
+              "x": 37,
+              "y": 10,
+              "towards": {
+                "x": 57,
+                "y": 30
+              }
+            }
+          ],
+          "description": "本阶段可从北侧或南侧接近，按实际敌舰方向选择。虚线区域只表示资料中的接近方向，具体刷新格位未核实。",
+          "route": "*",
+          "evidence": "directional"
+        },
+        {
+          "stage": "维修阶段",
+          "title": "维修接敌 · 南侧",
+          "points": [
+            {
+              "label": "南侧巡洋舰群",
+              "x": 68,
+              "y": 74,
+              "towards": {
+                "x": 64,
+                "y": 48
+              }
+            }
+          ],
+          "description": "虚线区域只表示资料中的接近方向，具体刷新格位未核实。",
+          "route": "*",
+          "evidence": "directional"
+        },
+        {
+          "stage": "航母支线",
+          "title": "航母目标 · 东南侧",
+          "points": [
+            {
+              "label": "东南航母及护卫",
+              "x": 91,
+              "y": 60,
+              "towards": {
+                "x": 78,
+                "y": 67
+              }
+            }
+          ],
+          "description": "航母与护卫在东南一侧活动。虚线区域只表示资料中的接近方向，具体刷新格位未核实。",
+          "route": "*",
+          "evidence": "directional"
+        },
+        {
+          "stage": "航母支线",
+          "title": "航母目标 · 西侧",
+          "points": [
+            {
+              "label": "西侧航母 · H1",
+              "cell": "H1"
+            },
+            {
+              "label": "航母北上通行格位",
+              "cell": "C1",
+              "kind": "movement"
+            }
+          ],
+          "description": "航母从 H1 向北到 C1 后可能折返或继续北上；C1 是通行格位。",
+          "route": "*",
+          "evidence": "grid"
+        },
+        {
+          "title": "航行途中 · A1",
+          "description": "第三波候选位置 A1；西侧 1 列另有驱逐舰突击。 第三波候选格位不与当前出口强行绑定。",
+          "points": [
+            {
+              "label": "第三波",
+              "cell": "A1"
+            },
+            {
+              "label": "西侧驱逐舰（区域）",
+              "x": 5,
+              "y": 50
+            }
+          ],
+          "stage": "航行途中",
+          "route": "*",
+          "evidence": "directional"
+        },
+        {
+          "title": "航行途中 · A9",
+          "description": "第三波候选位置 A9；西侧 1 列另有驱逐舰突击。 第三波候选格位不与当前出口强行绑定。",
+          "points": [
+            {
+              "label": "第三波",
+              "cell": "A9"
+            },
+            {
+              "label": "西侧驱逐舰（区域）",
+              "x": 5,
+              "y": 50
+            }
+          ],
+          "stage": "航行途中",
+          "route": "*",
+          "evidence": "directional"
+        },
+        {
+          "title": "航行途中 · H3",
+          "description": "第三波候选位置 H3；西侧 1 列另有驱逐舰突击。 第三波候选格位不与当前出口强行绑定。",
+          "points": [
+            {
+              "label": "第三波",
+              "cell": "H3"
+            },
+            {
+              "label": "西侧驱逐舰（区域）",
+              "x": 5,
+              "y": 50
+            }
+          ],
+          "stage": "航行途中",
+          "route": "*",
+          "evidence": "directional"
+        },
+        {
+          "title": "航行途中 · K7",
+          "description": "第三波候选位置 K7，在地图南侧边界之外。 第三波候选格位不与当前出口强行绑定。",
+          "points": [
+            {
+              "label": "K7（图外）",
+              "cell": "K7"
+            }
+          ],
+          "stage": "航行途中",
+          "route": "*",
+          "evidence": "grid"
+        },
+        {
+          "title": "南航点 → 南出口 · 分支 1",
+          "description": "J3 巡洋舰、J2 战列舰",
+          "points": [
+            {
+              "label": "巡洋舰 · J3",
+              "cell": "J3"
+            },
+            {
+              "label": "战列舰 · J2",
+              "cell": "J2"
+            }
+          ],
+          "stage": "出口接敌",
+          "route": "south-south",
+          "evidence": "grid"
+        },
+        {
+          "title": "南航点 → 南出口 · 分支 2",
+          "description": "G0 战列舰、G1 巡洋舰；G0 在西侧图外",
+          "points": [
+            {
+              "label": "战列舰 · G0",
+              "cell": "G0"
+            },
+            {
+              "label": "巡洋舰 · G1",
+              "cell": "G1"
+            }
+          ],
+          "stage": "出口接敌",
+          "route": "south-south",
+          "evidence": "grid"
+        },
+        {
+          "title": "南航点 → 中出口 · 分支 1",
+          "description": "A1 巡洋舰与战列舰",
+          "points": [
+            {
+              "label": "巡洋舰与战列舰 · A1",
+              "cell": "A1"
+            }
+          ],
+          "stage": "出口接敌",
+          "route": "south-middle",
+          "evidence": "grid"
+        },
+        {
+          "title": "南航点 → 中出口 · 分支 2",
+          "description": "A5 巡洋舰群",
+          "points": [
+            {
+              "label": "巡洋舰群 · A5",
+              "cell": "A5"
+            }
+          ],
+          "stage": "出口接敌",
+          "route": "south-middle",
+          "evidence": "grid"
+        },
+        {
+          "title": "北航点 → 中出口",
+          "description": "H3 巡洋舰、J2 战列舰、J4 追加巡洋舰",
+          "points": [
+            {
+              "label": "巡洋舰 · H3",
+              "cell": "H3"
+            },
+            {
+              "label": "战列舰 · J2",
+              "cell": "J2"
+            },
+            {
+              "label": "追加巡洋舰 · J4",
+              "cell": "J4"
+            }
+          ],
+          "stage": "出口接敌",
+          "route": "north-middle",
+          "evidence": "grid"
+        },
+        {
+          "title": "北航点 → 北出口 · 分支 1",
+          "description": "E0 战列舰、C0 巡洋舰；均在西侧图外",
+          "points": [
+            {
+              "label": "战列舰 · E0",
+              "cell": "E0"
+            },
+            {
+              "label": "巡洋舰 · C0",
+              "cell": "C0"
+            }
+          ],
+          "stage": "出口接敌",
+          "route": "north-north",
+          "evidence": "grid"
+        },
+        {
+          "title": "北航点 → 北出口 · 分支 2",
+          "description": "E9 附近巡洋舰群",
+          "points": [
+            {
+              "label": "附近巡洋舰群 · E9",
+              "cell": "E9"
+            }
+          ],
+          "stage": "出口接敌",
+          "route": "north-north",
+          "evidence": "grid"
+        }
+      ],
+      "routes": [
+        {
+          "id": "south-south",
+          "label": "南航点 → 南出口",
+          "image": "/operation-maps/raptor-south-south.svg",
+          "baseMarkers": [
+            {
+              "x": 48.160000000000004,
+              "y": 55.52,
+              "width": 7,
+              "height": 7
+            },
+            {
+              "x": 48.160000000000004,
+              "y": 47.52,
+              "width": 15,
+              "height": 6
+            },
+            {
+              "x": 8.600000000000001,
+              "y": 89.56,
+              "width": 7,
+              "height": 7
+            },
+            {
+              "x": 19.6,
+              "y": 81.56,
+              "width": 11,
+              "height": 6
+            }
+          ]
+        },
+        {
+          "id": "south-middle",
+          "label": "南航点 → 中出口",
+          "image": "/operation-maps/raptor-south-middle.svg",
+          "baseMarkers": [
+            {
+              "x": 48.160000000000004,
+              "y": 55.52,
+              "width": 7,
+              "height": 7
+            },
+            {
+              "x": 48.160000000000004,
+              "y": 47.52,
+              "width": 15,
+              "height": 6
+            },
+            {
+              "x": 8.600000000000001,
+              "y": 43.56,
+              "width": 7,
+              "height": 7
+            },
+            {
+              "x": 19.6,
+              "y": 35.56,
+              "width": 11,
+              "height": 6
+            }
+          ]
+        },
+        {
+          "id": "north-middle",
+          "label": "北航点 → 中出口",
+          "image": "/operation-maps/raptor-north-middle.svg",
+          "baseMarkers": [
+            {
+              "x": 48.160000000000004,
+              "y": 40.800000000000004,
+              "width": 7,
+              "height": 7
+            },
+            {
+              "x": 48.160000000000004,
+              "y": 32.800000000000004,
+              "width": 15,
+              "height": 6
+            },
+            {
+              "x": 8.600000000000001,
+              "y": 43.56,
+              "width": 7,
+              "height": 7
+            },
+            {
+              "x": 19.6,
+              "y": 35.56,
+              "width": 11,
+              "height": 6
+            }
+          ]
+        },
+        {
+          "id": "north-north",
+          "label": "北航点 → 北出口",
+          "image": "/operation-maps/raptor-north-north.svg",
+          "baseMarkers": [
+            {
+              "x": 48.160000000000004,
+              "y": 40.800000000000004,
+              "width": 7,
+              "height": 7
+            },
+            {
+              "x": 48.160000000000004,
+              "y": 32.800000000000004,
+              "width": 15,
+              "height": 6
+            },
+            {
+              "x": 8.600000000000001,
+              "y": 13.200000000000001,
+              "width": 7,
+              "height": 7
+            },
+            {
+              "x": 19.6,
+              "y": 6,
+              "width": 11,
+              "height": 6
+            }
+          ]
+        }
+      ],
+      "reviewedAt": "2026-10-08",
+      "routeLabel": "路线 / 出口",
+      "routeSource": "https://steamcommunity.com/sharedfiles/filedetails/?id=3392428008",
+      "routeNotice": "阶段与格位据官方 Wiki 重新整理；方向区域参考较早社区图，仅作示意。社区图未包含 14.11 后改动，不能保证当前版本的精确刷新位置。",
+      "stages": [
+        "开局接敌",
+        "维修阶段",
+        "航母支线",
+        "航行途中",
+        "出口接敌"
+      ],
+      "overview": {
+        "routeSelection": true,
+        "groups": [
+          {
+            "number": "1",
+            "title": "开局接敌",
+            "stages": [
+              "开局接敌"
+            ],
+            "note": "北侧岛旁舰群与西侧驱逐舰。"
+          },
+          {
+            "number": "2",
+            "title": "维修阶段",
+            "stages": [
+              "维修阶段"
+            ],
+            "note": "北侧、南侧均为本阶段候选接近区域，按本局实际情况查看。"
+          },
+          {
+            "number": "3",
+            "title": "航母目标",
+            "stages": [
+              "航母支线"
+            ],
+            "note": "两艘航母为开局已存在的次要目标，这里只标初始位置；不再标后续通行格位。"
+          },
+          {
+            "number": "4",
+            "title": "航行途中",
+            "stages": [
+              "航行途中"
+            ],
+            "note": "第三波候选为 A1、A9、H3、K7（图外），并非每局全部出现；西侧另有驱逐舰突击。"
+          },
+          {
+            "number": "5",
+            "title": "出口接敌",
+            "stages": [
+              "出口接敌"
+            ],
+            "note": "这里随所选航点／出口组合变化。存在多个候选舰群时全部标在总图，按实际遇敌位置查看，不代表全部出现。"
+          }
+        ]
+      },
+      "terrainSource": "https://github.com/WoWs-Builder-Team/minimap_renderer/tree/0cc781355535906f6f4817e40bc7d902325537b6/src/renderer/resources/spaces"
+    },
+    {
+      "id": "cherry-blossom",
+      "name": "樱花盛开",
+      "englishName": "Cherry Blossom",
+      "aliases": [
+        "樱花盛开",
+        "樱花",
+        "Cherry Blossom"
+      ],
+      "maps": [
+        "s10_USS_CL"
+      ],
+      "source": "https://wiki.worldofwarships.com/Ship:Operation_Cherry_Blossom",
+      "sourceUpdated": "2026-07-12",
+      "legacy": false,
+      "image": "/operation-maps/cherry-blossom-overview.svg",
+      "bounds": [
+        4,
+        4,
+        92,
+        92
+      ],
+      "pointSets": [
+        {
+          "stage": "夜战首波",
+          "title": "首波 · 运输船北侧驱逐舰",
+          "points": [
+            {
+              "label": "首批驱逐舰 · 运输船北侧",
+              "x": 50,
+              "y": 55,
+              "towards": {
+                "x": 53,
+                "y": 65
+              }
+            }
+          ],
+          "description": "首波位于运输船北侧接近区域。虚线区域只表示资料中的接近方向，具体刷新格位未核实。",
+          "route": "*",
+          "evidence": "directional"
+        },
+        {
+          "stage": "岸上阵地防御",
+          "title": "岸防 · 东侧炮击舰",
+          "points": [
+            {
+              "label": "炮击岸上阵地的巡洋舰",
+              "x": 81,
+              "y": 42,
+              "towards": {
+                "x": 70,
+                "y": 44
+              }
+            }
+          ],
+          "description": "虚线区域只表示资料中的接近方向，具体刷新格位未核实。",
+          "route": "*",
+          "evidence": "directional"
+        },
+        {
+          "stage": "岸上阵地防御",
+          "title": "岸防 · 北侧增援舰群",
+          "points": [
+            {
+              "label": "北侧巡洋舰",
+              "x": 49,
+              "y": 38,
+              "towards": {
+                "x": 62,
+                "y": 45
+              }
+            },
+            {
+              "label": "北侧驱逐舰",
+              "x": 69,
+              "y": 29,
+              "towards": {
+                "x": 81,
+                "y": 36
+              }
+            }
+          ],
+          "description": "虚线区域只表示资料中的接近方向，具体刷新格位未核实。",
+          "route": "*",
+          "evidence": "directional"
+        },
+        {
+          "stage": "白昼伏击",
+          "title": "白昼 · B6 岛东侧驱逐舰",
+          "points": [
+            {
+              "label": "驱逐舰伏击 · B6 岛东侧",
+              "cell": "B6"
+            }
+          ],
+          "description": "这里刷新的是攻击己方航母的敌方驱逐舰。",
+          "route": "*",
+          "evidence": "grid"
+        },
+        {
+          "stage": "港湾进攻",
+          "title": "港湾 · 现有守军",
+          "points": [
+            {
+              "label": "港湾守军",
+              "x": 27,
+              "y": 16
+            },
+            {
+              "label": "旗舰 · 港湾南下方向",
+              "x": 29,
+              "y": 27,
+              "towards": {
+                "x": 30,
+                "y": 45
+              }
+            }
+          ],
+          "description": "旗舰沿港湾向南行动后可能折返；方向箭头表示通行，未标作精确刷新格位。",
+          "route": "*",
+          "evidence": "directional"
+        },
+        {
+          "stage": "港湾进攻",
+          "title": "港湾 · A3 后续刷新",
+          "points": [
+            {
+              "label": "后续巡洋舰与驱逐舰 · A3",
+              "cell": "A3"
+            }
+          ],
+          "description": "机场进攻期间的后续敌舰在 A3；与港湾现有守军分开查看。",
+          "route": "*",
+          "evidence": "grid"
+        }
+      ],
+      "routes": [
+        {
+          "id": "standard",
+          "label": "固定夜战 → 白昼流程"
+        }
+      ],
+      "reviewedAt": "2026-10-08",
+      "routeLabel": "路线 / 出口",
+      "routeSource": "https://steamcommunity.com/sharedfiles/filedetails/?id=3392428008",
+      "routeNotice": "阶段与格位据官方 Wiki 重新整理；方向区域参考较早社区图，仅作示意。社区图未包含 14.11 后改动，不能保证当前版本的精确刷新位置。",
+      "stages": [
+        "夜战首波",
+        "岸上阵地防御",
+        "白昼伏击",
+        "港湾进攻"
+      ],
+      "overview": {
+        "routeSelection": false,
+        "groups": [
+          {
+            "number": "1",
+            "title": "夜战首波",
+            "stages": [
+              "夜战首波"
+            ],
+            "note": "首批驱逐舰从运输船北侧接近。"
+          },
+          {
+            "number": "2",
+            "title": "岸上阵地防御",
+            "stages": [
+              "岸上阵地防御"
+            ],
+            "note": "东侧炮击舰与北侧巡洋舰、驱逐舰都在本图标出。"
+          },
+          {
+            "number": "3",
+            "title": "白昼伏击",
+            "stages": [
+              "白昼伏击"
+            ],
+            "note": "B6 岛东侧出现攻击己方航母的驱逐舰。"
+          },
+          {
+            "number": "4",
+            "title": "港湾进攻",
+            "stages": [
+              "港湾进攻"
+            ],
+            "note": "港湾守军为已有目标；旗舰向南活动，后续巡洋舰与驱逐舰从 A3 进入。"
+          }
+        ]
+      },
+      "terrainSource": "https://github.com/WoWs-Builder-Team/minimap_renderer/tree/0cc781355535906f6f4817e40bc7d902325537b6/src/renderer/resources/spaces"
+    },
+    {
+      "id": "hermes",
+      "name": "赫尔墨斯",
+      "englishName": "Hermes",
+      "aliases": [
+        "赫尔墨斯",
+        "赫尔梅斯",
+        "Hermes"
+      ],
+      "maps": [
+        "s09_LePVE"
+      ],
+      "source": "https://wiki.worldofwarships.com/Ship:Operation_Hermes",
+      "sourceUpdated": "2026-07-12",
+      "legacy": false,
+      "image": "/operation-maps/hermes-north.svg",
+      "bounds": [
+        4,
+        4,
+        92,
+        92
+      ],
+      "pointSets": [
+        {
+          "stage": "首波接敌",
+          "route": "north",
+          "title": "首波接敌 · 北侧撤离",
+          "description": "首波从船队左侧雷雨区域接近。",
+          "points": [
+            {
+              "label": "巡洋舰与驱逐舰 · 西南方向",
+              "x": 58,
+              "y": 75,
+              "towards": {
+                "x": 75,
+                "y": 76
+              }
+            }
+          ],
+          "evidence": "directional"
+        },
+        {
+          "stage": "第二波接敌",
+          "route": "north",
+          "title": "第二波接敌 · 北侧撤离",
+          "description": "第二波从首波相反一侧的岛后接近。",
+          "points": [
+            {
+              "label": "巡洋舰与驱逐舰 · 东侧岛后",
+              "x": 88,
+              "y": 61,
+              "towards": {
+                "x": 76,
+                "y": 68
+              }
+            }
+          ],
+          "evidence": "directional"
+        },
+        {
+          "stage": "战列舰群",
+          "route": "north",
+          "title": "战列舰群 · 北侧撤离",
+          "description": "战列舰群从第二波同侧岛后驶来；虚线标记表示接近区域。",
+          "points": [
+            {
+              "label": "战列舰群 · 东侧岛后",
+              "x": 94,
+              "y": 54,
+              "towards": {
+                "x": 75,
+                "y": 40
+              }
+            }
+          ],
+          "evidence": "directional"
+        },
+        {
+          "stage": "维修点增援",
+          "route": "north",
+          "title": "维修点增援 · 北侧撤离",
+          "description": "北侧路线查看 A10 方向增援。",
+          "points": [
+            {
+              "label": "战列舰与驱逐舰 · A10",
+              "cell": "A10",
+              "towards": {
+                "x": 66,
+                "y": 27
+              }
+            }
+          ],
+          "evidence": "grid"
+        },
+        {
+          "stage": "出口拦截",
+          "route": "north",
+          "title": "出口拦截 · 北侧撤离",
+          "description": "航母从西北进入；巡洋舰与冲向当前出口的驱逐舰分别标出参考接近区域。",
+          "points": [
+            {
+              "label": "敌方航母 · 西北方向",
+              "x": 7,
+              "y": 8,
+              "towards": {
+                "x": 20,
+                "y": 18
+              }
+            },
+            {
+              "label": "巡洋舰 · 西北岛间",
+              "x": 15,
+              "y": 21,
+              "towards": {
+                "x": 36,
+                "y": 22
+              }
+            },
+            {
+              "label": "出口驱逐舰 · 北侧岛后",
+              "x": 26,
+              "y": 13,
+              "towards": {
+                "x": 35,
+                "y": 5
+              }
+            }
+          ],
+          "evidence": "directional"
+        },
+        {
+          "stage": "后续边界增援",
+          "route": "north",
+          "title": "后续边界增援 · 北侧撤离",
+          "description": "后续巡洋舰与驱逐舰从 A1 进入，沿边界向当前撤离点前进。",
+          "points": [
+            {
+              "label": "巡洋舰与驱逐舰 · A1",
+              "cell": "A1",
+              "towards": {
+                "x": 35,
+                "y": 5
+              }
+            }
+          ],
+          "evidence": "grid"
+        },
+        {
+          "stage": "首波接敌",
+          "route": "west",
+          "title": "首波接敌 · 西侧撤离",
+          "description": "首波从船队右侧雷雨区域接近。",
+          "points": [
+            {
+              "label": "巡洋舰与驱逐舰 · 东侧方向",
+              "x": 88,
+              "y": 61,
+              "towards": {
+                "x": 76,
+                "y": 68
+              }
+            }
+          ],
+          "evidence": "directional"
+        },
+        {
+          "stage": "第二波接敌",
+          "route": "west",
+          "title": "第二波接敌 · 西侧撤离",
+          "description": "第二波从首波相反一侧的岛后接近。",
+          "points": [
+            {
+              "label": "巡洋舰与驱逐舰 · 西南岛后",
+              "x": 55,
+              "y": 76,
+              "towards": {
+                "x": 71,
+                "y": 77
+              }
+            }
+          ],
+          "evidence": "directional"
+        },
+        {
+          "stage": "战列舰群",
+          "route": "west",
+          "title": "战列舰群 · 西侧撤离",
+          "description": "战列舰群从第二波同侧岛后驶来；虚线标记表示接近区域。",
+          "points": [
+            {
+              "label": "战列舰群 · 南侧岛后",
+              "x": 49,
+              "y": 89,
+              "towards": {
+                "x": 38,
+                "y": 71
+              }
+            }
+          ],
+          "evidence": "directional"
+        },
+        {
+          "stage": "维修点增援",
+          "route": "west",
+          "title": "维修点增援 · 西侧撤离",
+          "description": "西侧路线查看 J1 方向增援。",
+          "points": [
+            {
+              "label": "战列舰与驱逐舰 · J1",
+              "cell": "J1",
+              "towards": {
+                "x": 36,
+                "y": 62
+              }
+            }
+          ],
+          "evidence": "grid"
+        },
+        {
+          "stage": "出口拦截",
+          "route": "west",
+          "title": "出口拦截 · 西侧撤离",
+          "description": "航母从西北进入；巡洋舰与冲向当前出口的驱逐舰分别标出参考接近区域。",
+          "points": [
+            {
+              "label": "敌方航母 · 西北方向",
+              "x": 7,
+              "y": 8,
+              "towards": {
+                "x": 20,
+                "y": 18
+              }
+            },
+            {
+              "label": "巡洋舰 · 西北岛间",
+              "x": 26,
+              "y": 27,
+              "towards": {
+                "x": 21,
+                "y": 51
+              }
+            },
+            {
+              "label": "出口驱逐舰 · 西侧岛后",
+              "x": 14,
+              "y": 24,
+              "towards": {
+                "x": 5,
+                "y": 35
+              }
+            }
+          ],
+          "evidence": "directional"
+        },
+        {
+          "stage": "后续边界增援",
+          "route": "west",
+          "title": "后续边界增援 · 西侧撤离",
+          "description": "后续巡洋舰与驱逐舰从 A1 进入，沿边界向当前撤离点前进。",
+          "points": [
+            {
+              "label": "巡洋舰与驱逐舰 · A1",
+              "cell": "A1",
+              "towards": {
+                "x": 5,
+                "y": 35
+              }
+            }
+          ],
+          "evidence": "grid"
+        }
+      ],
+      "routes": [
+        {
+          "id": "north",
+          "label": "北侧撤离 · A4",
+          "exitCell": "A4",
+          "image": "/operation-maps/hermes-north.svg",
+          "baseMarkers": [
+            {
+              "x": 36.2,
+              "y": 8.600000000000001,
+              "width": 7,
+              "height": 7
+            },
+            {
+              "x": 47.2,
+              "y": 6,
+              "width": 15,
+              "height": 6
+            }
+          ]
+        },
+        {
+          "id": "west",
+          "label": "西侧撤离 · D1",
+          "exitCell": "D1",
+          "image": "/operation-maps/hermes-west.svg",
+          "baseMarkers": [
+            {
+              "x": 8.600000000000001,
+              "y": 36.2,
+              "width": 7,
+              "height": 7
+            },
+            {
+              "x": 19.6,
+              "y": 28.200000000000003,
+              "width": 15,
+              "height": 6
+            }
+          ]
+        }
+      ],
+      "routeSource": "https://steamcommunity.com/sharedfiles/filedetails/?id=3392428008",
+      "routeNotice": "分路线区域参考 Ruserification 社区攻略；该攻略未包含 14.11 后的改动。区域和航向仅作参考，A10／J1 与 A1 格位另据官方 Wiki 核对。",
+      "reviewedAt": "2026-10-08",
+      "routeLabel": "路线 / 出口",
+      "stages": [
+        "首波接敌",
+        "第二波接敌",
+        "战列舰群",
+        "维修点增援",
+        "出口拦截",
+        "后续边界增援"
+      ],
+      "overview": {
+        "routeSelection": true,
+        "groups": [
+          {
+            "number": "1",
+            "title": "首波接敌",
+            "stages": [
+              "首波接敌"
+            ],
+            "note": "从船队雷雨一侧接近；位置随撤离路线变化。"
+          },
+          {
+            "number": "2",
+            "title": "第二波接敌",
+            "stages": [
+              "第二波接敌"
+            ],
+            "note": "从首波相反一侧的岛后接近。"
+          },
+          {
+            "number": "3",
+            "title": "战列舰群",
+            "stages": [
+              "战列舰群"
+            ],
+            "note": "从第二波同侧岛后驶来。"
+          },
+          {
+            "number": "4",
+            "title": "维修点增援",
+            "stages": [
+              "维修点增援"
+            ],
+            "note": "北侧撤离对应 A10，西侧撤离对应 J1；总图只显示当前路线对应的位置。"
+          },
+          {
+            "number": "5",
+            "title": "出口拦截",
+            "stages": [
+              "出口拦截"
+            ],
+            "note": "西北航母、岛间巡洋舰及冲向当前出口的驱逐舰分开标出。"
+          },
+          {
+            "number": "6",
+            "title": "后续边界增援",
+            "stages": [
+              "后续边界增援"
+            ],
+            "note": "后续巡洋舰与驱逐舰从 A1 进入，沿边界向当前出口前进。"
+          }
+        ]
+      },
+      "terrainSource": "https://github.com/WoWs-Builder-Team/minimap_renderer/tree/0cc781355535906f6f4817e40bc7d902325537b6/src/renderer/resources/spaces"
+    },
+    {
+      "id": "newport",
+      "name": "纽波特海军基地防御",
+      "englishName": "Defense of Naval Station Newport",
+      "aliases": [
+        "纽波特",
+        "纽波特海军基地防御",
+        "Newport",
+        "Defense of Naval Station Newport"
+      ],
+      "maps": [
+        "s02_Naval_Defense"
+      ],
+      "source": "https://wiki.worldofwarships.com/Ship:Defense_of_Naval_Station_Newport",
+      "sourceUpdated": "2026-07-12",
+      "legacy": false,
+      "image": "/operation-maps/newport-overview.svg",
+      "bounds": [
+        4,
+        4,
+        92,
+        92
+      ],
+      "pointSets": [
+        {
+          "stage": "第一波",
+          "title": "第一波 · 西侧",
+          "points": [
+            {
+              "label": "西侧接近区域",
+              "x": 13,
+              "y": 67,
+              "towards": {
+                "x": 35,
+                "y": 72
+              }
+            }
+          ],
+          "description": "按本波实际方向选择；相邻波次沿相邻监视站出现，首波中央时第三波也为中央。虚线区域只表示资料中的接近方向，具体刷新格位未核实。",
+          "route": "west",
+          "evidence": "directional"
+        },
+        {
+          "stage": "第一波",
+          "title": "第一波 · 中央",
+          "points": [
+            {
+              "label": "中央接近区域",
+              "x": 42,
+              "y": 29,
+              "towards": {
+                "x": 59,
+                "y": 56
+              }
+            }
+          ],
+          "description": "按本波实际方向选择；相邻波次沿相邻监视站出现，首波中央时第三波也为中央。虚线区域只表示资料中的接近方向，具体刷新格位未核实。",
+          "route": "center",
+          "evidence": "directional"
+        },
+        {
+          "stage": "第一波",
+          "title": "第一波 · 北侧",
+          "points": [
+            {
+              "label": "北侧接近区域",
+              "x": 75,
+              "y": 13,
+              "towards": {
+                "x": 80,
+                "y": 48
+              }
+            }
+          ],
+          "description": "按本波实际方向选择；相邻波次沿相邻监视站出现，首波中央时第三波也为中央。虚线区域只表示资料中的接近方向，具体刷新格位未核实。",
+          "route": "north",
+          "evidence": "directional"
+        },
+        {
+          "stage": "第二波",
+          "title": "第二波 · 西侧",
+          "points": [
+            {
+              "label": "西侧接近区域",
+              "x": 13,
+              "y": 67,
+              "towards": {
+                "x": 35,
+                "y": 72
+              }
+            }
+          ],
+          "description": "按本波实际方向选择；相邻波次沿相邻监视站出现，首波中央时第三波也为中央。虚线区域只表示资料中的接近方向，具体刷新格位未核实。",
+          "route": "west",
+          "evidence": "directional"
+        },
+        {
+          "stage": "第二波",
+          "title": "第二波 · 中央",
+          "points": [
+            {
+              "label": "中央接近区域",
+              "x": 42,
+              "y": 29,
+              "towards": {
+                "x": 59,
+                "y": 56
+              }
+            }
+          ],
+          "description": "按本波实际方向选择；相邻波次沿相邻监视站出现，首波中央时第三波也为中央。虚线区域只表示资料中的接近方向，具体刷新格位未核实。",
+          "route": "center",
+          "evidence": "directional"
+        },
+        {
+          "stage": "第二波",
+          "title": "第二波 · 北侧",
+          "points": [
+            {
+              "label": "北侧接近区域",
+              "x": 75,
+              "y": 13,
+              "towards": {
+                "x": 80,
+                "y": 48
+              }
+            }
+          ],
+          "description": "按本波实际方向选择；相邻波次沿相邻监视站出现，首波中央时第三波也为中央。虚线区域只表示资料中的接近方向，具体刷新格位未核实。",
+          "route": "north",
+          "evidence": "directional"
+        },
+        {
+          "stage": "第三波",
+          "title": "第三波 · 西侧",
+          "points": [
+            {
+              "label": "西侧接近区域",
+              "x": 13,
+              "y": 67,
+              "towards": {
+                "x": 35,
+                "y": 72
+              }
+            }
+          ],
+          "description": "按本波实际方向选择；相邻波次沿相邻监视站出现，首波中央时第三波也为中央。虚线区域只表示资料中的接近方向，具体刷新格位未核实。",
+          "route": "west",
+          "evidence": "directional"
+        },
+        {
+          "stage": "第三波",
+          "title": "第三波 · 中央",
+          "points": [
+            {
+              "label": "中央接近区域",
+              "x": 42,
+              "y": 29,
+              "towards": {
+                "x": 59,
+                "y": 56
+              }
+            }
+          ],
+          "description": "按本波实际方向选择；相邻波次沿相邻监视站出现，首波中央时第三波也为中央。虚线区域只表示资料中的接近方向，具体刷新格位未核实。",
+          "route": "center",
+          "evidence": "directional"
+        },
+        {
+          "stage": "第三波",
+          "title": "第三波 · 北侧",
+          "points": [
+            {
+              "label": "北侧接近区域",
+              "x": 75,
+              "y": 13,
+              "towards": {
+                "x": 80,
+                "y": 48
+              }
+            }
+          ],
+          "description": "按本波实际方向选择；相邻波次沿相邻监视站出现，首波中央时第三波也为中央。虚线区域只表示资料中的接近方向，具体刷新格位未核实。",
+          "route": "north",
+          "evidence": "directional"
+        },
+        {
+          "stage": "支援舰追击",
+          "title": "支援舰追击 · 南侧",
+          "points": [
+            {
+              "label": "追击巡洋舰 · 南侧边界",
+              "x": 72,
+              "y": 95,
+              "towards": {
+                "x": 79,
+                "y": 80
+              }
+            }
+          ],
+          "description": "防守成功后的候选方向，与前序波次相关；按实战选择。虚线区域只表示资料中的接近方向，具体刷新格位未核实。",
+          "route": "*",
+          "evidence": "directional"
+        },
+        {
+          "stage": "支援舰追击",
+          "title": "支援舰追击 · 东侧",
+          "points": [
+            {
+              "label": "追击巡洋舰 · 东侧边界",
+              "x": 95,
+              "y": 62,
+              "towards": {
+                "x": 85,
+                "y": 72
+              }
+            }
+          ],
+          "description": "虚线区域只表示资料中的接近方向，具体刷新格位未核实。",
+          "route": "*",
+          "evidence": "directional"
+        },
+        {
+          "stage": "主攻阶段",
+          "title": "主攻 · 西侧",
+          "points": [
+            {
+              "label": "西侧主攻舰群",
+              "x": 16,
+              "y": 66,
+              "towards": {
+                "x": 57,
+                "y": 83
+              }
+            }
+          ],
+          "description": "三个方向都可能参与主攻；逐个选择查看，不表示本局只有一个方向。虚线区域只表示资料中的接近方向，具体刷新格位未核实。",
+          "route": "west",
+          "evidence": "directional"
+        },
+        {
+          "stage": "主攻阶段",
+          "title": "主攻 · 中央",
+          "points": [
+            {
+              "label": "中央主攻舰群",
+              "x": 40,
+              "y": 27,
+              "towards": {
+                "x": 66,
+                "y": 69
+              }
+            }
+          ],
+          "description": "三个方向都可能参与主攻；逐个选择查看，不表示本局只有一个方向。虚线区域只表示资料中的接近方向，具体刷新格位未核实。",
+          "route": "center",
+          "evidence": "directional"
+        },
+        {
+          "stage": "主攻阶段",
+          "title": "主攻 · 北侧",
+          "points": [
+            {
+              "label": "北侧主攻舰群",
+              "x": 74,
+              "y": 14,
+              "towards": {
+                "x": 83,
+                "y": 58
+              }
+            }
+          ],
+          "description": "三个方向都可能参与主攻；逐个选择查看，不表示本局只有一个方向。虚线区域只表示资料中的接近方向，具体刷新格位未核实。",
+          "route": "north",
+          "evidence": "directional"
+        }
+      ],
+      "routes": [
+        {
+          "id": "west",
+          "label": "西侧监视站方向"
+        },
+        {
+          "id": "center",
+          "label": "中央监视站方向"
+        },
+        {
+          "id": "north",
+          "label": "北侧监视站方向"
+        }
+      ],
+      "reviewedAt": "2026-10-08",
+      "routeLabel": "来袭方向",
+      "routeSource": "https://steamcommunity.com/sharedfiles/filedetails/?id=3392428008",
+      "routeNotice": "阶段与格位据官方 Wiki 重新整理；方向区域参考较早社区图，仅作示意。社区图未包含 14.11 后改动，不能保证当前版本的精确刷新位置。",
+      "stages": [
+        "第一波",
+        "第二波",
+        "第三波",
+        "支援舰追击",
+        "主攻阶段"
+      ],
+      "overview": {
+        "routeSelection": false,
+        "groups": [
+          {
+            "number": "1–3",
+            "title": "前三波候选区域",
+            "stages": [
+              "第一波",
+              "第二波",
+              "第三波"
+            ],
+            "note": "三个接近方向都在总图中展示；1–3 表示前三波的候选位置，实际先后按本局来袭顺序判断，不把某个方向固定为第一、第二或第三波。"
+          },
+          {
+            "number": "4",
+            "title": "支援舰追击",
+            "stages": [
+              "支援舰追击"
+            ],
+            "note": "防守成功后，追击舰可能从南侧或东侧边界进入；两处候选同时展示。"
+          },
+          {
+            "number": "5",
+            "title": "主攻阶段",
+            "stages": [
+              "主攻阶段"
+            ],
+            "note": "西侧、中央、北侧都可能参与主攻；相邻参考区域合并显示编号 1–3 / 5。"
+          }
+        ]
+      },
+      "terrainSource": "https://github.com/WoWs-Builder-Team/minimap_renderer/tree/0cc781355535906f6f4817e40bc7d902325537b6/src/renderer/resources/spaces"
+    },
+    {
+      "id": "ultimate-frontier",
+      "name": "终极前沿",
+      "englishName": "The Ultimate Frontier",
+      "aliases": [
+        "终极前沿",
+        "终极边疆",
+        "Ultimate Frontier",
+        "The Ultimate Frontier"
+      ],
+      "maps": [
+        "s06_Atoll"
+      ],
+      "source": "https://wiki.worldofwarships.com/Ship:The_Ultimate_Frontier",
+      "sourceUpdated": "2026-07-12",
+      "legacy": false,
+      "image": "/operation-maps/ultimate-frontier-overview.svg",
+      "bounds": [
+        4,
+        4,
+        92,
+        92
+      ],
+      "pointSets": [
+        {
+          "stage": "初始接敌",
+          "title": "初始 · 侦察驱逐舰",
+          "points": [
+            {
+              "label": "侦察驱逐舰 · 南侧水域",
+              "x": 74,
+              "y": 72,
+              "towards": {
+                "x": 67,
+                "y": 52
+              }
+            }
+          ],
+          "description": "虚线区域只表示资料中的接近方向，具体刷新格位未核实。",
+          "route": "*",
+          "evidence": "directional"
+        },
+        {
+          "stage": "初始接敌",
+          "title": "初始 · 中央战列舰群",
+          "points": [
+            {
+              "label": "中央战列舰与巡洋舰",
+              "x": 65,
+              "y": 74,
+              "towards": {
+                "x": 76,
+                "y": 65
+              }
+            }
+          ],
+          "description": "战列舰群先向东北航行，再在 H8 附近转向；H8 属于航行位置。虚线区域只表示资料中的接近方向，具体刷新格位未核实。",
+          "route": "*",
+          "evidence": "directional"
+        },
+        {
+          "stage": "飞机护航",
+          "title": "护航 · A9 巡洋舰",
+          "points": [
+            {
+              "label": "巡洋舰 · A9",
+              "cell": "A9",
+              "towards": {
+                "x": 72,
+                "y": 27
+              }
+            }
+          ],
+          "description": "A9 巡洋舰向西南接近。",
+          "route": "*",
+          "evidence": "grid"
+        },
+        {
+          "stage": "飞机护航",
+          "title": "护航 · 后续防空巡洋舰",
+          "points": [
+            {
+              "label": "第二入口巡洋舰 · 东侧",
+              "x": 95,
+              "y": 28,
+              "towards": {
+                "x": 78,
+                "y": 31
+              }
+            },
+            {
+              "label": "第三入口巡洋舰 · 北侧",
+              "x": 71,
+              "y": 5,
+              "towards": {
+                "x": 69,
+                "y": 21
+              }
+            }
+          ],
+          "description": "分别查看三次飞机入场时出现的巡洋舰；后续入口位置是方向参考。",
+          "route": "*",
+          "evidence": "directional"
+        },
+        {
+          "stage": "条件增援",
+          "title": "条件增援 · H7 巡洋舰",
+          "points": [
+            {
+              "label": "追加巡洋舰 · H7",
+              "cell": "H7",
+              "towards": {
+                "x": 64,
+                "y": 55
+              }
+            }
+          ],
+          "description": "视前序敌舰击沉情况出现，不能当作每局必有的固定波次。",
+          "route": "*",
+          "evidence": "grid"
+        },
+        {
+          "stage": "条件增援",
+          "title": "条件伏击 · G5 驱逐舰",
+          "points": [
+            {
+              "label": "提前进入区域触发的驱逐舰 · G5",
+              "cell": "G5",
+              "towards": {
+                "x": 45,
+                "y": 44
+              }
+            }
+          ],
+          "description": "提前进入南侧指定区域时可能触发。",
+          "route": "*",
+          "evidence": "grid"
+        },
+        {
+          "stage": "航母目标",
+          "title": "航母 · G2 起始位置",
+          "points": [
+            {
+              "label": "敌方航母 · G2",
+              "cell": "G2",
+              "towards": {
+                "x": 25,
+                "y": 75
+              }
+            }
+          ],
+          "description": "G2 是航母初始格位，向东南撤离时不能仍把该格当作当前位置。",
+          "route": "*",
+          "evidence": "grid"
+        },
+        {
+          "stage": "机场防守 · 第一波",
+          "title": "机场防守 · 第一波 · 东侧",
+          "points": [
+            {
+              "label": "东侧舰群",
+              "x": 95,
+              "y": 46,
+              "towards": {
+                "x": 70,
+                "y": 30
+              }
+            }
+          ],
+          "description": "每局三个方向各出现一次，顺序随机；按本波方向切换。虚线区域只表示资料中的接近方向，具体刷新格位未核实。",
+          "route": "east",
+          "evidence": "directional"
+        },
+        {
+          "stage": "机场防守 · 第一波",
+          "title": "机场防守 · 第一波 · 南侧",
+          "points": [
+            {
+              "label": "南侧舰群",
+              "x": 46,
+              "y": 76,
+              "towards": {
+                "x": 46,
+                "y": 54
+              }
+            }
+          ],
+          "description": "每局三个方向各出现一次，顺序随机；按本波方向切换。虚线区域只表示资料中的接近方向，具体刷新格位未核实。",
+          "route": "south",
+          "evidence": "directional"
+        },
+        {
+          "stage": "机场防守 · 第一波",
+          "title": "机场防守 · 第一波 · 西侧",
+          "points": [
+            {
+              "label": "西侧舰群",
+              "x": 5,
+              "y": 44,
+              "towards": {
+                "x": 39,
+                "y": 41
+              }
+            }
+          ],
+          "description": "每局三个方向各出现一次，顺序随机；按本波方向切换。虚线区域只表示资料中的接近方向，具体刷新格位未核实。",
+          "route": "west",
+          "evidence": "directional"
+        },
+        {
+          "stage": "机场防守 · 第二波",
+          "title": "机场防守 · 第二波 · 东侧",
+          "points": [
+            {
+              "label": "东侧舰群",
+              "x": 95,
+              "y": 46,
+              "towards": {
+                "x": 70,
+                "y": 30
+              }
+            }
+          ],
+          "description": "每局三个方向各出现一次，顺序随机；按本波方向切换。虚线区域只表示资料中的接近方向，具体刷新格位未核实。",
+          "route": "east",
+          "evidence": "directional"
+        },
+        {
+          "stage": "机场防守 · 第二波",
+          "title": "机场防守 · 第二波 · 南侧",
+          "points": [
+            {
+              "label": "南侧舰群",
+              "x": 46,
+              "y": 76,
+              "towards": {
+                "x": 46,
+                "y": 54
+              }
+            }
+          ],
+          "description": "每局三个方向各出现一次，顺序随机；按本波方向切换。虚线区域只表示资料中的接近方向，具体刷新格位未核实。",
+          "route": "south",
+          "evidence": "directional"
+        },
+        {
+          "stage": "机场防守 · 第二波",
+          "title": "机场防守 · 第二波 · 西侧",
+          "points": [
+            {
+              "label": "西侧舰群",
+              "x": 5,
+              "y": 44,
+              "towards": {
+                "x": 39,
+                "y": 41
+              }
+            }
+          ],
+          "description": "每局三个方向各出现一次，顺序随机；按本波方向切换。虚线区域只表示资料中的接近方向，具体刷新格位未核实。",
+          "route": "west",
+          "evidence": "directional"
+        },
+        {
+          "stage": "机场防守 · 第三波",
+          "title": "机场防守 · 第三波 · 东侧",
+          "points": [
+            {
+              "label": "东侧舰群",
+              "x": 95,
+              "y": 46,
+              "towards": {
+                "x": 70,
+                "y": 30
+              }
+            }
+          ],
+          "description": "每局三个方向各出现一次，顺序随机；按本波方向切换。虚线区域只表示资料中的接近方向，具体刷新格位未核实。",
+          "route": "east",
+          "evidence": "directional"
+        },
+        {
+          "stage": "机场防守 · 第三波",
+          "title": "机场防守 · 第三波 · 南侧",
+          "points": [
+            {
+              "label": "南侧舰群",
+              "x": 46,
+              "y": 76,
+              "towards": {
+                "x": 46,
+                "y": 54
+              }
+            }
+          ],
+          "description": "每局三个方向各出现一次，顺序随机；按本波方向切换。虚线区域只表示资料中的接近方向，具体刷新格位未核实。",
+          "route": "south",
+          "evidence": "directional"
+        },
+        {
+          "stage": "机场防守 · 第三波",
+          "title": "机场防守 · 第三波 · 西侧",
+          "points": [
+            {
+              "label": "西侧舰群",
+              "x": 5,
+              "y": 44,
+              "towards": {
+                "x": 39,
+                "y": 41
+              }
+            }
+          ],
+          "description": "每局三个方向各出现一次，顺序随机；按本波方向切换。虚线区域只表示资料中的接近方向，具体刷新格位未核实。",
+          "route": "west",
+          "evidence": "directional"
+        },
+        {
+          "stage": "维修基地驱逐舰",
+          "title": "维修基地突击 · F5",
+          "points": [
+            {
+              "label": "驱逐舰候选 · F5",
+              "cell": "F5",
+              "towards": {
+                "x": 50,
+                "y": 45
+              }
+            }
+          ],
+          "description": "机场防守第二波的附加驱逐舰，F5／F7 二选一，单独查看。",
+          "route": "*",
+          "evidence": "grid"
+        },
+        {
+          "stage": "维修基地驱逐舰",
+          "title": "维修基地突击 · F7",
+          "points": [
+            {
+              "label": "驱逐舰候选 · F7",
+              "cell": "F7",
+              "towards": {
+                "x": 50,
+                "y": 45
+              }
+            }
+          ],
+          "description": "按实际方向切换；不再把两个候选点画进所有机场波次。",
+          "route": "*",
+          "evidence": "grid"
+        }
+      ],
+      "routes": [
+        {
+          "id": "east",
+          "label": "东侧"
+        },
+        {
+          "id": "south",
+          "label": "南侧"
+        },
+        {
+          "id": "west",
+          "label": "西侧"
+        }
+      ],
+      "reviewedAt": "2026-10-08",
+      "routeLabel": "本波来袭方向",
+      "routeSource": "https://steamcommunity.com/sharedfiles/filedetails/?id=3392428008",
+      "routeNotice": "阶段与格位据官方 Wiki 重新整理；方向区域参考较早社区图，仅作示意。社区图未包含 14.11 后改动，不能保证当前版本的精确刷新位置。",
+      "stages": [
+        "初始接敌",
+        "飞机护航",
+        "条件增援",
+        "航母目标",
+        "机场防守 · 第一波",
+        "机场防守 · 第二波",
+        "机场防守 · 第三波",
+        "维修基地驱逐舰"
+      ],
+      "overview": {
+        "routeSelection": false,
+        "groups": [
+          {
+            "number": "1",
+            "title": "开局目标",
+            "stages": [
+              "初始接敌",
+              "航母目标"
+            ],
+            "note": "侦察驱逐舰与中央舰群为初始目标；敌方航母初始在 G2，随后向东南航行，不是机场防守后才刷出。"
+          },
+          {
+            "number": "2",
+            "title": "飞机护航",
+            "stages": [
+              "飞机护航"
+            ],
+            "note": "防空巡洋舰随三次飞机入场先后出现：A9、东侧入口、北侧入口。"
+          },
+          {
+            "number": "3",
+            "title": "条件增援",
+            "stages": [
+              "条件增援"
+            ],
+            "note": "H7 追加巡洋舰取决于前序战斗；提前进入指定区域可能触发 G5 驱逐舰，不是每局必有。"
+          },
+          {
+            "number": "4–6",
+            "title": "机场防守三波",
+            "stages": [
+              "机场防守 · 第一波",
+              "机场防守 · 第二波",
+              "机场防守 · 第三波"
+            ],
+            "note": "东、南、西三个方向各出现一波，顺序随机；三个点共用 4–6，不把方向绑定某一波。"
+          },
+          {
+            "number": "5",
+            "title": "第二波附加驱逐舰",
+            "stages": [
+              "维修基地驱逐舰"
+            ],
+            "note": "机场防守第二波另有驱逐舰从 F5 或 F7 出现，二选一；不是三波都刷新。"
+          }
+        ]
+      },
+      "terrainSource": "https://github.com/WoWs-Builder-Team/minimap_renderer/tree/0cc781355535906f6f4817e40bc7d902325537b6/src/renderer/resources/spaces"
+    }
+  ]
+}

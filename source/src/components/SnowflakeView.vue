@@ -160,6 +160,7 @@ onMounted(() => {
             </article>
           </div>
         </div>
+        <p v-if="summary?.warning" class="error-message" role="status">{{ summary.warning }}</p>
         <p v-if="error" class="error-message">{{ error }}</p>
       </section>
 

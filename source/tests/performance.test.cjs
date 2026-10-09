@@ -221,7 +221,9 @@ test("completed roster entries arrive before the slowest player finishes", async
     assert.deepEqual(updates, [[0, "ok"]]);
   } finally { releaseSlow(); }
   const result = await pending;
-  assert.deepEqual(updates, [[0, "ok"], [1, "ok"]]);
+  // A later publication may enrich a finished row with optional clan data.
+  assert.deepEqual(updates.slice(0, 2), [[0, "ok"], [1, "ok"]]);
+  assert.ok(updates.every(([, status]) => status === "ok"));
   assert.deepEqual(result.map((entry) => entry.status), ["ok", "ok"]);
 });
 

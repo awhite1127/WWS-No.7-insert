@@ -28,7 +28,7 @@ function recentFromSnapshots(current, snapshots) {
       !best || Math.abs(item.capturedAt - target) < Math.abs(best.capturedAt - target) ? item : best
     ), null);
     const actualDays = baseline ? (current.capturedAt - baseline.capturedAt) / DAY_MS : 0;
-    const available = Boolean(baseline && actualDays >= days * 0.8);
+    const available = Boolean(baseline && Math.abs(actualDays - days) <= days * 0.2);
     if (!available) return { days, available: false, actualDays };
 
     const battles = current.battles - baseline.battles;
@@ -64,7 +64,11 @@ function mergeSnapshot(snapshots, current) {
     .sort((a,b) => a.capturedAt-b.capturedAt);
   for (const item of records) {
     const date = new Date(item.capturedAt);
-    days.set([date.getFullYear(),date.getMonth(),date.getDate()].join("-"),item);
+    const key = [date.getFullYear(),date.getMonth(),date.getDate()].join("-");
+    const previous = days.get(key);
+    // Keep the complete sample and its actual timestamp on partial-query failure.
+    if (item.prUnavailable && previous?.pr) continue;
+    days.set(key, item);
   }
   return [...days.values()];
 }

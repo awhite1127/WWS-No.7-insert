@@ -1,6 +1,6 @@
 {
   "name": "wws-no-7-insert",
-  "version": "0.1.6",
+  "version": "0.1.7",
   "private": true,
   "description": "WWS No. 7 insert - World of Warships battle assistant",
   "main": "electron/main.cjs",
@@ -12,7 +12,9 @@
     "test": "node --test tests/*.test.cjs",
     "sync:containers": "node scripts/sync-containers.cjs",
     "sync:glossary": "node scripts/sync-wg-glossary.cjs",
-    "dist": "npm run build && electron-builder --win nsis portable"
+    "dist": "npm run build && electron-builder --win nsis portable",
+    "sync:planner": "node scripts/sync-planner.cjs",
+    "test:planner-ui": "electron scripts/check-planner-ui.cjs"
   },
   "dependencies": {
     "dotenv": "^17.2.2",

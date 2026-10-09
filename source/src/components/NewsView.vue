@@ -40,12 +40,11 @@ function readableDetails(lines: string[], category: NewsItem["category"]) {
     return paragraphs;
   });
 }
-let timer: ReturnType<typeof setInterval>;
 let disposed = false;
-async function load(force = false) {
+async function load() {
   if (loading.value) return;
   loading.value = true; error.value = "";
-  try { const result = await window.wws.getNews(force); if (!disposed) feed.value = result; }
+  try { const result = await window.wws.getNews(); if (!disposed) feed.value = result; }
   catch { if (!disposed) error.value = "公告读取失败，请稍后重试。"; }
   finally { if (!disposed) loading.value = false; }
 }
@@ -84,8 +83,8 @@ async function showDetail(item: NewsItem) {
   if (!detailDialog.value.open) detailDialog.value.showModal();
   void loadDetail(item);
 }
-onMounted(() => { void load(); timer = setInterval(() => void load(), 60000); });
-onUnmounted(() => { disposed = true; clearInterval(timer); });
+onMounted(() => { void load(); });
+onUnmounted(() => { disposed = true; });
 </script>
 
 <template>
@@ -100,7 +99,7 @@ onUnmounted(() => { disposed = true; clearInterval(timer); });
           <button role="tab" :aria-selected="category === 'events'" :class="{ active: category === 'events' }" @click="category = 'events'"><AppIcon name="overlay" :size="18" />版本更新 <b>{{ count('events') }}</b></button>
         </div>
       </div>
-      <div class="news-sync"><span><i></i>运行期间每 30 分钟更新</span><small>{{ source?.updatedAt ? `内容更新于 ${date(source.updatedAt)}` : '等待首次同步' }}</small><button class="button-secondary" :disabled="loading" @click="load(true)"><span v-if="loading" class="ui-spinner" aria-hidden="true"></span><AppIcon v-else name="pulse" :size="15" />{{ loading ? '正在同步…' : '刷新公告' }}</button><label class="news-search"><AppIcon name="search" :size="16" /><input v-model="query" type="search" placeholder="搜索版本或舰船" aria-label="搜索公告" /></label></div>
+      <div class="news-sync"><span><i></i>每次启动软件时更新一次</span><small>{{ source?.updatedAt ? `内容更新于 ${date(source.updatedAt)}` : loading ? '正在进行启动同步' : '本次启动未能取得新内容' }}</small><label class="news-search"><AppIcon name="search" :size="16" /><input v-model="query" type="search" placeholder="搜索版本或舰船" aria-label="搜索公告" /></label></div>
     </header>
     <p v-if="error || source?.error" class="news-warning" role="alert">{{ error || source?.error }}<span v-if="source?.updatedAt"> · 当前内容截至 {{ date(source.updatedAt) }}</span></p>
     <LoadingState v-if="loading && !feed.items.length" class="panel news-loading" label="正在同步官方公告…" detail="正在读取开发者日志与亚服简体中文新闻" />
@@ -111,7 +110,7 @@ onUnmounted(() => { disposed = true; clearInterval(timer); });
           <h3>{{ item.title }}</h3><small v-if="item.originalTitle" class="news-original">{{ item.originalTitle }}</small><p>{{ item.summary }}</p>
           <footer><span>{{ item.source }}<small>{{ item.language }}</small></span><div class="news-card__actions"><button class="button-secondary" aria-haspopup="dialog" @click="showDetail(item)">查看详细</button><button class="button-secondary" :disabled="opening === item.url" @click="open(item.url)">官网原文 ↗</button></div></footer>
         </article>
-        <div v-if="!items.length" class="panel news-empty"><AppIcon name="search" :size="28" /><strong>{{ query ? '没有匹配的公告' : '暂无可显示的公告' }}</strong><span>{{ query ? '试试版本号、中文舰名或其他关键词' : '可以点击上方刷新按钮重新同步' }}</span><button v-if="query" class="button-secondary" @click="query = ''">清空搜索</button></div>
+        <div v-if="!items.length" class="panel news-empty"><AppIcon name="search" :size="28" /><strong>{{ query ? '没有匹配的公告' : '暂无可显示的公告' }}</strong><span>{{ query ? '试试版本号、中文舰名或其他关键词' : '下次启动软件时将重新同步公告' }}</span><button v-if="query" class="button-secondary" @click="query = ''">清空搜索</button></div>
       </div>
 
     </div>

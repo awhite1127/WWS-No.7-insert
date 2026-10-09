@@ -2,7 +2,7 @@ import expectedPr from "../data/pr-expected.json";
 import { ratingValue } from "./stats-trend";
 import type { PrAggregate } from "./types";
 import newsSnapshot from "../data/news-snapshot.json";
-import type { NewsFeed, AppConfig, ArenaInfo, ClanDetails, ContainerDetails, ContainerSummary, PlayerDetails, RosterPlayer, SnowflakeAuthStatus, WgAuthStatus } from "./types";
+import type { NewsFeed, AppConfig, ClanDetails, ContainerDetails, ContainerSummary, PlayerDetails, SnowflakeAuthStatus, WgAuthStatus } from "./types";
 
 if (!window.wws) {
   // Optional slow-data preview; Electron always uses its real preload API.
@@ -11,9 +11,7 @@ if (!window.wws) {
     if (previewDelay) await new Promise((resolve) => setTimeout(resolve, previewDelay));
     return value;
   }
-  const config: AppConfig = { realm: "asia", theme: "dark", gamePath: "", overlayEnabled: true, overlayHotkeyEnabled: true, overlayHotkey: "Tab" };
-  const arenaListeners: Array<(arena: ArenaInfo | null) => void> = [];
-  const rosterListeners: Array<(players: RosterPlayer[]) => void> = [];
+  const config: AppConfig = { realm: "asia", theme: "dark", gamePath: "", overlayEnabled: true, overlayHotkeyEnabled: true, overlayHotkey: "Tab", overlayBattleMode: "random" };
   const mockDetails: PlayerDetails = {
     accountId: 3003269897,
     nickname: "yizhibai",
@@ -76,23 +74,6 @@ if (!window.wws) {
     const avg=(key:"avgDamage"|"avgXp"|"avgFrags")=>battles?ships.reduce((n,s)=>n+s[key]*s.battles,0)/battles:null;
     const pr=previewPr(ships);return {...c,shipCount:ships.length,battles,wins,winRate:battles?wins/battles*100:null,avgDamage:avg("avgDamage"),avgXp:avg("avgXp"),avgFrags:avg("avgFrags"),pr:pr.value,prCoverage:pr.coverage};
   });
-  const mockArena: ArenaInfo = {
-    battleId: "preview",
-    mapName: "北方海域",
-    gameMode: "制海权",
-    updatedAt: Date.now(),
-    players: (["ally", "enemy"] as const).flatMap((side) =>
-      [
-        ["白龙", "AirCarrier"], ["大和", "Battleship"], ["蒙大拿", "Battleship"],
-        ["勃艮第", "Battleship"], ["俄亥俄", "Battleship"], ["威尼斯", "Cruiser"],
-        ["得梅因", "Cruiser"], ["彼得罗巴甫洛夫斯克", "Cruiser"], ["米诺陶斯", "Cruiser"],
-        ["莫斯科", "Cruiser"], ["岛风", "Destroyer"], ["春云", "Destroyer"],
-      ].map(([shipName, shipType], index) => ({
-        key: side + index, name: side === "ally" && index === 0 ? "yizhibai" : (side === "ally" ? "FleetMate_" : "SeaRival_") + String(index + 1).padStart(2, "0"),
-        side, relation: side === "ally" ? 1 : 2, accountId: 3003269897 + index + (side === "enemy" ? 100 : 0),
-        shipId: 4000000000 + index, shipName, shipType, shipTier: 10,
-      }))),
-  };
   const mockClan: ClanDetails = {
     clanId: 2000030618,
     tag: "GNK48",
@@ -112,24 +93,6 @@ if (!window.wws) {
       overall: index === 15 ? null : { battles: 1600 + index * 175, winRate: 48 + (index * 7 % 18), avgDamage: 73000 + index * 2200, avgXp: 1450 + index * 32 },
     })),
   };
-  const mockRoster: RosterPlayer[] = mockArena.players.map((player, index) => ({
-    ...player,
-    status: "ok",
-    gameKarma: index === 0 ? 4 : index % 5 === 0 ? 0 : index * 3,
-    karmaStatus: "ok",
-    overall: {
-      battles: 1600 + index * 267, wins: 800 + index * 130,
-      winRate: 43 + ((index * 7 + Math.floor(index / 12) * 4) % 21), avgDamage: 62000 + index * 1900,
-      avgXp: 1180 + index * 28, avgFrags: 0.7, survivalRate: 40,
-    },
-    currentShip: {
-      shipId: player.shipId!, name: player.shipName, tier: 10, type: player.shipType!,
-      nation: "japan", battles: 42 + index * 13, wins: 20 + index * 6,
-      winRate: 39 + (index * 9 % 25), avgDamage: 78000 + index * 1800,
-      avgXp: 1250 + index * 32, avgFrags: 0.8,
-    },
-    clan: index === 0 ? mockDetails.clan : null,
-  }));
   const mockContainers: ContainerSummary[] = [
     { id: "4059222960", title: "“特级快递：战斗支援物资”高级补给箱", englishName: '"Special Delivery: Combat Supplies" Premium container' },
     { id: "4002599856", title: "“星条曙光”补给箱", englishName: "Dawn of a Nation container" },
@@ -195,11 +158,25 @@ if (!window.wws) {
   };
 
   window.wws = {
+    getShipDataStatus: async () => {
+      const catalog = await window.wws.getPlannerCatalog();
+      return {state:"idle",version:catalog.version,revision:catalog.revision,shipCount:catalog.ships.length,checkedAt:null,updated:false,error:""};
+    },
+    checkShipData: async () => ({...await window.wws.getShipDataStatus(),state:"error",error:"浏览器预览仅使用内置数据，请在桌面版检查更新。"}),
+    onShipDataStatus: () => () => {},
+    getPlannerCatalog: async () => {
+      const response = await fetch(import.meta.env.BASE_URL + "planner-catalog.json.gz");
+      if (!response.ok || !response.body) throw new Error("配装数据包不可用");
+      const stream = response.body.pipeThrough(new DecompressionStream("gzip"));
+      return await new Response(stream).json() as import("./build-planner").PlannerCatalog;
+    },
     getNews: async () => { const today = new Date(); const monthStart = new Date(Date.UTC(today.getUTCFullYear(), today.getUTCMonth() - 2, 1)); const lastDay = new Date(Date.UTC(monthStart.getUTCFullYear(), monthStart.getUTCMonth() + 1, 0)).getUTCDate(); const cutoff = new Date(Date.UTC(monthStart.getUTCFullYear(), monthStart.getUTCMonth(), Math.min(today.getUTCDate(), lastDay))); return previewResult({ ...newsSnapshot, items: newsSnapshot.items.filter(item => { const published = new Date(item.publishedAt + "T00:00:00Z"); return published >= cutoff && published <= today; }) } as NewsFeed); },
     getNewsDetail: async () => ["浏览器预览暂不提供文章全文，请在桌面版查看。"],
     openRatingSource: async () => { window.open("https://wows-numbers.com/personal/rating/", "_blank", "noopener,noreferrer"); },
     openNewsSource: async (url) => { window.open(url, "_blank", "noopener,noreferrer"); },
     getConfig: async () => config,
+    onConfigChanged: () => () => {},
+    onWindowActivity: () => () => {},
     saveConfig: async (next) => Object.assign(config, next),
     getArenaState: async () => ({ arena: null, roster: [], watchedPath: "", arenaFileFound: false }),
     listContainers: async () => previewResult(mockContainers),
@@ -207,10 +184,7 @@ if (!window.wws) {
       ? mockAlbumDetails
       : { ...mockContainerDetails, id, title: mockContainers.find((item) => item.id === id)?.title || mockContainerDetails.title },
     openContainerSource: async () => {},
-    refreshRoster: async () => {
-      rosterListeners.forEach((listener) => listener(mockRoster));
-      return mockRoster;
-    },
+    refreshRoster: async () => [],
     getWgAuthStatus: async () => snowStatus as WgAuthStatus,
     loginWg: async () => snowStatus as WgAuthStatus,
     getMyStats: async () => previewResult(mockDetails),
@@ -227,33 +201,20 @@ if (!window.wws) {
     chooseGameDirectory: async () => "",
     startArenaWatch: async (gamePath) => gamePath,
     stopArenaWatch: async () => true,
-    checkForUpdate: async () => ({ currentVersion: "0.1.6", latestVersion: "0.1.3", updateAvailable: false, releaseUrl: "https://github.com/awhite1127/WWS-No.7-insert/releases/tag/V0.1.3", asset: null }),
+    checkForUpdate: async () => ({ currentVersion: "0.1.7", latestVersion: "0.1.3", updateAvailable: false, releaseUrl: "https://github.com/awhite1127/WWS-No.7-insert/releases/tag/V0.1.3", asset: null }),
     downloadUpdate: async () => { throw new Error("浏览器预览不能下载程序"); },
     showUpdateFile: async () => false,
     installUpdate: async () => false,
     openUpdateRelease: async () => {},
     onUpdateProgress: () => () => {},
-    simulateArena: async () => {
-      arenaListeners.forEach((listener) => listener(mockArena));
-      rosterListeners.forEach((listener) => listener(mockRoster));
-      return mockArena;
-    },
     setOverlayVisible: async () => true,
     minimizeWindow: async () => true,
     toggleMaximizeWindow: async () => false,
     isWindowMaximized: async () => false,
     closeWindow: async () => true,
     onWindowMaximized: () => () => {},
-    onArenaUpdate: (callback) => {
-      arenaListeners.push(callback);
-      if (new URLSearchParams(location.search).get("overlay") === "1") queueMicrotask(() => callback(mockArena));
-      return () => arenaListeners.splice(arenaListeners.indexOf(callback), 1);
-    },
-    onRosterStats: (callback) => {
-      rosterListeners.push(callback);
-      if (new URLSearchParams(location.search).get("overlay") === "1") queueMicrotask(() => callback(mockRoster));
-      return () => rosterListeners.splice(rosterListeners.indexOf(callback), 1);
-    },
+    onArenaUpdate: () => () => {},
+    onRosterStats: () => () => {},
     onOverlayStatus: () => () => {},
   };
 }
