@@ -1,6 +1,1480 @@
 {
-  "updatedAt": "2026-09-30T06:37:37.470Z",
+  "updatedAt": "2026-10-29T02:37:01.614Z",
   "pools": [
+    {
+      "year": 2026,
+      "sourceUrl": "https://blog.worldofwarships.com/blog/closed-test-1511-new-year-celebrations-santas-gifts-and-the-ice-station-port",
+      "publishedAt": "2026-10-29 00:01:00",
+      "probabilitySources": {
+        "gift": "https://blog.worldofwarships.com/blog/closed-test-1511-new-year-celebrations-santas-gifts-and-the-ice-station-port",
+        "mega": "https://blog.worldofwarships.com/blog/closed-test-1511-new-year-celebrations-santas-gifts-and-the-ice-station-port",
+        "ultra": "https://blog.worldofwarships.com/blog/closed-test-1511-new-year-celebrations-santas-gifts-and-the-ice-station-port"
+      },
+      "groups": [
+        {
+          "id": "rare",
+          "label": "稀有及 X 级",
+          "officialTitle": "Tier V–X ship",
+          "probabilities": {
+            "gift": 0.1,
+            "mega": 1,
+            "ultra": 3
+          }
+        },
+        {
+          "id": "high",
+          "label": "VIII–IX 级",
+          "officialTitle": "Tier VIII–IX ship",
+          "probabilities": {
+            "gift": 0.4,
+            "mega": 3,
+            "ultra": 9
+          }
+        },
+        {
+          "id": "low",
+          "label": "V–VIII 级",
+          "officialTitle": "Tier V–VIII ship",
+          "probabilities": {
+            "gift": 2,
+            "mega": 12,
+            "ultra": 20
+          }
+        }
+      ],
+      "ships": [
+        {
+          "id": 3760075984,
+          "name": "旅顺",
+          "englishName": "Lüshun",
+          "tier": 10,
+          "nation": "pan_asia",
+          "type": "destroyer",
+          "groupId": "rare",
+          "group": "稀有及 X 级"
+        },
+        {
+          "id": 3655218480,
+          "name": "斯莫兰",
+          "englishName": "Småland",
+          "tier": 10,
+          "nation": "europe",
+          "type": "destroyer",
+          "groupId": "rare",
+          "group": "稀有及 X 级"
+        },
+        {
+          "id": 3550360912,
+          "name": "拉潘帕",
+          "englishName": "La Pampa",
+          "tier": 10,
+          "nation": "pan_america",
+          "type": "destroyer",
+          "groupId": "rare",
+          "group": "稀有及 X 级"
+        },
+        {
+          "id": 3760076208,
+          "name": "阿尔瓦罗·德·巴赞",
+          "englishName": "Álvaro de Bazán",
+          "tier": 10,
+          "nation": "spain",
+          "type": "destroyer",
+          "groupId": "rare",
+          "group": "稀有及 X 级"
+        },
+        {
+          "id": 3655251408,
+          "name": "斯摩棱斯克",
+          "englishName": "Smolensk",
+          "tier": 10,
+          "nation": "ussr",
+          "type": "cruiser",
+          "groupId": "rare",
+          "group": "稀有及 X 级"
+        },
+        {
+          "id": 3550394160,
+          "name": "希尔德布兰德",
+          "englishName": "Hildebrand",
+          "tier": 10,
+          "nation": "germany",
+          "type": "cruiser",
+          "groupId": "rare",
+          "group": "稀有及 X 级"
+        },
+        {
+          "id": 3760142288,
+          "name": "雷神",
+          "englishName": "Thunderer",
+          "tier": 10,
+          "nation": "uk",
+          "type": "battleship",
+          "groupId": "rare",
+          "group": "稀有及 X 级"
+        },
+        {
+          "id": 3655251952,
+          "name": "波多黎各",
+          "englishName": "Puerto Rico",
+          "tier": 10,
+          "nation": "usa",
+          "type": "cruiser",
+          "groupId": "rare",
+          "group": "稀有及 X 级"
+        },
+        {
+          "id": 3549869840,
+          "name": "金枪鱼",
+          "englishName": "Tonijn",
+          "tier": 10,
+          "nation": "netherlands",
+          "type": "submarine",
+          "groupId": "rare",
+          "group": "稀有及 X 级"
+        },
+        {
+          "id": 4273911760,
+          "name": "蒙茅斯",
+          "englishName": "Monmouth",
+          "tier": 10,
+          "nation": "uk",
+          "type": "cruiser",
+          "groupId": "rare",
+          "group": "稀有及 X 级"
+        },
+        {
+          "id": 3539941360,
+          "name": "罗德岛",
+          "englishName": "Rhode Island",
+          "tier": 10,
+          "nation": "usa",
+          "type": "battleship",
+          "groupId": "rare",
+          "group": "稀有及 X 级"
+        },
+        {
+          "id": 3539941104,
+          "name": "绿伯爵",
+          "englishName": "Conte Verde",
+          "tier": 10,
+          "nation": "italy",
+          "type": "battleship",
+          "groupId": "rare",
+          "group": "稀有及 X 级"
+        },
+        {
+          "id": 3550361296,
+          "name": "冬月",
+          "englishName": "Fuyutsuki",
+          "tier": 10,
+          "nation": "japan",
+          "type": "destroyer",
+          "groupId": "rare",
+          "group": "稀有及 X 级"
+        },
+        {
+          "id": 3550393680,
+          "name": "伊里萨尔海军上将",
+          "englishName": "Almirante Irízar",
+          "tier": 10,
+          "nation": "pan_america",
+          "type": "cruiser",
+          "groupId": "rare",
+          "group": "稀有及 X 级"
+        },
+        {
+          "id": 3761157584,
+          "name": "喀琅施塔得",
+          "englishName": "Kronshtadt",
+          "tier": 9,
+          "nation": "ussr",
+          "type": "cruiser",
+          "groupId": "rare",
+          "group": "稀有及 X 级"
+        },
+        {
+          "id": 3750704848,
+          "name": "肥前",
+          "englishName": "Hizen",
+          "tier": 9,
+          "nation": "japan",
+          "type": "battleship",
+          "groupId": "rare",
+          "group": "稀有及 X 级"
+        },
+        {
+          "id": 3761190608,
+          "name": "武藏",
+          "englishName": "Musashi",
+          "tier": 9,
+          "nation": "japan",
+          "type": "battleship",
+          "groupId": "rare",
+          "group": "稀有及 X 级"
+        },
+        {
+          "id": 3751753552,
+          "name": "让·巴尔",
+          "englishName": "Jean Bart",
+          "tier": 9,
+          "nation": "france",
+          "type": "battleship",
+          "groupId": "rare",
+          "group": "稀有及 X 级"
+        },
+        {
+          "id": 3761125360,
+          "name": "贝纳姆",
+          "englishName": "Benham",
+          "tier": 9,
+          "nation": "usa",
+          "type": "destroyer",
+          "groupId": "rare",
+          "group": "稀有及 X 级"
+        },
+        {
+          "id": 3540923696,
+          "name": "闪电52",
+          "englishName": "Błyskawica '52",
+          "tier": 9,
+          "nation": "europe",
+          "type": "destroyer",
+          "groupId": "rare",
+          "group": "稀有及 X 级"
+        },
+        {
+          "id": 3530504176,
+          "name": "佐治亚",
+          "englishName": "Georgia",
+          "tier": 9,
+          "nation": "usa",
+          "type": "battleship",
+          "groupId": "rare",
+          "group": "稀有及 X 级"
+        },
+        {
+          "id": 3540989936,
+          "name": "印第安纳",
+          "englishName": "Indiana",
+          "tier": 9,
+          "nation": "usa",
+          "type": "battleship",
+          "groupId": "rare",
+          "group": "稀有及 X 级"
+        },
+        {
+          "id": 3761190896,
+          "name": "密苏里",
+          "englishName": "Missouri",
+          "tier": 9,
+          "nation": "usa",
+          "type": "battleship",
+          "groupId": "rare",
+          "group": "稀有及 X 级"
+        },
+        {
+          "id": 3762239280,
+          "name": "奥丁",
+          "englishName": "Odin",
+          "tier": 8,
+          "nation": "germany",
+          "type": "battleship",
+          "groupId": "rare",
+          "group": "稀有及 X 级"
+        },
+        {
+          "id": 3751753168,
+          "name": "列宁",
+          "englishName": "Lenin",
+          "tier": 8,
+          "nation": "ussr",
+          "type": "battleship",
+          "groupId": "rare",
+          "group": "稀有及 X 级"
+        },
+        {
+          "id": 3751687888,
+          "name": "朝潮",
+          "englishName": "Asashio",
+          "tier": 8,
+          "nation": "japan",
+          "type": "destroyer",
+          "groupId": "rare",
+          "group": "稀有及 X 级"
+        },
+        {
+          "id": 3741300688,
+          "name": "巨像",
+          "englishName": "Colossus",
+          "tier": 8,
+          "nation": "uk",
+          "type": "aircarrier",
+          "groupId": "rare",
+          "group": "稀有及 X 级"
+        },
+        {
+          "id": 3751720944,
+          "name": "安克雷奇",
+          "englishName": "Anchorage",
+          "tier": 8,
+          "nation": "usa",
+          "type": "cruiser",
+          "groupId": "rare",
+          "group": "稀有及 X 级"
+        },
+        {
+          "id": 3751753712,
+          "name": "马萨诸塞",
+          "englishName": "Massachusetts",
+          "tier": 8,
+          "nation": "usa",
+          "type": "battleship",
+          "groupId": "rare",
+          "group": "稀有及 X 级"
+        },
+        {
+          "id": 3751786480,
+          "name": "企业",
+          "englishName": "Enterprise",
+          "tier": 8,
+          "nation": "usa",
+          "type": "aircarrier",
+          "groupId": "rare",
+          "group": "稀有及 X 级"
+        },
+        {
+          "id": 3762206160,
+          "name": "米哈伊尔·库图佐夫",
+          "englishName": "Mikhail Kutuzov",
+          "tier": 8,
+          "nation": "ussr",
+          "type": "cruiser",
+          "groupId": "rare",
+          "group": "稀有及 X 级"
+        },
+        {
+          "id": 3762173744,
+          "name": "Z-39",
+          "englishName": "Z-39",
+          "tier": 7,
+          "nation": "germany",
+          "type": "destroyer",
+          "groupId": "rare",
+          "group": "稀有及 X 级"
+        },
+        {
+          "id": 3763255248,
+          "name": "贝尔法斯特",
+          "englishName": "Belfast",
+          "tier": 7,
+          "nation": "uk",
+          "type": "cruiser",
+          "groupId": "rare",
+          "group": "稀有及 X 级"
+        },
+        {
+          "id": 3752802256,
+          "name": "纳尔逊",
+          "englishName": "Nelson",
+          "tier": 7,
+          "nation": "uk",
+          "type": "battleship",
+          "groupId": "rare",
+          "group": "稀有及 X 级"
+        },
+        {
+          "id": 3764270896,
+          "name": "T-61",
+          "englishName": "T-61",
+          "tier": 6,
+          "nation": "germany",
+          "type": "destroyer",
+          "groupId": "rare",
+          "group": "稀有及 X 级"
+        },
+        {
+          "id": 3764303664,
+          "name": "海军上将施佩伯爵",
+          "englishName": "Admiral Graf Spee",
+          "tier": 6,
+          "nation": "germany",
+          "type": "cruiser",
+          "groupId": "rare",
+          "group": "稀有及 X 级"
+        },
+        {
+          "id": 3764369200,
+          "name": "埃里希·勒文哈尔特",
+          "englishName": "Erich Loewenhardt",
+          "tier": 6,
+          "nation": "germany",
+          "type": "aircarrier",
+          "groupId": "rare",
+          "group": "稀有及 X 级"
+        },
+        {
+          "id": 4293801424,
+          "name": "轰鸣",
+          "englishName": "Gremyashchy",
+          "tier": 5,
+          "nation": "ussr",
+          "type": "destroyer",
+          "groupId": "rare",
+          "group": "稀有及 X 级"
+        },
+        {
+          "id": 4267587280,
+          "name": "神风R",
+          "englishName": "Kamikaze R",
+          "tier": 5,
+          "nation": "japan",
+          "type": "destroyer",
+          "groupId": "rare",
+          "group": "稀有及 X 级"
+        },
+        {
+          "id": 4268635856,
+          "name": "神风",
+          "englishName": "Kamikaze",
+          "tier": 5,
+          "nation": "japan",
+          "type": "destroyer",
+          "groupId": "rare",
+          "group": "稀有及 X 级"
+        },
+        {
+          "id": 4277024464,
+          "name": "风神",
+          "englishName": "Fūjin",
+          "tier": 5,
+          "nation": "japan",
+          "type": "destroyer",
+          "groupId": "rare",
+          "group": "稀有及 X 级"
+        },
+        {
+          "id": 3765384944,
+          "name": "尤里乌斯-恺撒",
+          "englishName": "Giulio Cesare",
+          "tier": 5,
+          "nation": "italy",
+          "type": "battleship",
+          "groupId": "rare",
+          "group": "稀有及 X 级"
+        },
+        {
+          "id": 3761157328,
+          "name": "大连",
+          "englishName": "Dalian",
+          "tier": 9,
+          "nation": "pan_asia",
+          "type": "cruiser",
+          "groupId": "high",
+          "group": "VIII–IX 级"
+        },
+        {
+          "id": 3740218576,
+          "name": "载之",
+          "englishName": "Sun Yat-Sen",
+          "tier": 9,
+          "nation": "pan_asia",
+          "type": "battleship",
+          "groupId": "high",
+          "group": "VIII–IX 级"
+        },
+        {
+          "id": 3761124656,
+          "name": "贝洛斯",
+          "englishName": "Velos",
+          "tier": 9,
+          "nation": "europe",
+          "type": "destroyer",
+          "groupId": "high",
+          "group": "VIII–IX 级"
+        },
+        {
+          "id": 3540989360,
+          "name": "维多利亚",
+          "englishName": "Victoria",
+          "tier": 9,
+          "nation": "spain",
+          "type": "battleship",
+          "groupId": "high",
+          "group": "VIII–IX 级"
+        },
+        {
+          "id": 3540956624,
+          "name": "库兹马·米宁",
+          "englishName": "Kozma Minin",
+          "tier": 9,
+          "nation": "ussr",
+          "type": "cruiser",
+          "groupId": "high",
+          "group": "VIII–IX 级"
+        },
+        {
+          "id": 3761190352,
+          "name": "纳瓦林",
+          "englishName": "Navarin",
+          "tier": 9,
+          "nation": "ussr",
+          "type": "battleship",
+          "groupId": "high",
+          "group": "VIII–IX 级"
+        },
+        {
+          "id": 3540924112,
+          "name": "峰云",
+          "englishName": "Minegumo",
+          "tier": 9,
+          "nation": "japan",
+          "type": "destroyer",
+          "groupId": "high",
+          "group": "VIII–IX 级"
+        },
+        {
+          "id": 3519985360,
+          "name": "铃谷",
+          "englishName": "Suzuya",
+          "tier": 9,
+          "nation": "japan",
+          "type": "cruiser",
+          "groupId": "high",
+          "group": "VIII–IX 级"
+        },
+        {
+          "id": 3719247568,
+          "name": "剑",
+          "englishName": "Tsurugi",
+          "tier": 9,
+          "nation": "japan",
+          "type": "battleship",
+          "groupId": "high",
+          "group": "VIII–IX 级"
+        },
+        {
+          "id": 3540956912,
+          "name": "费兰特·贡扎加",
+          "englishName": "Ferrante Gonzaga",
+          "tier": 9,
+          "nation": "italy",
+          "type": "cruiser",
+          "groupId": "high",
+          "group": "VIII–IX 级"
+        },
+        {
+          "id": 3750704880,
+          "name": "朱塞佩·威尔第",
+          "englishName": "Giuseppe Verdi",
+          "tier": 9,
+          "nation": "italy",
+          "type": "battleship",
+          "groupId": "high",
+          "group": "VIII–IX 级"
+        },
+        {
+          "id": 3761190640,
+          "name": "马可波罗",
+          "englishName": "Marco Polo",
+          "tier": 9,
+          "nation": "italy",
+          "type": "battleship",
+          "groupId": "high",
+          "group": "VIII–IX 级"
+        },
+        {
+          "id": 3761125136,
+          "name": "格罗宁根",
+          "englishName": "Groningen",
+          "tier": 9,
+          "nation": "netherlands",
+          "type": "destroyer",
+          "groupId": "high",
+          "group": "VIII–IX 级"
+        },
+        {
+          "id": 3750639408,
+          "name": "Z-44",
+          "englishName": "Z-44",
+          "tier": 9,
+          "nation": "germany",
+          "type": "destroyer",
+          "groupId": "high",
+          "group": "VIII–IX 级"
+        },
+        {
+          "id": 3540957136,
+          "name": "阿伯丁",
+          "englishName": "Aberdeen",
+          "tier": 9,
+          "nation": "uk",
+          "type": "cruiser",
+          "groupId": "high",
+          "group": "VIII–IX 级"
+        },
+        {
+          "id": 3656333264,
+          "name": "猩红雷霆",
+          "englishName": "Scarlet Thunder",
+          "tier": 9,
+          "nation": "uk",
+          "type": "battleship",
+          "groupId": "high",
+          "group": "VIII–IX 级"
+        },
+        {
+          "id": 3750639600,
+          "name": "哈尔福德",
+          "englishName": "Halford",
+          "tier": 9,
+          "nation": "usa",
+          "type": "destroyer",
+          "groupId": "high",
+          "group": "VIII–IX 级"
+        },
+        {
+          "id": 3540957168,
+          "name": "剑桥",
+          "englishName": "Cambridge",
+          "tier": 9,
+          "nation": "usa",
+          "type": "cruiser",
+          "groupId": "high",
+          "group": "VIII–IX 级"
+        },
+        {
+          "id": 3750672368,
+          "name": "塔尔萨",
+          "englishName": "Tulsa",
+          "tier": 9,
+          "nation": "usa",
+          "type": "cruiser",
+          "groupId": "high",
+          "group": "VIII–IX 级"
+        },
+        {
+          "id": 3530470608,
+          "name": "包头",
+          "englishName": "Baotou",
+          "tier": 9,
+          "nation": "pan_asia",
+          "type": "cruiser",
+          "groupId": "high",
+          "group": "VIII–IX 级"
+        },
+        {
+          "id": 3530471408,
+          "name": "沃斯堡",
+          "englishName": "Fort Worth",
+          "tier": 9,
+          "nation": "usa",
+          "type": "cruiser",
+          "groupId": "high",
+          "group": "VIII–IX 级"
+        },
+        {
+          "id": 3551409520,
+          "name": "卡尤加",
+          "englishName": "Cayuga",
+          "tier": 9,
+          "nation": "commonwealth",
+          "type": "destroyer",
+          "groupId": "high",
+          "group": "VIII–IX 级"
+        },
+        {
+          "id": 3551475120,
+          "name": "胜捷",
+          "englishName": "Triunfante",
+          "tier": 9,
+          "nation": "spain",
+          "type": "battleship",
+          "groupId": "high",
+          "group": "VIII–IX 级"
+        },
+        {
+          "id": 3540989744,
+          "name": "弗里德里希·卡尔",
+          "englishName": "Friedrich Carl",
+          "tier": 9,
+          "nation": "germany",
+          "type": "battleship",
+          "groupId": "high",
+          "group": "VIII–IX 级"
+        },
+        {
+          "id": 3542004944,
+          "name": "那莱",
+          "englishName": "Narai",
+          "tier": 8,
+          "nation": "pan_asia",
+          "type": "cruiser",
+          "groupId": "high",
+          "group": "VIII–IX 级"
+        },
+        {
+          "id": 3762173232,
+          "name": "奥坎",
+          "englishName": "Orkan",
+          "tier": 8,
+          "nation": "europe",
+          "type": "destroyer",
+          "groupId": "high",
+          "group": "VIII–IX 级"
+        },
+        {
+          "id": 3542037808,
+          "name": "图尔古特·雷伊斯",
+          "englishName": "Turgut Reis",
+          "tier": 8,
+          "nation": "europe",
+          "type": "battleship",
+          "groupId": "high",
+          "group": "VIII–IX 级"
+        },
+        {
+          "id": 3542005040,
+          "name": "卡罗尔一世",
+          "englishName": "Regele Carol I",
+          "tier": 8,
+          "nation": "europe",
+          "type": "cruiser",
+          "groupId": "high",
+          "group": "VIII–IX 级"
+        },
+        {
+          "id": 3552490832,
+          "name": "阿吉雷",
+          "englishName": "Comandante Aguirre",
+          "tier": 8,
+          "nation": "pan_america",
+          "type": "cruiser",
+          "groupId": "high",
+          "group": "VIII–IX 级"
+        },
+        {
+          "id": 3762206032,
+          "name": "格劳海军上将",
+          "englishName": "Almirante Grau",
+          "tier": 8,
+          "nation": "pan_america",
+          "type": "cruiser",
+          "groupId": "high",
+          "group": "VIII–IX 级"
+        },
+        {
+          "id": 3762206128,
+          "name": "努曼西亚",
+          "englishName": "Numancia",
+          "tier": 8,
+          "nation": "spain",
+          "type": "cruiser",
+          "groupId": "high",
+          "group": "VIII–IX 级"
+        },
+        {
+          "id": 3761681872,
+          "name": "S-189",
+          "englishName": "S-189",
+          "tier": 8,
+          "nation": "ussr",
+          "type": "submarine",
+          "groupId": "high",
+          "group": "VIII–IX 级"
+        },
+        {
+          "id": 3541972432,
+          "name": "灵巧",
+          "englishName": "Provorny",
+          "tier": 8,
+          "nation": "ussr",
+          "type": "destroyer",
+          "groupId": "high",
+          "group": "VIII–IX 级"
+        },
+        {
+          "id": 3730748880,
+          "name": "彼得罗·巴格拉季昂",
+          "englishName": "Pyotr Bagration",
+          "tier": 8,
+          "nation": "ussr",
+          "type": "cruiser",
+          "groupId": "high",
+          "group": "VIII–IX 级"
+        },
+        {
+          "id": 3741234640,
+          "name": "奥恰科夫",
+          "englishName": "Ochakov",
+          "tier": 8,
+          "nation": "ussr",
+          "type": "cruiser",
+          "groupId": "high",
+          "group": "VIII–IX 级"
+        },
+        {
+          "id": 3741267408,
+          "name": "博罗季诺",
+          "englishName": "Borodino",
+          "tier": 8,
+          "nation": "ussr",
+          "type": "battleship",
+          "groupId": "high",
+          "group": "VIII–IX 级"
+        },
+        {
+          "id": 3531486928,
+          "name": "时雨",
+          "englishName": "Shigure",
+          "tier": 8,
+          "nation": "japan",
+          "type": "destroyer",
+          "groupId": "high",
+          "group": "VIII–IX 级"
+        },
+        {
+          "id": 4276008656,
+          "name": "利根",
+          "englishName": "Tone",
+          "tier": 8,
+          "nation": "japan",
+          "type": "cruiser",
+          "groupId": "high",
+          "group": "VIII–IX 级"
+        },
+        {
+          "id": 3542038256,
+          "name": "马坎托尼奥·科隆纳",
+          "englishName": "Marcantonio Colonna",
+          "tier": 8,
+          "nation": "italy",
+          "type": "battleship",
+          "groupId": "high",
+          "group": "VIII–IX 级"
+        },
+        {
+          "id": 3762271984,
+          "name": "天鹰",
+          "englishName": "Aquila",
+          "tier": 8,
+          "nation": "italy",
+          "type": "aircarrier",
+          "groupId": "high",
+          "group": "VIII–IX 级"
+        },
+        {
+          "id": 3751687984,
+          "name": "Z-35",
+          "englishName": "Z-35",
+          "tier": 8,
+          "nation": "germany",
+          "type": "destroyer",
+          "groupId": "high",
+          "group": "VIII–IX 级"
+        },
+        {
+          "id": 3531519792,
+          "name": "威斯巴登",
+          "englishName": "Wiesbaden",
+          "tier": 8,
+          "nation": "germany",
+          "type": "cruiser",
+          "groupId": "high",
+          "group": "VIII–IX 级"
+        },
+        {
+          "id": 3741234992,
+          "name": "席尔",
+          "englishName": "Schill",
+          "tier": 8,
+          "nation": "germany",
+          "type": "cruiser",
+          "groupId": "high",
+          "group": "VIII–IX 级"
+        },
+        {
+          "id": 3541972816,
+          "name": "奥什",
+          "englishName": "Hoche",
+          "tier": 8,
+          "nation": "france",
+          "type": "destroyer",
+          "groupId": "high",
+          "group": "VIII–IX 级"
+        },
+        {
+          "id": 3730782032,
+          "name": "弗兰德尔",
+          "englishName": "Flandre",
+          "tier": 8,
+          "nation": "france",
+          "type": "battleship",
+          "groupId": "high",
+          "group": "VIII–IX 级"
+        },
+        {
+          "id": 3761682384,
+          "name": "联盟",
+          "englishName": "Alliance",
+          "tier": 8,
+          "nation": "uk",
+          "type": "submarine",
+          "groupId": "high",
+          "group": "VIII–IX 级"
+        },
+        {
+          "id": 3541972944,
+          "name": "爱斯基摩人",
+          "englishName": "Eskimo",
+          "tier": 8,
+          "nation": "uk",
+          "type": "destroyer",
+          "groupId": "high",
+          "group": "VIII–IX 级"
+        },
+        {
+          "id": 3730749392,
+          "name": "汉普郡",
+          "englishName": "Hampshire",
+          "tier": 8,
+          "nation": "uk",
+          "type": "cruiser",
+          "groupId": "high",
+          "group": "VIII–IX 级"
+        },
+        {
+          "id": 3751720912,
+          "name": "虎59",
+          "englishName": "Tiger '59",
+          "tier": 8,
+          "nation": "uk",
+          "type": "cruiser",
+          "groupId": "high",
+          "group": "VIII–IX 级"
+        },
+        {
+          "id": 3762206672,
+          "name": "柴郡",
+          "englishName": "Cheshire",
+          "tier": 8,
+          "nation": "uk",
+          "type": "cruiser",
+          "groupId": "high",
+          "group": "VIII–IX 级"
+        },
+        {
+          "id": 3762272208,
+          "name": "不挠",
+          "englishName": "Indomitable",
+          "tier": 8,
+          "nation": "uk",
+          "type": "aircarrier",
+          "groupId": "high",
+          "group": "VIII–IX 级"
+        },
+        {
+          "id": 3730782192,
+          "name": "星座",
+          "englishName": "Constellation",
+          "tier": 8,
+          "nation": "usa",
+          "type": "battleship",
+          "groupId": "high",
+          "group": "VIII–IX 级"
+        },
+        {
+          "id": 3552524240,
+          "name": "威尔士亲王",
+          "englishName": "Prince of Wales",
+          "tier": 8,
+          "nation": "uk",
+          "type": "battleship",
+          "groupId": "high",
+          "group": "VIII–IX 级"
+        },
+        {
+          "id": 3720296272,
+          "name": "皮卡第",
+          "englishName": "Picardie",
+          "tier": 8,
+          "nation": "france",
+          "type": "battleship",
+          "groupId": "low",
+          "group": "V–VIII 级"
+        },
+        {
+          "id": 3542071248,
+          "name": "忒修斯",
+          "englishName": "Theseus",
+          "tier": 8,
+          "nation": "uk",
+          "type": "aircarrier",
+          "groupId": "low",
+          "group": "V–VIII 级"
+        },
+        {
+          "id": 3763254608,
+          "name": "七月九日",
+          "englishName": "Nueve de Julio",
+          "tier": 7,
+          "nation": "pan_america",
+          "type": "cruiser",
+          "groupId": "low",
+          "group": "V–VIII 级"
+        },
+        {
+          "id": 3763287408,
+          "name": "育空",
+          "englishName": "Yukon",
+          "tier": 7,
+          "nation": "commonwealth",
+          "type": "battleship",
+          "groupId": "low",
+          "group": "V–VIII 级"
+        },
+        {
+          "id": 3752736208,
+          "name": "塔什干39",
+          "englishName": "Tashkent '39",
+          "tier": 7,
+          "nation": "ussr",
+          "type": "destroyer",
+          "groupId": "low",
+          "group": "V–VIII 级"
+        },
+        {
+          "id": 3763221968,
+          "name": "列宁格勒",
+          "englishName": "Leningrad",
+          "tier": 7,
+          "nation": "ussr",
+          "type": "destroyer",
+          "groupId": "low",
+          "group": "V–VIII 级"
+        },
+        {
+          "id": 3543086544,
+          "name": "阿尔汉格尔斯克",
+          "englishName": "Arkhangelsk",
+          "tier": 7,
+          "nation": "ussr",
+          "type": "battleship",
+          "groupId": "low",
+          "group": "V–VIII 级"
+        },
+        {
+          "id": 3762238928,
+          "name": "波尔塔瓦",
+          "englishName": "Poltava",
+          "tier": 7,
+          "nation": "ussr",
+          "type": "battleship",
+          "groupId": "low",
+          "group": "V–VIII 级"
+        },
+        {
+          "id": 3763222224,
+          "name": "夕立",
+          "englishName": "Yūdachi",
+          "tier": 7,
+          "nation": "japan",
+          "type": "destroyer",
+          "groupId": "low",
+          "group": "V–VIII 级"
+        },
+        {
+          "id": 3752769232,
+          "name": "摩耶",
+          "englishName": "Maya",
+          "tier": 7,
+          "nation": "japan",
+          "type": "cruiser",
+          "groupId": "low",
+          "group": "V–VIII 级"
+        },
+        {
+          "id": 3763254992,
+          "name": "十胜",
+          "englishName": "Tokachi",
+          "tier": 7,
+          "nation": "japan",
+          "type": "cruiser",
+          "groupId": "low",
+          "group": "V–VIII 级"
+        },
+        {
+          "id": 3752802000,
+          "name": "日向",
+          "englishName": "Hyūga",
+          "tier": 7,
+          "nation": "japan",
+          "type": "battleship",
+          "groupId": "low",
+          "group": "V–VIII 级"
+        },
+        {
+          "id": 3763287760,
+          "name": "爱鹰",
+          "englishName": "Ashitaka",
+          "tier": 7,
+          "nation": "japan",
+          "type": "battleship",
+          "groupId": "low",
+          "group": "V–VIII 级"
+        },
+        {
+          "id": 3763222256,
+          "name": "FR25",
+          "englishName": "FR25",
+          "tier": 7,
+          "nation": "italy",
+          "type": "destroyer",
+          "groupId": "low",
+          "group": "V–VIII 级"
+        },
+        {
+          "id": 3658397424,
+          "name": "戈里齐亚",
+          "englishName": "Gorizia",
+          "tier": 7,
+          "nation": "italy",
+          "type": "cruiser",
+          "groupId": "low",
+          "group": "V–VIII 级"
+        },
+        {
+          "id": 3752769264,
+          "name": "弗朗切斯科·费鲁乔",
+          "englishName": "Francesco Ferruccio",
+          "tier": 7,
+          "nation": "italy",
+          "type": "cruiser",
+          "groupId": "low",
+          "group": "V–VIII 级"
+        },
+        {
+          "id": 3763255024,
+          "name": "阿布鲁齐公爵",
+          "englishName": "Duca degli Abruzzi",
+          "tier": 7,
+          "nation": "italy",
+          "type": "cruiser",
+          "groupId": "low",
+          "group": "V–VIII 级"
+        },
+        {
+          "id": 3752769328,
+          "name": "魏玛",
+          "englishName": "Weimar",
+          "tier": 7,
+          "nation": "germany",
+          "type": "cruiser",
+          "groupId": "low",
+          "group": "V–VIII 级"
+        },
+        {
+          "id": 3763255088,
+          "name": "慕尼黑",
+          "englishName": "München",
+          "tier": 7,
+          "nation": "germany",
+          "type": "cruiser",
+          "groupId": "low",
+          "group": "V–VIII 级"
+        },
+        {
+          "id": 3763287856,
+          "name": "沙恩霍斯特",
+          "englishName": "Scharnhorst",
+          "tier": 7,
+          "nation": "germany",
+          "type": "battleship",
+          "groupId": "low",
+          "group": "V–VIII 级"
+        },
+        {
+          "id": 3763255120,
+          "name": "土伦",
+          "englishName": "Toulon",
+          "tier": 7,
+          "nation": "france",
+          "type": "cruiser",
+          "groupId": "low",
+          "group": "V–VIII 级"
+        },
+        {
+          "id": 3763287888,
+          "name": "斯特拉斯堡",
+          "englishName": "Strasbourg",
+          "tier": 7,
+          "nation": "france",
+          "type": "battleship",
+          "groupId": "low",
+          "group": "V–VIII 级"
+        },
+        {
+          "id": 3543021520,
+          "name": "朱庇特42",
+          "englishName": "Jupiter '42",
+          "tier": 7,
+          "nation": "uk",
+          "type": "destroyer",
+          "groupId": "low",
+          "group": "V–VIII 级"
+        },
+        {
+          "id": 3522115536,
+          "name": "君权",
+          "englishName": "Royal Sovereign",
+          "tier": 7,
+          "nation": "uk",
+          "type": "battleship",
+          "groupId": "low",
+          "group": "V–VIII 级"
+        },
+        {
+          "id": 3543087056,
+          "name": "罗德尼",
+          "englishName": "Rodney",
+          "tier": 7,
+          "nation": "uk",
+          "type": "battleship",
+          "groupId": "low",
+          "group": "V–VIII 级"
+        },
+        {
+          "id": 3731830736,
+          "name": "科林伍德",
+          "englishName": "Collingwood",
+          "tier": 7,
+          "nation": "uk",
+          "type": "battleship",
+          "groupId": "low",
+          "group": "V–VIII 级"
+        },
+        {
+          "id": 3763288016,
+          "name": "胡德",
+          "englishName": "Hood",
+          "tier": 7,
+          "nation": "uk",
+          "type": "battleship",
+          "groupId": "low",
+          "group": "V–VIII 级"
+        },
+        {
+          "id": 4264441840,
+          "name": "西姆斯",
+          "englishName": "Sims",
+          "tier": 7,
+          "nation": "usa",
+          "type": "destroyer",
+          "groupId": "low",
+          "group": "V–VIII 级"
+        },
+        {
+          "id": 3668883440,
+          "name": "博伊西",
+          "englishName": "Boise",
+          "tier": 7,
+          "nation": "usa",
+          "type": "cruiser",
+          "groupId": "low",
+          "group": "V–VIII 级"
+        },
+        {
+          "id": 3763255280,
+          "name": "印第安纳波利斯",
+          "englishName": "Indianapolis",
+          "tier": 7,
+          "nation": "usa",
+          "type": "cruiser",
+          "groupId": "low",
+          "group": "V–VIII 级"
+        },
+        {
+          "id": 4288591856,
+          "name": "亚特兰大",
+          "englishName": "Atlanta",
+          "tier": 7,
+          "nation": "usa",
+          "type": "cruiser",
+          "groupId": "low",
+          "group": "V–VIII 级"
+        },
+        {
+          "id": 3553572848,
+          "name": "加利福尼亚",
+          "englishName": "California",
+          "tier": 7,
+          "nation": "usa",
+          "type": "battleship",
+          "groupId": "low",
+          "group": "V–VIII 级"
+        },
+        {
+          "id": 3752802288,
+          "name": "佛罗里达",
+          "englishName": "Florida",
+          "tier": 7,
+          "nation": "usa",
+          "type": "battleship",
+          "groupId": "low",
+          "group": "V–VIII 级"
+        },
+        {
+          "id": 3543577808,
+          "name": "新中国14",
+          "englishName": "Xin Zhong Guo 14",
+          "tier": 6,
+          "nation": "pan_asia",
+          "type": "submarine",
+          "groupId": "low",
+          "group": "V–VIII 级"
+        },
+        {
+          "id": 3764303152,
+          "name": "埃利",
+          "englishName": "Elli",
+          "tier": 6,
+          "nation": "europe",
+          "type": "cruiser",
+          "groupId": "low",
+          "group": "V–VIII 级"
+        },
+        {
+          "id": 3764270416,
+          "name": "茹鲁阿",
+          "englishName": "Juruá",
+          "tier": 6,
+          "nation": "pan_america",
+          "type": "destroyer",
+          "groupId": "low",
+          "group": "V–VIII 级"
+        },
+        {
+          "id": 3753817456,
+          "name": "迈索尔",
+          "englishName": "Mysore",
+          "tier": 6,
+          "nation": "commonwealth",
+          "type": "cruiser",
+          "groupId": "low",
+          "group": "V–VIII 级"
+        },
+        {
+          "id": 3659445712,
+          "name": "马卡罗夫海军上将",
+          "englishName": "Admiral Makarov",
+          "tier": 6,
+          "nation": "ussr",
+          "type": "cruiser",
+          "groupId": "low",
+          "group": "V–VIII 级"
+        },
+        {
+          "id": 3743364816,
+          "name": "伊势",
+          "englishName": "Ise",
+          "tier": 6,
+          "nation": "japan",
+          "type": "battleship",
+          "groupId": "low",
+          "group": "V–VIII 级"
+        },
+        {
+          "id": 3764336336,
+          "name": "陆奥",
+          "englishName": "Mutsu",
+          "tier": 6,
+          "nation": "japan",
+          "type": "battleship",
+          "groupId": "low",
+          "group": "V–VIII 级"
+        },
+        {
+          "id": 3764369232,
+          "name": "贝阿恩",
+          "englishName": "Béarn",
+          "tier": 6,
+          "nation": "france",
+          "type": "aircarrier",
+          "groupId": "low",
+          "group": "V–VIII 级"
+        },
+        {
+          "id": 3544102864,
+          "name": "俄里翁44",
+          "englishName": "Orion '44",
+          "tier": 6,
+          "nation": "uk",
+          "type": "cruiser",
+          "groupId": "low",
+          "group": "V–VIII 级"
+        },
+        {
+          "id": 3764271088,
+          "name": "莫纳汉",
+          "englishName": "Monaghan",
+          "tier": 6,
+          "nation": "usa",
+          "type": "destroyer",
+          "groupId": "low",
+          "group": "V–VIII 级"
+        },
+        {
+          "id": 3765384528,
+          "name": "里约热内卢",
+          "englishName": "Rio de Janeiro",
+          "tier": 5,
+          "nation": "pan_america",
+          "type": "battleship",
+          "groupId": "low",
+          "group": "V–VIII 级"
+        },
+        {
+          "id": 3765319120,
+          "name": "猎人",
+          "englishName": "Okhotnik",
+          "tier": 5,
+          "nation": "ussr",
+          "type": "destroyer",
+          "groupId": "low",
+          "group": "V–VIII 级"
+        },
+        {
+          "id": 3765351888,
+          "name": "红色克里米亚",
+          "englishName": "Krasny Krym",
+          "tier": 5,
+          "nation": "ussr",
+          "type": "cruiser",
+          "groupId": "low",
+          "group": "V–VIII 级"
+        },
+        {
+          "id": 3765352400,
+          "name": "埃克塞特",
+          "englishName": "Exeter",
+          "tier": 5,
+          "nation": "uk",
+          "type": "cruiser",
+          "groupId": "low",
+          "group": "V–VIII 级"
+        },
+        {
+          "id": 3765319664,
+          "name": "希尔",
+          "englishName": "Hill",
+          "tier": 5,
+          "nation": "usa",
+          "type": "destroyer",
+          "groupId": "low",
+          "group": "V–VIII 级"
+        }
+      ]
+    },
     {
       "year": 2025,
       "containerId": "4016231344",

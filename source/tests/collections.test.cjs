@@ -18,7 +18,8 @@ const assert = require("node:assert/strict");
   });
   test("Santa group probabilities match WG's gift, mega and ultra tables", () => {
     assert.deepEqual(pool.groups.map(g => g.probabilities), [{ gift: 0.1, mega: 1, ultra: 3 }, { gift: 0.4, mega: 3, ultra: 9 }, { gift: 2, mega: 12, ultra: 20 }]);
-    assert.deepEqual(pool.probabilitySources, { gift: "4016231344", mega: "4015182768", ultra: "4014134192" });
+    assert.equal(pool.year, 2026);
+    assert.deepEqual(pool.probabilitySources, { gift: pool.sourceUrl, mega: pool.sourceUrl, ultra: pool.sourceUrl });
   });
   test("Santa sync reads the group probability and rejects unknown classifications", () => {
     const reward = { id: "1", type: "ship", probability: 99 };
@@ -106,7 +107,7 @@ const assert = require("node:assert/strict");
     assert.deepEqual(shipsFromPort(null), []);
   });
 
-  test("summarizes anniversary tokens and supership steel by tier", () => {
+  test("summarizes Christmas coal, festive tokens and steel by tier", () => {
     const ships = [{ ship_id: 1 }, { ship_id: 2 }, { ship_id: 3 }, { ship_id: 4 }, { ship_id: 5 }];
     const metadata = {
       1: { tier: 5 },
@@ -118,9 +119,10 @@ const assert = require("node:assert/strict");
     const result = summarizeSnowflakes(ships, metadata, { accountId: 42, nickname: "Tester", realm: "asia" });
     assert.equal(result.totalShips, 5);
     assert.equal(result.eligibleShips, 4);
-    assert.equal(result.totalTokens, 175);
+    assert.equal(result.totalTokens, 1);
+    assert.equal(result.totalCoal, 1400);
     assert.equal(result.totalSteel, 200);
     assert.equal(result.tiers.find((row) => row.tier === 5).count, 2);
-    assert.ok(result.event.exchangeRewards.some((reward) => reward.id === "kurama" && reward.price === 11000));
+    assert.ok(result.event.exchangeRewards.some((reward) => reward.id === "santa-mega" && reward.price === 5));
   });
 }

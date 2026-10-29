@@ -265,7 +265,7 @@ export interface SnowflakeTierSummary {
   label: string;
   count: number;
   rewardPerShip: number;
-  rewardType: "token" | "steel";
+  rewardType: "token" | "steel" | "coal";
   totalReward: number;
 }
 
@@ -278,6 +278,7 @@ export interface SnowflakeSummary {
   eligibleShips: number;
   totalTokens: number;
   totalSteel: number;
+  totalCoal: number;
   tiers: SnowflakeTierSummary[];
   event: {
     id: string;

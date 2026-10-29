@@ -3,15 +3,20 @@
 
 ![No. 7 insert 图标](source/src/assets/app-icon.png)
 
-**No. 7 insert** 是面向《战舰世界》WG 服的开源战绩查询与对局助手。当前源码版本为 **V0.1.7**，首次公开版本为 **V0.1.1**。
+**No. 7 insert** 是面向《战舰世界》WG 服的开源战绩查询与对局助手。当前源码版本为 **V0.1.8**，首次公开版本为 **V0.1.1**。
 
 ## 下载完整程序
 
-Windows 0.1.7 安装版、便携版和 SHA-256 校验值位于 `release/0.1.7`。安装版支持选择安装目录并创建快捷方式；便携版可直接运行。下载见 [V0.1.7 发布页](https://github.com/awhite1127/WWS-No.7-insert/releases/tag/V0.1.7)，完整说明见 [0.1.7 更新说明](docs/releases/0.1.7.md)。公开历史版本见 [GitHub Releases](https://github.com/awhite1127/WWS-No.7-insert/releases)。
+Windows 0.1.8 安装版、便携版和 SHA-256 校验值位于 `release/0.1.8`。安装版支持选择安装目录并创建快捷方式；便携版可直接运行。下载见 [V0.1.8 发布页](https://github.com/awhite1127/WWS-No.7-insert/releases/tag/V0.1.8)，完整说明见 [0.1.8 更新说明](docs/releases/0.1.8.md)。公开历史版本见 [GitHub Releases](https://github.com/awhite1127/WWS-No.7-insert/releases)。
 
 源码在本仓库的 [source](source) 文件夹；打包文件通过 GitHub Releases 分发，避免把大型二进制文件写入 Git 历史。
 
-## V0.1.7 本次更新
+## V0.1.8 本次更新
+
+- **2026 圣诞船池**：依据 WG 15.11 开发博客更新 28 艘舰船，名单共 143 艘；保留官方分档概率、筛选及港口拥有状态核对。
+- **圣诞扫雪**：按等级计算煤炭、钢铁与节日代币，兑换规划改为普通箱、超大号箱及银币，并补充经验要求与额外领取规则。
+
+## V0.1.7 更新
 
 - **行动路线与点位图**：独立页面按 8 张地图分类，共 13 张全流程点位总图。猛禽 4 张、赫尔墨斯 2 张、杀人鲸 2 张，其余各 1 张；每条航线使用独立的干净地形底图，仅标当前友方航点／出口。敌方仅显示刷新编号位置，移除敌舰航行箭头及通行位置标记；阶段编号、随机编号范围、候选与条件说明位于图旁。重复区域合并编号，紧凑圆圈与编号避让降低遮挡。七号插及游戏浮层同步支持，Beta 仅在左侧菜单；不判断实时阶段或计时，未知地图支持手动选择。社区攻略有版本滞后，大致区域仍需实战核对。
 - **Beta 标识**：舰船配装与行动路线仅在左侧菜单标注 Beta，标题处不显示，避免挤占筛选栏空间。
@@ -102,10 +107,10 @@ npm run dev
 cd source
 npm test
 npm run build
-npm run dist -- --config.directories.output=../release/0.1.7
+npm run dist -- --config.directories.output=../release/0.1.8
 ```
 
-上面的命令将 0.1.7 安装版、便携版和解压版直接生成在 `release/0.1.7`。图标源文件为 [app-icon.png](source/src/assets/app-icon.png)，Windows 图标由 [generate-icon.ps1](source/build/generate-icon.ps1) 生成。
+上面的命令将 0.1.8 安装版、便携版和解压版直接生成在 `release/0.1.8`。图标源文件为 [app-icon.png](source/src/assets/app-icon.png)，Windows 图标由 [generate-icon.ps1](source/build/generate-icon.ps1) 生成。
 
 ## 舰船配装规划器
 

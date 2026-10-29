@@ -20,6 +20,8 @@ const plannedSpent = computed(() => summary.value?.event.exchangeRewards.reduce(
   (sum, reward) => sum + reward.price * (plannedCounts.value[reward.id] || 0), 0,
 ) ?? 0);
 const remainingTokens = computed(() => (summary.value?.totalTokens ?? 0) - plannedSpent.value);
+const rewardNames = { coal: "煤炭", steel: "钢铁", token: "节日代币" };
+function openSource() { void window.wws.openChristmasSource(2026); }
 type ExchangeReward = SnowflakeSummary["event"]["exchangeRewards"][number];
 
 function updateStatus(next: SnowflakeAuthStatus) {
@@ -148,18 +150,25 @@ onMounted(() => {
         </div>
         <div class="snow-summary__views">
           <div class="snow-totals" :class="{ 'is-hidden': summaryView !== 'overview' }" :inert="summaryView !== 'overview'" :aria-hidden="summaryView !== 'overview'">
-            <article><span>港口舰船</span><strong>{{ summary.totalShips }}</strong><small>包含全部等级</small></article>
-            <article><span>可扫雪舰船</span><strong>{{ summary.eligibleShips }}</strong><small>V级及以上</small></article>
-            <article class="snow-total--token"><span>节日代币总计</span><strong>{{ summary.totalTokens.toLocaleString() }}</strong><small>V–X级舰船</small></article>
-            <article class="snow-total--steel"><span>钢铁总计</span><strong>{{ summary.totalSteel.toLocaleString() }}</strong><small>超级舰船</small></article>
+            <article><span>可扫雪舰船</span><strong>{{ summary.eligibleShips }}</strong><small>V级及以上 · 港口共 {{ summary.totalShips }} 艘</small></article>
+            <article><span>煤炭总计</span><strong>{{ summary.totalCoal.toLocaleString() }}</strong><small>V–VII级舰船</small></article>
+            <article class="snow-total--token"><span>{{ summary.event.currencyName }}总计</span><strong>{{ summary.totalTokens.toLocaleString() }}</strong><small>X级舰船</small></article>
+            <article class="snow-total--steel"><span>钢铁总计</span><strong>{{ summary.totalSteel.toLocaleString() }}</strong><small>VIII–IX级及超级舰船</small></article>
           </div>
           <div class="snow-tier-grid snow-tier-grid--inside" :class="{ 'is-hidden': summaryView !== 'tiers' }" :inert="summaryView !== 'tiers'" :aria-hidden="summaryView !== 'tiers'">
             <article v-for="row in summary.tiers" :key="row.tier">
               <span>{{ row.label }}</span><strong>{{ row.count }}<small> 艘</small></strong>
-              <div><em>单舰 {{ row.rewardPerShip }}</em><b>{{ row.totalReward.toLocaleString() }} {{ row.rewardType === 'steel' ? '钢铁' : '代币' }}</b></div>
+              <div><em>单舰 {{ row.rewardPerShip }} {{ rewardNames[row.rewardType] }}</em><b>{{ row.totalReward.toLocaleString() }} {{ rewardNames[row.rewardType] }}</b></div>
             </article>
           </div>
         </div>
+        <details class="snow-rules">
+          <summary>15.11 扫雪规则与来源</summary>
+          <p>每艘舰船仅可领取一次奖励。V、VI、VII、VIII、IX、X 级及超级舰船分别需要累计 200、250、300、400、500、600、600 基础经验。</p>
+          <p>任意等级舰船累计获得 1,000 基础经验，可为港口其他舰船领取额外奖励。港口舰船数量为 0–24、25–49、50–99、100–199、200–399、400–599、600+ 时，分别获得 1、2、3、4、5、6、7 次额外领取机会。</p>
+          <p>此处按当前港口计算活动总收益，不扣除游戏内已经领取的奖励。</p>
+          <button type="button" class="button-secondary" @click="openSource">查看 WG 开发博客 ↗</button>
+        </details>
         <p v-if="summary?.warning" class="error-message" role="status">{{ summary.warning }}</p>
         <p v-if="error" class="error-message">{{ error }}</p>
       </section>

@@ -94,6 +94,9 @@ input::placeholder { color: var(--muted); opacity: 1; }
 
 /* Keep both snow summary tabs compact, with scrolling inside at narrow widths. */
 .snow-summary__views { height: 80px; }
+.snow-rules { margin-top: 12px; color: var(--muted); font-size: 12px; line-height: 1.6; }
+.snow-rules summary { cursor: pointer; }
+.snow-rules p { margin: 8px 0; }
 .snow-summary__views > * { height: 100%; min-height: 0; overflow: auto; }
 .snow-tier-grid--inside article { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-content: center; align-items: center; gap: 2px 6px; padding: 6px 10px; }
 .snow-tier-grid--inside > article > strong { margin: 0; font-size: 20px; line-height: 1; white-space: nowrap; }

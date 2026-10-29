@@ -2,6 +2,7 @@ import expectedPr from "../data/pr-expected.json";
 import { ratingValue } from "./stats-trend";
 import type { PrAggregate } from "./types";
 import newsSnapshot from "../data/news-snapshot.json";
+import christmasPools from "../data/christmas-pools.json";
 import type { NewsFeed, AppConfig, ClanDetails, ContainerDetails, ContainerSummary, PlayerDetails, SnowflakeAuthStatus, WgAuthStatus } from "./types";
 
 if (!window.wws) {
@@ -136,21 +137,19 @@ if (!window.wws) {
       realm: "asia",
       totalShips: 183,
       eligibleShips: 142,
-      totalTokens: 10875,
-      totalSteel: 1200,
+      totalTokens: 14,
+      totalSteel: 4530,
+      totalCoal: 57550,
       tiers: [
-        [5, "5级", 28, 25, "token"], [6, "6级", 25, 35, "token"], [7, "7级", 24, 50, "token"],
-        [8, "8级", 27, 75, "token"], [9, "9级", 18, 100, "token"], [10, "10级", 14, 125, "token"], [11, "超级舰船", 6, 200, "steel"],
+        [5, "5级", 28, 700, "coal"], [6, "6级", 25, 750, "coal"], [7, "7级", 24, 800, "coal"],
+        [8, "8级", 27, 70, "steel"], [9, "9级", 18, 80, "steel"], [10, "10级", 14, 1, "token"], [11, "超级舰船", 6, 200, "steel"],
       ].map(([tier, label, count, rewardPerShip, rewardType]) => ({ tier, label, count, rewardPerShip, rewardType, totalReward: Number(count) * Number(rewardPerShip) })) as SnowflakeAuthStatus["summary"] extends infer S ? S extends { tiers: infer T } ? T : never : never,
       event: {
-        id: "wows-15.8-11th-anniversary", name: "11周年庆典", currencyName: "节日代币",
+        id: "wows-15.11-new-year-2026", name: "2026 圣诞与新年庆典", currencyName: "节日代币",
         exchangeRewards: [
-          { id: "kurama", name: "★ 鞍马", category: "舰船", price: 11000, limit: 1, featured: true },
-          { id: "press-f", name: "Press F 击沉特效", category: "外观", price: 2500, limit: 1 },
-          { id: "supership-bonus", name: "超级舰船收益加成包", category: "加成", price: 2000, limit: 1 },
-          { id: "supercontainer", name: "超级补给箱", category: "补给箱", price: 125, limit: 130 },
-          { id: "red-steel-titan", name: "红钢巨人高级补给箱", category: "补给箱", price: 95 },
-          { id: "signals-1", name: "信号旗组合包 I", category: "信号旗", price: 50 },
+          { id: "santa-gift", name: "圣诞老人的礼物补给箱", category: "补给箱", price: 1 },
+          { id: "santa-mega", name: "圣诞老人的超大号礼物补给箱", category: "补给箱", price: 5, featured: true },
+          { id: "credits", name: "375,000 银币", category: "银币", price: 1 },
         ],
       },
       syncedAt: Date.now(),
@@ -189,7 +188,10 @@ if (!window.wws) {
     loginWg: async () => snowStatus as WgAuthStatus,
     getMyStats: async () => previewResult(mockDetails),
     getChristmasPortShips: async () => ({ accountId: 3003269897, nickname: "yizhibai", realm: "asia", shipIds: [3436099280, 3544102864, 4074645200, 4281317360], syncedAt: Date.now() }),
-    openChristmasSource: async (year) => { window.open(({ 2023: "https://worldofwarships.com/news/sales-and-events/armory-1211-santa-crates/", 2024: "https://worldofwarships.com/en/content/contents-and-drop-rates-of-containers/", 2025: "https://worldofwarships.com/en/news/sales-and-events/santas-gifts-arrived-to-nordlyshavn/" } as Record<number, string>)[year], "_blank"); },
+    openChristmasSource: async (year) => {
+      const pool = christmasPools.pools.find(item => item.year === year);
+      if (pool) window.open(pool.sourceUrl, "_blank", "noopener,noreferrer");
+    },
     getSnowflakeStatus: async () => snowStatus,
     loginSnowflake: async () => snowStatus,
     refreshSnowflake: async () => snowStatus,
