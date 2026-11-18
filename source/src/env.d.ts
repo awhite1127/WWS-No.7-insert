@@ -1,6 +1,6 @@
 /// <reference types="vite/client" />
 
-import type { NewsFeed, AppConfig, ArenaInfo, ArenaState, ClanDetails, ClanSearchResult, ContainerDetails, ContainerSummary, ChristmasPortShips, DownloadedUpdate, PlayerDetails, RosterPlayer, SearchResult, SnowflakeAuthStatus, UpdateCheckResult, UpdateProgress, WgAuthStatus } from "./types";
+import type { NewsFeed, AppConfig, ArenaInfo, ArenaState, ClanDetails, ClanSearchResult, ContainerDetails, ContainerSummary, ChristmasPortShips, DownloadedUpdate, PlayerDetails, ReplayStats, RosterPlayer, SearchResult, SnowflakeAuthStatus, UpdateCheckResult, UpdateProgress, WgAuthStatus } from "./types";
 
 import type { PlannerCatalog } from "./build-planner";
 
@@ -39,6 +39,7 @@ declare global {
       containerDetails(id: string, realm: AppConfig["realm"]): Promise<ContainerDetails>;
       openContainerSource(realm: AppConfig["realm"]): Promise<void>;
       refreshRoster(): Promise<RosterPlayer[]>;
+      queryReplay(): Promise<ReplayStats | null>;
       getWgAuthStatus(): Promise<WgAuthStatus>;
       loginWg(realm: AppConfig["realm"]): Promise<WgAuthStatus>;
       getMyStats(): Promise<PlayerDetails>;

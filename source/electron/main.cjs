@@ -12,7 +12,8 @@ require("dotenv").config({ path: envPath, quiet: true });
 const { WgApi } = require("./wg-api.cjs");
 const { KarmaService, enrichRosterKarma } = require("./karma-service.cjs");
 const karmaService = new KarmaService();
-const { ArenaWatcher } = require("./arena-watcher.cjs");
+const { ArenaWatcher, findSavedReplay } = require("./arena-watcher.cjs");
+const { readReplayArena } = require("./replay-parser.cjs");
 const { createNewsService, officialUrl } = require("./news-service.cjs");
 let newsService;
 const { createPlannerService } = require("./planner-service.cjs");
@@ -284,8 +285,8 @@ function saveConfig(next) {
   else if (currentArena) createOverlayWindow();
   syncKeyboardHook();
   sendAll("config:changed", publicConfig(merged));
-  if (currentArena && (current.realm !== merged.realm || current.overlayBattleMode !== merged.overlayBattleMode)) {
-    void handleArena(currentArena);
+  if (currentArena && watcher.arenaActive && (current.realm !== merged.realm || current.overlayBattleMode !== merged.overlayBattleMode)) {
+    void handleArena(currentArena, merged);
   }
   return publicConfig(merged);
 }
@@ -364,7 +365,7 @@ function getOverlayBounds() {
 }
 
 function createOverlayWindow() {
-  if (!currentArena || !loadConfig().overlayEnabled) return;
+  if (!watcher.arenaActive || !currentArena || !loadConfig().overlayEnabled) return;
   const interactive = currentArena.isOperation || loadConfig().overlayBattleMode === "operations";
   if (overlayWindow && !overlayWindow.isDestroyed()) {
     overlayWindow.setIgnoreMouseEvents(!interactive, { forward: true });
@@ -455,20 +456,19 @@ function stopKeyboardHook() {
 }
 
 function syncKeyboardHook() {
-  if (currentArena && loadConfig().overlayEnabled && loadConfig().overlayHotkeyEnabled) startKeyboardHook();
+  if (watcher.arenaActive && currentArena && loadConfig().overlayEnabled && loadConfig().overlayHotkeyEnabled) startKeyboardHook();
   else stopKeyboardHook();
 }
 
-async function handleArena(arena) {
+async function handleArena(arena, { realm, overlayBattleMode: battleMode } = loadConfig()) {
   const requestId = ++rosterRequestId;
   rosterController?.abort();
   rosterController = new AbortController();
   const controller = rosterController;
   const enriched = new Set();
-  const realm = loadConfig().realm;
-  currentArena = { ...arena, realm };
+  const previousRoster = currentArena?.updatedAt === arena.updatedAt ? currentRoster : [];
+  currentArena = { ...arena, realm, battleMode };
   createOverlayWindow();
-  const battleMode = loadConfig().overlayBattleMode;
   if (arena.isOperation || battleMode === "operations") {
     currentRoster = [];
     sendAll("arena:update", currentArena);
@@ -476,7 +476,7 @@ async function handleArena(arena) {
     return;
   }
   currentRoster = arena.players.map((player) => {
-    const previous = currentRoster.find((item) => item.key === player.key);
+    const previous = previousRoster.find((item) => item.key === player.key && item.shipId === player.shipId);
     return { ...player, realm, battleMode, shipType: previous?.shipType || player.shipType, shipTier: previous?.shipTier || player.shipTier, status: player.isBot ? "bot" : "loading" };
   });
   sendAll("arena:update", currentArena);
@@ -498,15 +498,7 @@ async function handleArena(arena) {
 }
 
 watcher.on("arena", (arena) => void handleArena(arena));
-watcher.on("arena-ended", () => {
-  rosterRequestId++;
-  rosterController?.abort();
-  currentArena = null;
-  destroyOverlayWindow();
-  currentRoster = [];
-  sendAll("arena:update", null);
-  sendAll("roster:stats", []);
-});
+watcher.on("arena-ended", destroyOverlayWindow);
 watcher.on("warning", (message) => sendAll("overlay:status", { warning: message }));
 watcher.on("path", (watchedPath) => sendAll("overlay:status", { watchedPath }));
 watcher.on("file-status", (status) => sendAll("overlay:status", status));
@@ -575,7 +567,7 @@ ipcMain.handle("arena:refresh-roster", async () => {
     sendAll("roster:stats", currentRoster);
     return currentRoster;
   }
-  await handleArena(currentArena);
+  await handleArena(currentArena, { realm: currentArena.realm, overlayBattleMode: currentArena.battleMode });
   return currentRoster;
 });
 ipcMain.handle("wg:auth-status", () => wgAuthStatus());
@@ -622,6 +614,23 @@ ipcMain.handle("arena:choose-game-directory", async () => {
     properties: ["openDirectory"],
   });
   return result.canceled ? "" : result.filePaths[0];
+});
+ipcMain.handle("arena:query-replay", async () => {
+  const { realm, gamePath } = loadConfig();
+  const replayPath = watcher.lastArenaPath || (gamePath && await findSavedReplay(gamePath)) || watcher.filePath;
+  const replayFolder = replayPath && path.dirname(replayPath);
+  const result = await dialog.showOpenDialog(mainWindow, {
+    title: "选择《战舰世界》录像",
+    defaultPath: replayFolder && fs.existsSync(replayFolder) ? replayFolder : gamePath || undefined,
+    filters: [{ name: "战舰世界录像", extensions: ["wowsreplay"] }],
+    properties: ["openFile"],
+  });
+  if (result.canceled || !result.filePaths.length) return null;
+
+  const filePath = result.filePaths[0];
+  const arena = { ...await readReplayArena(filePath), realm };
+  const roster = await wg.rosterStats(arena.players, realm, undefined, null, arena.battleMode);
+  return { arena, roster, fileName: path.basename(filePath) };
 });
 ipcMain.handle("arena:start", (_event, { gamePath }) => {
   rosterRequestId++;

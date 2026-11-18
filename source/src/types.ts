@@ -196,6 +196,7 @@ export interface ArenaPlayer {
 
 export interface ArenaInfo {
   realm?: string;
+  battleMode?: AppConfig["overlayBattleMode"];
   battleId: string;
   mapName: string;
   mapId?: string;
@@ -228,6 +229,12 @@ export interface ArenaState {
   roster: RosterPlayer[];
   watchedPath?: string;
   arenaFileFound?: boolean;
+}
+
+export interface ReplayStats {
+  arena: ArenaInfo;
+  roster: RosterPlayer[];
+  fileName: string;
 }
 
 export interface ContainerSummary {

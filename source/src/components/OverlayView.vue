@@ -39,6 +39,6 @@ onUnmounted(() => { disposed = true; cleanups.forEach(cleanup => cleanup()); });
 
 <template>
   <main class="overlay-shell" :data-resting="!visible">
-    <BattleRoster :arena="arena" :roster="roster" :realm="arena?.realm || realm" :battle-mode="battleMode" />
+    <BattleRoster :arena="arena" :roster="roster" :realm="arena?.realm || realm" :battle-mode="arena?.battleMode || battleMode" />
   </main>
 </template>

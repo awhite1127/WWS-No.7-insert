@@ -12,7 +12,7 @@ function isReplayDirectory(name) {
   return /^replays?(?:[-_]\d+(?:\.\d+)*)?$/i.test(name);
 }
 
-async function newestReplayFile(replaysDirectory, isCurrent) {
+async function newestReplayFile(replaysDirectory, matchesFile, isCurrent) {
   const pending = [replaysDirectory];
   let newest = "";
   let newestWriteTime = -1;
@@ -28,7 +28,7 @@ async function newestReplayFile(replaysDirectory, isCurrent) {
       const entryPath = path.join(directory, entry.name);
       if (entry.isDirectory()) {
         pending.push(entryPath);
-      } else if (entry.isFile() && entry.name.toLowerCase() === ARENA_FILE_NAME.toLowerCase()) {
+      } else if (entry.isFile() && matchesFile(entry.name.toLowerCase())) {
         try {
           const writeTime = (await fs.promises.stat(entryPath)).mtimeMs;
           if (writeTime > newestWriteTime || (writeTime === newestWriteTime && entryPath < newest)) {
@@ -42,7 +42,7 @@ async function newestReplayFile(replaysDirectory, isCurrent) {
   return { filePath: newest, writeTime: newestWriteTime };
 }
 
-async function findArenaFile(root, maxDepth = 5, maxEntries = 1200, isCurrent = () => true) {
+async function findFileInReplayDirectories(root, matchesFile, maxDepth, maxEntries, isCurrent) {
   const queue = [{ directory: root, depth: 0 }];
   let visited = 0;
   let latest = { filePath: "", writeTime: -1 };
@@ -50,7 +50,7 @@ async function findArenaFile(root, maxDepth = 5, maxEntries = 1200, isCurrent = 
     const { directory, depth } = queue[visited];
     visited += 1;
     if (isReplayDirectory(path.basename(directory))) {
-      const found = await newestReplayFile(directory, isCurrent);
+      const found = await newestReplayFile(directory, matchesFile, isCurrent);
       if (found.writeTime > latest.writeTime) latest = found;
       continue;
     }
@@ -65,7 +65,7 @@ async function findArenaFile(root, maxDepth = 5, maxEntries = 1200, isCurrent = 
       if (!entry.isDirectory() || entry.name.startsWith(".") || SKIP_DIRECTORIES.has(entry.name.toLowerCase())) continue;
       const child = path.join(directory, entry.name);
       if (isReplayDirectory(entry.name)) {
-        const found = await newestReplayFile(child, isCurrent);
+        const found = await newestReplayFile(child, matchesFile, isCurrent);
         if (found.writeTime > latest.writeTime) latest = found;
       } else {
         queue.push({ directory: child, depth: depth + 1 });
@@ -73,6 +73,14 @@ async function findArenaFile(root, maxDepth = 5, maxEntries = 1200, isCurrent = 
     }
   }
   return latest.filePath;
+}
+
+function findArenaFile(root, maxDepth = 5, maxEntries = 1200, isCurrent = () => true) {
+  return findFileInReplayDirectories(root, name => name === ARENA_FILE_NAME.toLowerCase(), maxDepth, maxEntries, isCurrent);
+}
+
+function findSavedReplay(root) {
+  return findFileInReplayDirectories(root, name => name.endsWith(".wowsreplay") && name !== "temp.wowsreplay", 5, 1200, () => true);
 }
 
 async function resolveArenaFilePath(gameDirectory, isCurrent = () => true) {
@@ -98,6 +106,7 @@ class ArenaWatcher extends EventEmitter {
     this.watchedDirectory = "";
     this.fileExists = false;
     this.lastReportedPath = "";
+    this.lastArenaPath = "";
     this.missingPolls = 0;
     this.arenaActive = false;
     this.lastSignature = null;
@@ -208,6 +217,7 @@ class ArenaWatcher extends EventEmitter {
       // expose the file while it is still being written.
       this.lastContent = content;
       this.lastSignature = signature;
+      this.lastArenaPath = this.filePath;
       this.arenaActive = true;
       this.emit("arena", arena);
     } catch (error) {
@@ -237,6 +247,7 @@ class ArenaWatcher extends EventEmitter {
     this.lastDiscoveryAt = 0;
     this.fileExists = false;
     this.lastReportedPath = "";
+    this.lastArenaPath = "";
     this.missingPolls = 0;
     this.arenaActive = false;
     this.filePath = "";
@@ -246,4 +257,4 @@ class ArenaWatcher extends EventEmitter {
   }
 }
 
-module.exports = { ArenaWatcher, findArenaFile, resolveArenaFilePath };
+module.exports = { ArenaWatcher, findArenaFile, findSavedReplay, resolveArenaFilePath };

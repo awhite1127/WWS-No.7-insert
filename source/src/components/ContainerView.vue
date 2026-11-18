@@ -2,6 +2,7 @@
 import { computed, ref, watch } from "vue";
 import AppIcon from "./AppIcon.vue";
 import LoadingState from "./LoadingState.vue";
+import { createContainerSimulator, type SimulatedReward } from "../container-simulator";
 import type { AppConfig, ChristmasPortShips, ContainerDetails, ContainerSummary, WgAuthStatus } from "../types";
 
 const props = defineProps<{ realm: AppConfig["realm"]; authStatus: WgAuthStatus }>();
@@ -9,6 +10,8 @@ const query = ref("");
 const containers = ref<ContainerSummary[]>([]);
 const selectedId = ref("");
 const details = ref<ContainerDetails | null>(null);
+const simulator = computed(() => details.value && createContainerSimulator(details.value));
+const simulation = ref<{ count: number; rewards: SimulatedReward[] } | null>(null);
 const listLoading = ref(false);
 const detailLoading = ref(false);
 const error = ref("");
@@ -37,9 +40,14 @@ function openOfficialSource() {
   void window.wws.openContainerSource(props.realm);
 }
 
+function simulate(count: number) {
+  if (simulator.value) simulation.value = { count, rewards: simulator.value(count) };
+}
+
 async function selectContainer(item: ContainerSummary) {
   selectedId.value = item.id;
   details.value = null;
+  simulation.value = null;
   detailLoading.value = true;
   error.value = "";
   const currentRequest = ++requestId;
@@ -60,6 +68,7 @@ async function loadContainers() {
   containers.value = [];
   selectedId.value = "";
   details.value = null;
+  simulation.value = null;
   error.value = "";
   try {
     const result = await window.wws.listContainers(props.realm);
@@ -99,6 +108,17 @@ watch(() => [props.authStatus.authorized, props.authStatus.accountId, props.real
         <div v-else-if="details" class="container-detail__content">
           <header><div><span class="eyebrow">官方掉落资料</span><h2>{{ details.title }}</h2><small>箱子编号 {{ details.id }}</small></div><button type="button" @click="openOfficialSource">查看官网说明 ↗</button></header>
           <p class="container-detail__note">概率按官网当前公布的数据展示。奖励组概率表示抽中该组的机会；组内各物品未公布单独概率时不会推算。{{ port?.realm === realm ? `已对照 ${port.nickname} 的港口舰船。` : '' }}</p>
+          <section class="container-simulator" aria-label="模拟开箱">
+            <div class="container-simulator__actions">
+              <h3>模拟开箱</h3>
+              <button v-for="count in [1, 10, 100]" :key="count" type="button" class="button-secondary" :disabled="!simulator" @click="simulate(count)">开 {{ count }} 个</button>
+            </div>
+            <p>{{ simulator ? '按公开掉落率模拟。组内权重未完整公布时采用等权抽取。每箱独立抽取，模拟范围为基础掉落率。' : '此箱子的奖励槽位缺少完整掉落率，暂无法模拟。' }}</p>
+            <div v-if="simulation" class="container-simulator__results" aria-live="polite">
+              <strong>本次开启 {{ simulation.count }} 个</strong>
+              <ul><li v-for="reward in simulation.rewards" :key="reward.key"><span>{{ reward.name }}</span><b>× {{ reward.amount.toLocaleString('zh-CN') }}</b></li></ul>
+            </div>
+          </section>
           <article v-for="slot in details.slots" :key="slot.number" class="container-slot">
             <h3>奖励槽位 {{ slot.number }} <small v-if="slot.title">{{ slot.title }}</small></h3>
             <details v-for="(group, index) in slot.groups" :key="index" class="container-group" :open="group.rewards.length <= 15">
@@ -120,3 +140,15 @@ watch(() => [props.authStatus.authorized, props.authStatus.accountId, props.real
     </div>
   </section>
 </template>
+
+<style scoped>
+.container-simulator { display: grid; gap: 8px; margin: 12px 0; padding: 12px; border: 1px solid var(--line); border-radius: 8px; }
+.container-simulator__actions { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.container-simulator__actions h3 { margin: 0 auto 0 0; font-size: 14px; }
+.container-simulator__actions button { min-height: 30px; padding: 0 10px; font-size: 11px; }
+.container-simulator > p { margin: 0; color: var(--muted); font-size: 11px; }
+.container-simulator__results { font-size: 12px; }
+.container-simulator__results ul { display: grid; gap: 4px; max-height: 180px; overflow: auto; margin: 6px 0 0; padding: 0; list-style: none; }
+.container-simulator__results li { display: flex; justify-content: space-between; gap: 10px; padding: 5px 8px; background: var(--panel-solid); }
+.container-simulator__results li b { flex: none; }
+</style>

@@ -107,7 +107,7 @@ if (!window.wws) {
     slots: [{ number: 1, title: "", groups: [
       { kind: "common", title: "常规奖励", probability: null, guaranteedAfter: null, rewards: [
         { name: "银币经济加成 +160%", type: "camoboost", amount: 8, probability: 10, id: "4281331632" },
-        { name: "精英指挥官经验", type: "elite_xp", amount: 57000, probability: 38.1, id: null },
+        { name: "精英指挥官经验", type: "elite_xp", amount: 57000, probability: 88.1, id: null },
       ] },
       { kind: "valuable", title: "金币战舰", probability: 1.9, guaranteedAfter: 110, rewards: [
         { name: "IX BA高梁", type: "ship", amount: 1, probability: null, id: "3436099280" },
@@ -184,6 +184,7 @@ if (!window.wws) {
       : { ...mockContainerDetails, id, title: mockContainers.find((item) => item.id === id)?.title || mockContainerDetails.title },
     openContainerSource: async () => {},
     refreshRoster: async () => [],
+    queryReplay: async () => { throw new Error("请选择桌面版打开本地录像"); },
     getWgAuthStatus: async () => snowStatus as WgAuthStatus,
     loginWg: async () => snowStatus as WgAuthStatus,
     getMyStats: async () => previewResult(mockDetails),

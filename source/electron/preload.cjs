@@ -58,6 +58,7 @@ contextBridge.exposeInMainWorld("wws", {
   startArenaWatch: (gamePath) => ipcRenderer.invoke("arena:start", { gamePath }),
   stopArenaWatch: () => ipcRenderer.invoke("arena:stop"),
   refreshRoster: () => ipcRenderer.invoke("arena:refresh-roster"),
+  queryReplay: () => ipcRenderer.invoke("arena:query-replay"),
   setOverlayVisible: (visible) => ipcRenderer.invoke("overlay:visible", { visible }),
   minimizeWindow: () => ipcRenderer.invoke("window:minimize"),
   toggleMaximizeWindow: () => ipcRenderer.invoke("window:toggle-maximize"),

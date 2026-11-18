@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted, ref, watch } from "vue";
+import { computed, onBeforeUnmount, onMounted, ref, watch } from "vue";
 import catalog from "../../data/christmas-pools.json";
 import AppIcon from "./AppIcon.vue";
 import type { AppConfig, ChristmasPortShips, WgAuthStatus } from "../types";
@@ -14,6 +14,25 @@ const ownership = ref("all");
 const port = ref<ChristmasPortShips | null>(null);
 const loading = ref(false);
 const error = ref("");
+const pageElement = ref<HTMLElement | null>(null);
+const overviewElement = ref<HTMLElement | null>(null);
+const toolbarElement = ref<HTMLElement | null>(null);
+let overviewHeight = 1;
+let layoutObserver: ResizeObserver | undefined;
+
+function updateOverview() {
+  const page = pageElement.value;
+  if (!page) return;
+  page.style.setProperty("--overview-progress", String(Math.min(1, page.scrollTop / overviewHeight)));
+}
+
+function measureLayout() {
+  const page = pageElement.value;
+  if (!page || !overviewElement.value || !toolbarElement.value) return;
+  overviewHeight = overviewElement.value.offsetHeight + 14;
+  page.style.setProperty("--catalog-toolbar-height", `${toolbarElement.value.offsetHeight}px`);
+  updateOverview();
+}
 const pool = computed(() => catalog.pools[0]);
 const portMatchesRealm = computed(() => port.value?.realm === props.realm);
 const owned = computed(() => new Set(portMatchesRealm.value ? port.value?.shipIds || [] : []));
@@ -63,14 +82,33 @@ async function authorize() {
 
 function openSource() { void window.wws.openChristmasSource(pool.value.year); }
 
+function filterOwnership(value: "all" | "owned" | "missing") {
+  ownership.value = value;
+  if (pageElement.value && overviewElement.value) {
+    pageElement.value.scrollTop = overviewHeight;
+  }
+}
+
 watch(() => props.authStatus.authorized, (value) => { if (value) void refreshPort(); else port.value = null; });
 watch(() => props.realm, () => { ownership.value = "all"; });
-onMounted(() => { if (props.authStatus.authorized) void refreshPort(); });
+watch([search, group, type, nation, ownership], () => {
+  // Keep the expanded list in place, but bring the new results back into view.
+  const page = pageElement.value;
+  if (page && page.scrollTop > overviewHeight) page.scrollTop = overviewHeight;
+});
+onMounted(() => {
+  measureLayout();
+  layoutObserver = new ResizeObserver(measureLayout);
+  if (overviewElement.value) layoutObserver.observe(overviewElement.value);
+  if (toolbarElement.value) layoutObserver.observe(toolbarElement.value);
+  if (props.authStatus.authorized) void refreshPort();
+});
+onBeforeUnmount(() => layoutObserver?.disconnect());
 </script>
 
 <template>
-  <section class="christmas-page">
-    <section class="panel christmas-overview">
+  <section ref="pageElement" class="christmas-page" @scroll.passive="updateOverview">
+    <section ref="overviewElement" class="panel christmas-overview">
       <div class="christmas-overview__top">
         <div>
           <span class="eyebrow">SANTA CONTAINER FLEET</span>
@@ -82,9 +120,9 @@ onMounted(() => { if (props.authStatus.authorized) void refreshPort(); });
         </div>
       </div>
       <div class="christmas-progress">
-        <article><span>船池舰船</span><strong>{{ pool.ships.length }}</strong><small>当年官方掉落名单</small></article>
-        <article><span>已拥有</span><strong>{{ ownedCount === null ? '—' : ownedCount }}</strong><small>{{ portMatchesRealm ? `${port?.nickname} · ${props.realm.toUpperCase()}` : '授权后核对港口' }}</small></article>
-        <article><span>尚未拥有</span><strong>{{ ownedCount === null ? '—' : pool.ships.length - ownedCount }}</strong><small>当前账号港口对照</small></article>
+        <button type="button" class="christmas-progress__filter" :aria-pressed="ownership === 'all'" @click="filterOwnership('all')"><span>船池舰船</span><strong>{{ pool.ships.length }}</strong><small>全部拥有状态</small></button>
+        <button type="button" class="christmas-progress__filter" :aria-pressed="ownership === 'owned'" :disabled="!portMatchesRealm" @click="filterOwnership('owned')"><span>已拥有</span><strong>{{ ownedCount === null ? '—' : ownedCount }}</strong><small>{{ portMatchesRealm ? `${port?.nickname} · ${props.realm.toUpperCase()}` : '授权后核对港口' }}</small></button>
+        <button type="button" class="christmas-progress__filter" :aria-pressed="ownership === 'missing'" :disabled="!portMatchesRealm" @click="filterOwnership('missing')"><span>未拥有</span><strong>{{ ownedCount === null ? '—' : pool.ships.length - ownedCount }}</strong><small>当前账号港口对照</small></button>
         <div class="christmas-progress__account">
           <p v-if="port && !portMatchesRealm">当前授权为 {{ port.realm.toUpperCase() }}，请授权 {{ realm.toUpperCase() }} 账号以核对港口。</p>
           <p v-else-if="portMatchesRealm">港口已同步 · {{ new Date(port!.syncedAt).toLocaleString() }}</p>
@@ -96,7 +134,7 @@ onMounted(() => { if (props.authStatus.authorized) void refreshPort(); });
     </section>
 
     <section class="panel christmas-catalog">
-      <div class="christmas-catalog__toolbar">
+      <div ref="toolbarElement" class="christmas-catalog__toolbar">
         <div><span class="eyebrow">SHIP LIST</span><h2>舰船名单 <small>{{ visibleShips.length }} / {{ pool.ships.length }}</small></h2></div>
         <div class="christmas-filters">
           <input v-model="search" type="search" placeholder="搜索中英文船名或舰船 ID" aria-label="搜索圣诞船池" />

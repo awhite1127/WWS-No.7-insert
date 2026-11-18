@@ -3,7 +3,7 @@
 
 ![No. 7 insert 图标](source/src/assets/app-icon.png)
 
-**No. 7 insert** 是面向《战舰世界》WG 服的开源战绩查询与对局助手。当前源码版本为 **V0.1.8**，首次公开版本为 **V0.1.1**。
+**No. 7 insert** 是面向《战舰世界》WG 服的开源战绩查询与对局助手。当前源码版本为 **V0.2.0**，首次公开版本为 **V0.1.1**。
 
 ## 下载完整程序
 
@@ -11,7 +11,18 @@ Windows 0.1.8 安装版、便携版和 SHA-256 校验值位于 `release/0.1.8`�
 
 源码在本仓库的 [source](source) 文件夹；打包文件通过 GitHub Releases 分发，避免把大型二进制文件写入 Git 历史。
 
-## V0.1.8 本次更新
+## V0.2.0 本次更新
+
+- **七号插与录像**：战斗结束后保留上一场战绩，读取下一场时自动更新。选择本地 `.wowsreplay` 文件可查询双方玩家的公开战绩。
+- **复制战绩**：详细战绩的单舰行和七号插的玩家菜单支持复制名称、账号胜率、账号场均经验、单舰胜率和单舰场均伤害。
+- **补给箱与圣诞船池**：箱子查询支持模拟开箱，圣诞船池可点击拥有状态直接筛选。
+- **舰船国旗**：修复详细战绩中的国籍图标匹配。
+
+## V0.1.9 更新
+
+- **圣诞船池滚动动效**：上滑浏览舰船时，总览逐渐缩小淡出，列表上移占满内容区；搜索筛选栏和分档标题吸顶，滚回顶部恢复总览。
+
+## V0.1.8 更新
 
 - **2026 圣诞船池**：依据 WG 15.11 开发博客更新 28 艘舰船，名单共 143 艘；保留官方分档概率、筛选及港口拥有状态核对。
 - **圣诞扫雪**：按等级计算煤炭、钢铁与节日代币，兑换规划改为普通箱、超大号箱及银币，并补充经验要求与额外领取规则。
@@ -107,10 +118,10 @@ npm run dev
 cd source
 npm test
 npm run build
-npm run dist -- --config.directories.output=../release/0.1.8
+npm run dist -- --config.directories.output=../release/0.2.0
 ```
 
-上面的命令将 0.1.8 安装版、便携版和解压版直接生成在 `release/0.1.8`。图标源文件为 [app-icon.png](source/src/assets/app-icon.png)，Windows 图标由 [generate-icon.ps1](source/build/generate-icon.ps1) 生成。
+上面的命令将 0.2.0 安装版、便携版和解压版直接生成在 `release/0.2.0`。图标源文件为 [app-icon.png](source/src/assets/app-icon.png)，Windows 图标由 [generate-icon.ps1](source/build/generate-icon.ps1) 生成。
 
 ## 舰船配装规划器
 

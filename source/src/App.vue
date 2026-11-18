@@ -14,7 +14,7 @@ import SnowflakeView from "./components/SnowflakeView.vue";
 import SearchControl from "./components/SearchControl.vue";
 import TitleBar from "./components/TitleBar.vue";
 import WgAuthGate from "./components/WgAuthGate.vue";
-import type { AppConfig, ArenaInfo, ClanDetails, ClanSearchResult, DownloadedUpdate, PlayerDetails, RosterPlayer, SearchResult, UpdateCheckResult, UpdateProgress, WgAuthStatus } from "./types";
+import type { AppConfig, ArenaInfo, ClanDetails, ClanSearchResult, DownloadedUpdate, PlayerDetails, ReplayStats, RosterPlayer, SearchResult, UpdateCheckResult, UpdateProgress, WgAuthStatus } from "./types";
 
 const config = ref<AppConfig>({ realm: "asia", theme: "dark", gamePath: "", overlayEnabled: true, overlayHotkeyEnabled: true, overlayHotkey: "Tab", overlayBattleMode: "random" });
 const mode = ref<"player" | "clan">("player");
@@ -48,6 +48,9 @@ const watchedPath = ref("");
 const watchedGamePath = ref("");
 const arenaFileFound = ref(false);
 const arenaWarning = ref("");
+const replayStats = ref<ReplayStats | null>(null);
+const replayLoading = ref(false);
+const replayError = ref("");
 const battleLogs = ref<Array<{ time: string; message: string; tone?: string }>>([]);
 const battleLogOpen = ref(false);
 const latestBattleLog = computed(() => battleLogs.value.at(-1));
@@ -103,6 +106,24 @@ async function refreshBattleRoster() {
   }
 }
 
+async function queryReplay() {
+  replayLoading.value = true;
+  replayError.value = "";
+  try {
+    const result = await window.wws.queryReplay();
+    if (result) replayStats.value = result;
+  } catch (reason) {
+    replayError.value = "读取录像失败：" + (reason instanceof Error ? reason.message : String(reason));
+  } finally {
+    replayLoading.value = false;
+  }
+}
+
+function showLiveBattle() {
+  replayStats.value = null;
+  replayError.value = "";
+}
+
 let cleanups: Array<() => void> = [];
 let appDisposed = false;
 let rosterLoadingLogged = false;
@@ -156,7 +177,14 @@ const pageMeta = computed(() => {
   if (activeView.value === "clan") return { eyebrow: "CLAN INTELLIGENCE", title: "军团情报", description: "检索军团档案与完整成员名单" };
   if (activeView.value === "containers") return { eyebrow: "CONTAINER INTELLIGENCE", title: "箱子查询", description: "检索官网公布的补给箱奖励和掉落概率" };
   if (activeView.value === "christmas") return { eyebrow: "SANTA SHIP POOL", title: "圣诞船池", description: "核对最近一期圣诞补给箱舰船与当前港口拥有情况" };
-  if (activeView.value === "overlay") return { eyebrow: "BATTLE ASSISTANT", title: "七号插", description: config.value.overlayHotkeyEnabled ? `自动加载当前对局，按住 ${hotkeyLabel(config.value.overlayHotkey)} 可在游戏中呼出` : "自动加载当前对局，按键呼出已关闭" };
+  if (activeView.value === "overlay") {
+    let description = config.value.overlayHotkeyEnabled
+      ? `自动加载当前对局，按住 ${hotkeyLabel(config.value.overlayHotkey)} 可在游戏中呼出`
+      : "自动加载当前对局，按键呼出已关闭";
+    if (arena.value && !arenaFileFound.value) description = "已保留上一场战绩，等待下一场对局";
+    if (replayStats.value) description = `${replayStats.value.arena.realm?.toUpperCase()} · ${replayStats.value.fileName}`;
+    return { eyebrow: "BATTLE ASSISTANT", title: replayStats.value ? "录像战绩" : "七号插", description: replayError.value || description };
+  }
   if (activeView.value === "my") return { eyebrow: "PERSONAL PERFORMANCE", title: "我的战绩", description: "仅展示当前授权账号的总体战绩、排位记录和舰船水平" };
   if (activeView.value === "snow") return { eyebrow: "FESTIVE REWARDS", title: snowEventName.value ? `扫雪 - ${snowEventName.value}` : "扫雪", description: "算算你能获得什么！" };
   return { eyebrow: "PLAYER INTELLIGENCE", title: "玩家战绩", description: "从 WG 官方数据中检索公开战绩" };
@@ -446,11 +474,11 @@ onMounted(async () => {
     window.wws.onWindowActivity((status) => { activityRevision++; windowActive.value = status.active; }),
     window.wws.onArenaUpdate((value) => {
       arenaRevision++;
-      const previousBattleId = arena.value?.battleId;
+      const previousArena = arena.value;
       arena.value = value;
       if (value) {
-        if (value.battleId !== previousBattleId) {
-          activeView.value = "overlay";
+        if (!previousArena || value.updatedAt !== previousArena.updatedAt) {
+          if (!replayStats.value) activeView.value = "overlay";
           rosterLoadingLogged = false;
           rosterCompletedLogged = false;
         }
@@ -582,8 +610,8 @@ onUnmounted(() => {
             <div><div class="page-heading__title"><h1>{{ pageMeta.title }}</h1><div v-if="activeView === 'my' || activeView === 'player'" class="stats-page-tabs" role="tablist" aria-label="战绩页面"><button id="stats-tab-overview" type="button" role="tab" :aria-selected="statsPage === 'overview'" aria-controls="stats-page-overview" :class="{ active: statsPage === 'overview' }" @click="statsPage = 'overview'">总览</button><button id="stats-tab-ships" type="button" role="tab" :aria-selected="statsPage === 'ships'" aria-controls="stats-page-ships" :class="{ active: statsPage === 'ships' }" @click="statsPage = 'ships'">详细</button></div></div><p>{{ pageMeta.description }}</p></div>
           </div>
           <div v-if="activeView==='planner'" id="planner-header-controls" class="planner-header-controls"></div>
-          <div v-if="activeView === 'overlay' && arena" class="battle-topbar">
-            <div class="battle-topbar__log">
+          <div v-if="activeView === 'overlay'" class="battle-topbar">
+            <div v-if="arena && !replayStats" class="battle-topbar__log">
               <button type="button" class="battle-topbar__toggle" :aria-expanded="battleLogOpen" aria-controls="battle-topbar-history" @click="battleLogOpen = !battleLogOpen">
                 <AppIcon name="pulse" :size="16" /><span>读取日志</span><small aria-live="polite">{{ latestBattleLog?.message || '等待对局数据' }}</small>
               </button>
@@ -592,7 +620,9 @@ onUnmounted(() => {
                 <div v-if="!battleLogs.length"><time>—</time><span>等待对局数据</span></div>
               </div>
             </div>
-            <button v-if="!arena.isOperation && config.overlayBattleMode !== 'operations'" type="button" class="battle-topbar__refresh button-secondary" :disabled="rosterRefreshing" @click="refreshBattleRoster"><span v-if="rosterRefreshing" class="ui-spinner" aria-hidden="true"></span>{{ rosterRefreshing ? '刷新中…' : '刷新战绩' }}</button>
+            <button v-if="arena && !replayStats && !arena.isOperation && arena.battleMode !== 'operations'" type="button" class="battle-topbar__refresh button-secondary" :disabled="rosterRefreshing" @click="refreshBattleRoster"><span v-if="rosterRefreshing" class="ui-spinner" aria-hidden="true"></span>{{ rosterRefreshing ? '刷新中…' : '刷新战绩' }}</button>
+            <button v-if="replayStats || replayError" type="button" class="battle-topbar__button button-secondary" :disabled="replayLoading" @click="showLiveBattle">返回对局</button>
+            <button type="button" class="battle-topbar__button button-secondary" :disabled="replayLoading" @click="queryReplay"><span v-if="replayLoading" class="ui-spinner" aria-hidden="true"></span>{{ replayLoading ? '查询录像中…' : '选择录像' }}</button>
           </div>
           <div v-if="activeView !== 'news' && activeView !== 'planner'" class="topbar__tools">
             <span class="realm-label">服务器</span>
@@ -698,8 +728,9 @@ onUnmounted(() => {
 
             <template v-else-if="activeView === 'overlay'">
               <section class="overlay-dashboard">
-                <section v-if="arena" class="panel battle-panel battle-panel--active">
-                  <BattleRoster :arena="arena" :roster="roster" :realm="arena?.realm || config.realm" :battle-mode="config.overlayBattleMode" embedded @open-player="openRosterPlayer" />
+                <section v-if="replayStats || arena" class="panel battle-panel battle-panel--active">
+                  <BattleRoster v-if="replayStats" :key="replayStats.fileName" :arena="replayStats.arena" :roster="replayStats.roster" :realm="replayStats.arena.realm" :battle-mode="replayStats.arena.battleMode" embedded replay @open-player="openRosterPlayer" />
+                  <BattleRoster v-else :arena="arena" :roster="roster" :realm="arena?.realm || config.realm" :battle-mode="arena?.battleMode || config.overlayBattleMode" embedded @open-player="openRosterPlayer" />
                 </section>
 
                 <template v-else>
@@ -760,6 +791,7 @@ onUnmounted(() => {
         <label class="toggle"><input v-model="config.overlayEnabled" type="checkbox" /><span></span><b>启用游戏内透明覆盖层</b></label>
         <label class="toggle"><input v-model="config.overlayHotkeyEnabled" type="checkbox" /><span></span><b>启用按键呼出战绩面板</b></label>
         <label><span>七号插呼出按键</span><button class="hotkey-input" @keydown.stop.prevent="captureHotkey">{{ hotkeyLabel(config.overlayHotkey) }}<small>点击后按下新按键</small></button></label>
+        <label><span>七号插对局辅助模式</span><select v-model="config.overlayBattleMode" class="settings-battle-mode"><option value="random">随机战</option><option value="ranked">排位战</option><option value="operations">行动模式</option></select></label>
         <div class="settings-update settings-ship-data">
           <div class="settings-update__top"><div><strong>舰船数据</strong><small>每次启动自动检查；配装与七号插共用</small></div><button type="button" :disabled="shipDataBusy || shipDataStatus?.state === 'checking'" @click="checkShipData">{{ shipDataBusy || shipDataStatus?.state === 'checking' ? '检查中…' : '检查舰船数据' }}</button></div>
           <p v-if="shipDataStatus?.version">当前 {{ shipDataStatus.version }} · {{ shipDataStatus.shipCount }} 艘舰船<span v-if="shipDataStatus.state === 'ready'"> · {{ shipDataStatus.updated ? '已更新' : '已检查，暂无新版' }}</span></p>

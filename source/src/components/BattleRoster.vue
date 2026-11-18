@@ -1,8 +1,9 @@
 <script setup lang="ts">
-import { computed, onMounted, onUnmounted, ref } from "vue";
+import { computed, onMounted, onUnmounted, ref, watch } from "vue";
 import AppIcon from "./AppIcon.vue";
 import OperationGuide from "./OperationGuide.vue";
 import { summarizeBattleTeams } from "../battle-summary";
+import { copyBattleStats } from "../copy-battle-stats";
 import { automaticPlayerMark, playerMark, togglePlayerMark, type PlayerMarkKind } from "../player-marks";
 import type { ArenaInfo, RosterPlayer } from "../types";
 
@@ -10,28 +11,46 @@ const props = defineProps<{
   arena: ArenaInfo | null;
   roster: RosterPlayer[];
   embedded?: boolean;
+  replay?: boolean;
   realm?: string;
   battleMode?: "random" | "ranked" | "operations";
 }>();
 const emit = defineEmits<{ openPlayer: [player: RosterPlayer] }>();
 const contextMenu = ref<{ player: RosterPlayer; x: number; y: number } | null>(null);
+const copyFeedback = ref("");
+watch(() => props.arena?.updatedAt, () => {
+  contextMenu.value = null;
+  copyFeedback.value = "";
+});
 function markFor(player: RosterPlayer) {
   return playerMark(player.realm || props.realm || "asia", player.accountId, player.name, player.overall?.winRate);
 }
 function showContextMenu(event: MouseEvent, player: RosterPlayer) {
   event.preventDefault();
   if (player.status === "bot" || player.isBot) return;
+  copyFeedback.value = "";
   const card = (event.currentTarget as HTMLElement).getBoundingClientRect();
   contextMenu.value = {
     player,
     x: Math.max(8, Math.min(event.clientX + 6, window.innerWidth - 183)),
-    y: Math.max(8, Math.min(card.top, window.innerHeight - 150)),
+    y: Math.max(8, Math.min(card.top, window.innerHeight - 172)),
   };
 }
 function queryPlayer() {
   const selected = contextMenu.value?.player;
   contextMenu.value = null;
   if (selected) emit("openPlayer", selected);
+}
+async function copyPlayer() {
+  const player = contextMenu.value?.player;
+  if (!player) return;
+  contextMenu.value = null;
+  try {
+    await copyBattleStats(player.name, player.overall, player.currentShip);
+    copyFeedback.value = `已复制 ${player.name} 的战绩`;
+  } catch {
+    copyFeedback.value = "无法复制战绩，请重试";
+  }
 }
 function toggleMark(kind: PlayerMarkKind) {
   if (!contextMenu.value) return;
@@ -99,7 +118,7 @@ function tierLabel(value?: number) {
 
 <template>
   <div class="battle-roster" :class="{ 'battle-roster--embedded': embedded }">
-    <OperationGuide v-if="arena?.isOperation || battleMode === 'operations'" :arena="arena" />
+    <OperationGuide v-if="!replay && (arena?.isOperation || battleMode === 'operations')" :arena="arena" />
     <div v-else-if="arena" class="battle-board">
       <div class="battle-board__roster">
         <div class="battle-comparison" :aria-label="'双方公开玩家的平均' + modeLabel + '账号胜率对比'">
@@ -162,10 +181,12 @@ function tierLabel(value?: number) {
         <div v-if="!slots.length" class="battle-roster__empty">正在读取双方阵容…</div>
       </div>
     </div>
+    <p v-if="copyFeedback" class="battle-copy-feedback" role="status">{{ copyFeedback }}</p>
     <Teleport to="body">
       <div v-if="contextMenu" class="battle-mark-menu" :style="{ left: `${contextMenu.x}px`, top: `${contextMenu.y}px` }" role="menu" :aria-label="`操作 ${contextMenu.player.name}`">
         <div class="battle-mark-menu__name">{{ contextMenu.player.name }}</div>
         <button type="button" class="battle-mark-menu__query" role="menuitem" @click="queryPlayer"><AppIcon name="user" :size="16" />查询战绩</button>
+        <button v-if="contextMenu.player.status !== 'loading'" type="button" role="menuitem" @click="copyPlayer">复制战绩</button>
         <button type="button" class="battle-mark-menu__favorite" role="menuitemcheckbox" :aria-checked="markFor(contextMenu.player).favorite" :disabled="automaticPlayerMark(contextMenu.player.overall?.winRate) !== null" :title="automaticPlayerMark(contextMenu.player.overall?.winRate) ? '按账号胜率自动标记' : '切换特别关注'" @click="toggleMark('favorite')"><AppIcon name="star" :size="16" />特别关注 <span>{{ markFor(contextMenu.player).favorite ? '✓' : '' }}</span></button>
         <button type="button" class="battle-mark-menu__monkey" role="menuitemcheckbox" :aria-checked="markFor(contextMenu.player).monkey" :disabled="automaticPlayerMark(contextMenu.player.overall?.winRate) !== null" :title="automaticPlayerMark(contextMenu.player.overall?.winRate) ? '按账号胜率自动标记' : '切换海猴标记'" @click="toggleMark('monkey')"><AppIcon name="monkey" :size="16" />海猴标记 <span>{{ markFor(contextMenu.player).monkey ? '✓' : '' }}</span></button>
       </div>

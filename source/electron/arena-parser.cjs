@@ -74,7 +74,7 @@ function parseArenaData(raw) {
   const matchGroup = String(firstValue(raw, ["matchGroup", "match_group"]) ?? "");
   const scenario = String(firstValue(raw, ["scenario", "scenarioName", "scenario_name", "operationName"]) ?? "");
   return {
-    battleId: String(firstValue(raw, ["arenaId", "arena_id", "battleId", "battle_id"]) ?? ""),
+    battleId: String(firstValue(raw, ["arenaId", "arena_id", "battleId", "battle_id", "arenaUniqueId"]) ?? ""),
     mapName, mapId, gameMode, matchGroup, scenario,
     ...detectOperation({ mapId, mapName, gameMode, matchGroup, scenario }),
     updatedAt: Date.now(),

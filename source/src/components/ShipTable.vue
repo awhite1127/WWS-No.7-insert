@@ -1,11 +1,13 @@
 <script setup lang="ts">
 import { computed, ref } from "vue";
-import type { ShipStats } from "../types";
+import type { PlayerDetails, ShipStats } from "../types";
+import { copyBattleStats } from "../copy-battle-stats";
 import { prGrade } from "../pr-grade";
 import NationFlag from "./NationFlag.vue";
 
 type SortKey = "battles" | "winRate" | "avgDamage" | "avgFrags" | "pr";
-const props = defineProps<{ ships: ShipStats[] }>();
+const props = defineProps<{ player: PlayerDetails }>();
+const copyFeedback = ref("");
 const query = ref("");
 const typeFilter = ref("");
 const nationFilter = ref("");
@@ -23,13 +25,21 @@ const nationLabels: Record<string, string> = {
   france: "法国", italy: "意大利", pan_asia: "泛亚", pan_europe: "泛欧",
   commonwealth: "英联邦", netherlands: "荷兰", spain: "西班牙", pan_america: "泛美",
 };
-const types = computed(() => [...new Set(props.ships.map((ship) => ship.type).filter(Boolean))]
+const nationAliases: Record<string, string> = {
+  russia: "ussr", unitedkingdom: "uk", europe: "pan_europe",
+  paneurope: "pan_europe", panasia: "pan_asia", panamerica: "pan_america",
+};
+const ships = computed(() => props.player.hiddenProfile ? [] : props.player.ships.map((ship) => {
+  const nation = ship.nation.trim().toLowerCase();
+  return { ...ship, nation: nationAliases[nation] || nation };
+}));
+const types = computed(() => [...new Set(ships.value.map((ship) => ship.type).filter(Boolean))]
   .sort((a, b) => (typeLabels[a] || a).localeCompare(typeLabels[b] || b, "zh-CN")));
-const nations = computed(() => [...new Set(props.ships.map((ship) => ship.nation).filter(Boolean))]
+const nations = computed(() => [...new Set(ships.value.map((ship) => ship.nation).filter(Boolean))]
   .sort((a, b) => (nationLabels[a] || a).localeCompare(nationLabels[b] || b, "zh-CN")));
-const tiers = computed(() => [...new Set(props.ships.map((ship) => ship.tier).filter((tier) => tier > 0))]
+const tiers = computed(() => [...new Set(ships.value.map((ship) => ship.tier).filter((tier) => tier > 0))]
   .sort((a, b) => b - a));
-const searchIndex = computed(() => props.ships.map((ship) => ({
+const searchIndex = computed(() => ships.value.map((ship) => ({
   ship, text: `${ship.name} ${ship.englishName || ""}`.toLowerCase(),
 })));
 const rows = computed(() => {
@@ -47,6 +57,15 @@ const rows = computed(() => {
     return (sortDirection.value === "desc" ? -difference : difference) || a.name.localeCompare(b.name, "zh-CN");
   });
 });
+
+async function copyShip(ship: ShipStats) {
+  try {
+    await copyBattleStats(props.player.nickname, props.player.overall, ship);
+    copyFeedback.value = `已复制 ${ship.name} 的战绩`;
+  } catch {
+    copyFeedback.value = "无法复制战绩，请重试";
+  }
+}
 
 function changeSort(key: SortKey) {
   if (sortKey.value === key) sortDirection.value = sortDirection.value === "desc" ? "asc" : "desc";
@@ -73,10 +92,12 @@ function winrateClass(value: number) {
       <label>最小场次<input v-model.number="minBattles" type="number" min="0" step="1" placeholder="不限" /></label>
       </div>
     </header>
+    <p v-if="copyFeedback" class="ship-copy-feedback" role="status">{{ copyFeedback }}</p>
     <div class="data-table">
       <div class="data-table__head">
         <span>舰船</span><span>等级</span>
         <button v-for="column in ([{ key: 'battles', label: '场次' }, { key: 'winRate', label: '胜率' }, { key: 'avgDamage', label: '场均伤害' }, { key: 'avgFrags', label: '场均击沉' }, { key: 'pr', label: 'PR' }] as const)" :key="column.key" type="button" :class="{ active: sortKey === column.key }" :aria-label="`按${column.label}${sortKey === column.key && sortDirection === 'desc' ? '升序' : '降序'}排序`" @click="changeSort(column.key)">{{ column.label }}<span v-if="sortKey === column.key">{{ sortDirection === 'desc' ? '↓' : '↑' }}</span></button>
+        <span>战绩</span>
       </div>
       <div v-for="ship in rows" :key="ship.shipId" class="data-table__row">
         <span class="ship-name" :title="ship.englishName && ship.englishName !== ship.name ? `${ship.name} / ${ship.englishName}` : ship.name"><NationFlag :nation="ship.nation" :label="nationLabels[ship.nation] || ship.nation || '未知国籍'" /><i class="ship-name__type">{{ ship.type.replace('AirCarrier', 'CV').replace('Battleship', 'BB').replace('Cruiser', 'CL').replace('Destroyer', 'DD').replace('Submarine', 'SS') }}</i><strong>{{ ship.name }}</strong><small v-if="ship.englishName && ship.englishName !== ship.name">/ {{ ship.englishName }}</small></span>
@@ -86,6 +107,7 @@ function winrateClass(value: number) {
         <span>{{ Math.round(ship.avgDamage).toLocaleString() }}</span>
         <span>{{ ship.avgFrags.toFixed(2) }}</span>
         <span :style="{color:prGrade(ship.pr).color}" :title="prGrade(ship.pr).label">{{ ship.pr == null ? '—' : Math.round(ship.pr).toLocaleString() }}</span>
+        <button type="button" class="ship-copy-button" :aria-label="`复制 ${ship.name} 战绩`" @click="copyShip(ship)">复制</button>
       </div>
       <p v-if="!rows.length" class="ship-filter-empty">没有符合筛选条件的舰船。</p>
     </div>
@@ -101,4 +123,7 @@ function winrateClass(value: number) {
 .ship-panel__controls label { font-size:12px; }
 .ship-panel__controls .ship-search, .ship-panel__controls select, .ship-panel__controls label input { font-size:13px; }
 .ship-filter-empty { font-size:13px; }
+.ship-panel .data-table__head, .ship-panel .data-table__row { grid-template-columns: minmax(180px,1.6fr) .4fr .55fr .65fr .8fr .6fr .6fr auto; }
+.ship-copy-button { padding: 4px 8px; border: 1px solid var(--line-strong); border-radius: 6px; background: var(--panel-solid); color: var(--ink); font-size: 12px; }
+.ship-copy-feedback { margin: 0 20px 6px; color: var(--muted); font-size: 12px; }
 </style>

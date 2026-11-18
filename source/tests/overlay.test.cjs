@@ -33,7 +33,7 @@ const assert = require("node:assert/strict");
   function launch(storage) {
     const context = vm.createContext({ cachedConfig: null, process: { env: {} }, path, normalizeHotkey,
       configPath: () => "settings/config.json", syncKeyboardHook: () => {},
-      currentArena: null, destroyOverlayWindow: () => {}, createOverlayWindow: () => {}, sendAll: () => {}, handleArena: () => {},
+      currentArena: null, watcher: { arenaActive: true }, destroyOverlayWindow: () => {}, createOverlayWindow: () => {}, sendAll: () => {}, handleArena: () => {},
       fs: { readFileSync: () => storage.content, mkdirSync: () => {}, writeFileSync: (file, value) => { assert.equal(file, "settings/config.json"); storage.content = value; } },
     });
     vm.runInContext(functions, context);
@@ -92,7 +92,7 @@ const assert = require("node:assert/strict");
       setIgnoreMouseEvents(value) { this.ignoreMouse = value; }
     }
     const context = vm.createContext({
-      overlayWindow: null, currentArena: { players: Array(24).fill({}) },
+      overlayWindow: null, currentArena: { players: Array(24).fill({}) }, watcher: { arenaActive: true },
       keyboardHook: null, hookListenersInstalled: false, hotkeyDown: false, activeHotkeyKeycode: null,
       BrowserWindow: Window, path, __dirname,
       screen: { getCursorScreenPoint: () => cursor, getDisplayNearestPoint: point => { assert.equal(point, cursor); return { bounds }; } },
@@ -155,9 +155,11 @@ const assert = require("node:assert/strict");
     hook.emit("keydown", { keycode: 15 });
     assert.equal(context.overlayWindow.visible, false);
     config.overlayEnabled = true;
-    context.currentArena = null;
-    context.setOverlayVisible(true);
-    assert.equal(context.overlayWindow.visible, false);
+    context.watcher.arenaActive = false;
+    context.overlayWindow = null;
+    context.createOverlayWindow();
+    assert.equal(context.overlayWindow, null);
+    assert.ok(context.currentArena);
   });
 
   test("disabled overlay is not created until enabled during a battle", () => {

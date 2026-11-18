@@ -651,11 +651,13 @@ nav { display: grid; gap: 5px; margin-top: 9px; }
 .christmas-overview p { margin: 0; color: var(--muted); font-size: 12px; }
 .christmas-overview__actions .button-secondary { white-space: nowrap; }
 .christmas-progress { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)) minmax(245px,1.5fr); gap: 10px; margin-top: 18px; }
-.christmas-progress article, .christmas-progress__account { min-width: 0; min-height: 96px; padding: 15px; border: 1px solid var(--line); border-radius: 9px; background: rgba(5,18,25,.48); }
-.christmas-progress article span, .christmas-progress article strong, .christmas-progress article small { display: block; }
-.christmas-progress article span { color: var(--muted); font-size: 11px; }
-.christmas-progress article strong { margin: 5px 0 2px; color: var(--ink); font-size: 25px; }
-.christmas-progress article small { overflow: hidden; color: var(--muted); font-size: 10px; text-overflow: ellipsis; white-space: nowrap; }
+.christmas-progress__filter, .christmas-progress__account { min-width: 0; min-height: 96px; padding: 15px; border: 1px solid var(--line); border-radius: 9px; background: rgba(5,18,25,.48); }
+.christmas-progress__filter { text-align: left; }
+.christmas-progress__filter:enabled:hover, .christmas-progress__filter[aria-pressed="true"] { border-color: var(--cyan); }
+.christmas-progress__filter span, .christmas-progress__filter strong, .christmas-progress__filter small { display: block; }
+.christmas-progress__filter span { color: var(--muted); font-size: 11px; }
+.christmas-progress__filter strong { margin: 5px 0 2px; color: var(--ink); font-size: 25px; }
+.christmas-progress__filter small { overflow: hidden; color: var(--muted); font-size: 10px; text-overflow: ellipsis; white-space: nowrap; }
 .christmas-progress__account { display: flex; flex-direction: column; justify-content: space-between; align-items: flex-start; gap: 9px; }
 .christmas-progress__account button { min-height: 29px; padding: 0 10px; border: 1px solid rgba(72,215,210,.4); border-radius: 6px; color: var(--cyan); background: var(--cyan-soft); font-size: 11px; }
 .christmas-progress__account button:disabled { opacity: .5; }
@@ -802,7 +804,11 @@ nav { display: grid; gap: 5px; margin-top: 9px; }
 .battle-topbar__toggle > span { flex: 0 0 auto; font-size: 12px; font-weight: 700; }
 .battle-topbar__toggle > small { min-width: 0; overflow: hidden; color: var(--muted); font-size: 11px; text-overflow: ellipsis; white-space: nowrap; }
 .battle-topbar__toggle .app-icon { flex: 0 0 auto; color: var(--cyan); }
-.battle-topbar__refresh { flex: 0 0 auto; min-height: 36px; padding: 0 10px; font-size: 11px; white-space: nowrap; }
+.battle-topbar__refresh, .battle-topbar__button { flex: 0 0 auto; min-height: 36px; padding: 0 10px; font-size: 11px; white-space: nowrap; }
+.page-heading, .page-heading > div { min-width: 0; }
+.page-heading p { overflow-wrap: anywhere; }
+.battle-copy-feedback { position: fixed; z-index: 31; right: 18px; bottom: 18px; padding: 8px 12px; border: 1px solid var(--line-strong); border-radius: 7px; color: var(--ink); background: var(--panel-solid); font-size: 12px; }
+.settings-battle-mode { min-height: 34px; padding: 0 10px; border: 1px solid var(--line); border-radius: 7px; color: var(--ink); background: var(--panel-solid); font: inherit; }
 .battle-topbar__history { position: absolute; top: calc(100% + 7px); right: 0; z-index: 30; width: min(480px, 80vw); max-height: 300px; overflow-y: auto; padding: 8px 12px; border: 1px solid var(--line-strong); border-radius: 8px; color: var(--ink); background: var(--panel-solid); box-shadow: 0 18px 40px rgba(0,0,0,.24); scrollbar-width: thin; }
 .battle-topbar__history > div { display: flex; gap: 10px; padding: 7px 0; border-bottom: 1px solid var(--line); font-size: 12px; line-height: 1.5; }
 .battle-topbar__history > div:last-child { border-bottom: 0; }
